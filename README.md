@@ -1,0 +1,2 @@
+# hdclient
+HyperDrive Client Library
