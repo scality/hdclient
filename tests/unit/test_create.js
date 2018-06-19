@@ -4,7 +4,7 @@
 
 const mocha = require('mocha');
 const assert = require('assert');
-const HyperdriveClient = require('../../index');
+const { client: HyperdriveClient } = require('../../index');
 
 
 mocha.describe('Hyperdrive Client', function () {
