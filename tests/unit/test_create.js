@@ -1,4 +1,5 @@
 'use strict'; // eslint-disable-line strict
+/* eslint-disable max-len */
 /* eslint-disable prefer-arrow-callback */ // Mocha recommends not using => func
 /* eslint-disable func-names */
 
