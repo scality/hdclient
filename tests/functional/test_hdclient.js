@@ -198,5 +198,91 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
             });
         });
     });
+
+    mocha.describe('PUT', function () {
+        mocha.it('Success small key', function (done) {
+            const hdClient = getDefaultClient();
+            const content = 'Je suis une mite en pullover';
+            const payloads = [[200, content, 'data']];
+            const keyContext = {
+                objectKey: 'bestObjEver',
+            };
+
+            hdmock.mockPUT(hdClient.options, keyContext, payloads);
+
+            hdClient.put(
+                hdmock.streamString(content),
+                hdmock.getPayloadLength(content),
+                keyContext, '1',
+                (err, rawKey) => {
+                    assert.ifError(err);
+                    assert.strictEqual(typeof rawKey, 'string');
+                    const parts = hdclient.keyscheme.deserialize(rawKey);
+
+                    const [endpoint, port] = hdClient.options
+                              .endpoints[0].split(':');
+                    assert.strictEqual(parts.nDataParts, 1);
+                    assert.strictEqual(parts.nCodingParts, 0);
+                    assert.strictEqual(parts.data[0].hostname, endpoint);
+                    assert.strictEqual(parts.data[0].port, Number(port));
+                    assert.ok(parts.data[0].key, keyContext.objectKey);
+                    done();
+                });
+        });
+
+        mocha.it('Success larger key (32 KiB)', function (done) {
+            const hdClient = getDefaultClient();
+            /* TODO avoid depending on hardcoded path */
+            const content = fs.createReadStream(
+                'tests/functional/random_payload');
+            const payloads = [[200, content, 'data']];
+            const keyContext = {
+                objectKey: 'bestObjEver',
+            };
+
+            hdmock.mockPUT(hdClient.options, keyContext, payloads);
+
+            hdClient.put(
+                content,
+                hdmock.getPayloadLength(content),
+                keyContext, '1',
+                (err, rawKey) => {
+                    assert.ifError(err);
+                    assert.strictEqual(typeof rawKey, 'string');
+                    const parts = hdclient.keyscheme.deserialize(rawKey);
+
+                    const [endpoint, port] = hdClient.options
+                              .endpoints[0].split(':');
+                    assert.strictEqual(parts.nDataParts, 1);
+                    assert.strictEqual(parts.nCodingParts, 0);
+                    assert.strictEqual(parts.data[0].hostname, endpoint);
+                    assert.strictEqual(parts.data[0].port, Number(port));
+                    assert.ok(parts.data[0].key, keyContext.objectKey);
+                    done();
+                });
+        });
+
+        mocha.it('Server error', function (done) {
+            const hdClient = getDefaultClient();
+            /* TODO avoid depending on hardcoded path */
+            const content = fs.createReadStream(
+                'tests/functional/random_payload');
+            const payloads = [[500, content, 'data']];
+            const keyContext = {
+                objectKey: 'bestObjEver',
+            };
+
+            hdmock.mockPUT(hdClient.options, keyContext, payloads);
+
+            hdClient.put(
+                content,
+                hdmock.getPayloadLength(content),
+                keyContext, '1',
+                err => {
+                    assert.strictEqual(err.infos.status, 500);
+                    done();
+                });
+        });
+    });
 });
 
