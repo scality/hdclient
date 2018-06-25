@@ -5,6 +5,8 @@
 const mocha = require('mocha');
 const assert = require('assert');
 const nock = require('nock');
+const fs = require('fs');
+const crypto = require('crypto');
 
 const hdclient = require('../../index');
 const hdmock = require('../utils');
@@ -81,6 +83,106 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
             const [rawKey] =
                   hdmock.mockDELETE(hdClient.options, 'bestObjEver', [500]);
             hdClient.delete(rawKey, '1', err => {
+                assert.strictEqual(err.infos.status, 500);
+                done();
+            });
+        });
+
+        mocha.it('Bad key', function (done) {
+            const hdClient = getDefaultClient();
+            hdClient.delete('---', '1', err => {
+                if (!(err instanceof BadKeyError)) {
+                    throw err;
+                }
+                done();
+            });
+        });
+    });
+
+    mocha.describe('GET', function () {
+        mocha.it('Existing small key', function (done) {
+            const hdClient = getDefaultClient();
+            const payloads = [[200, 'Je suis une mite en pullover', 'data']];
+            const [rawKey] =
+                      hdmock.mockGET(hdClient.options, 'bestObjEver', payloads);
+
+            hdClient.get(
+                rawKey, undefined /* range */, '1',
+                (err, httpReply) => {
+                    assert.ifError(err);
+                    assert.ok(httpReply);
+
+                    // Sanity checks before buffering the stream
+                    assert.strictEqual(httpReply.statusCode, payloads[0][0]);
+                    assert.strictEqual(httpReply.headers['content-length'],
+                                       payloads[0][1].length);
+
+                    // Buffer the whole stream and perform checks on 'end' event
+                    const readBufs = [];
+                    httpReply.on('data', function (chunk) {
+                        readBufs.push(chunk);
+                    });
+                    httpReply.on('end', function () {
+                        const buf = readBufs.join('');
+                        assert.strictEqual(buf.length, payloads[0][1].length);
+                        assert.strictEqual(buf, payloads[0][1]);
+                        done();
+                    });
+                });
+        });
+
+        mocha.it('Existing larger key (32 KiB)', function (done) {
+            const hdClient = getDefaultClient();
+            /* TODO avoid depending on hardcoded path */
+            const content = fs.createReadStream(
+                'tests/functional/random_payload');
+            const expectedDigest = '2b7a12623e736ee1773fc3efc6c289e8';
+            const contentLength = hdmock.getPayloadLength(content);
+            const payload = [200, content, 'data'];
+            const [rawKey] = hdmock.mockGET(
+                hdClient.options, 'bestObjEver', [payload]);
+
+            hdClient.get(
+                rawKey, undefined /* range */, '1',
+                (err, httpReply) => {
+                    assert.ifError(err);
+                    assert.ok(httpReply);
+
+                    // Sanity checks before buffering the stream
+                    assert.strictEqual(httpReply.statusCode, payload[0]);
+                    assert.strictEqual(httpReply.headers['content-length'],
+                                       contentLength);
+
+                    // Compute return valud md5
+                    const hash = crypto.createHash('md5');
+                    httpReply.on('data', function (data) {
+                        hash.update(data, 'utf8');
+                    });
+                    httpReply.on('end', function () {
+                        const getDigest = hash.digest('hex');
+                        assert.strictEqual(getDigest, expectedDigest);
+                        done();
+                    });
+                });
+        });
+
+        mocha.it('Not found key', function (done) {
+            const hdClient = getDefaultClient();
+            const [rawKey] = hdmock.mockGET(
+                hdClient.options, 'bestObjEver', [[404, '', 'data']]);
+
+            hdClient.get(rawKey, null /* range */, '1', err => {
+                assert.strictEqual(err.infos.status, 404);
+                done();
+            });
+        });
+
+        mocha.it('Server error', function (done) {
+            const hdClient = getDefaultClient();
+            const [rawKey] = hdmock.mockGET(
+                hdClient.options, 'bestObjEver', [[500, '', 'data']]);
+
+            hdClient.get(rawKey, null /* range */, '1', err => {
                 assert.strictEqual(err.infos.status, 500);
                 done();
             });
