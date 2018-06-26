@@ -157,6 +157,7 @@ mocha.describe('Hyperdrive Client', function () {
             const args = { endpoints: ['server1', 'server2', 'server3'],
                            dataParts: 2,
                            codingParts: 1,
+                           requestTimeoutMs: 0,
                          };
             const hdclient = new client.HyperdriveClient(args);
             assert.ok(hdclient);

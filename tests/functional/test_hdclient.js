@@ -19,6 +19,7 @@ function getDefaultClient() {
         endpoints: [endpoint],
         dataParts: 1,
         codingParts: 0,
+        requestTimeoutMs: 10,
     };
 
     const client = new hdclient.client.HyperdriveClient(conf);
@@ -61,8 +62,8 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
     mocha.describe('DELETE', function () {
         mocha.it('Existing key', function (done) {
             const hdClient = getDefaultClient();
-            const [rawKey] =
-                  hdmock.mockDELETE(hdClient.options, 'bestObjEver', [200]);
+            const [rawKey] = hdmock.mockDELETE(
+                hdClient.options, 'bestObjEver', [[200]]);
             hdClient.delete(rawKey, '1', err => {
                 done(err);
             });
@@ -70,8 +71,8 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
 
         mocha.it('Not found key', function (done) {
             const hdClient = getDefaultClient();
-            const [rawKey] =
-                  hdmock.mockDELETE(hdClient.options, 'bestObjEver', [404]);
+            const [rawKey] = hdmock.mockDELETE(
+                hdClient.options, 'bestObjEver', [[404]]);
             hdClient.delete(rawKey, '1', err => {
                 assert.strictEqual(err.infos.status, 404);
                 done();
@@ -80,8 +81,8 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
 
         mocha.it('Server error', function (done) {
             const hdClient = getDefaultClient();
-            const [rawKey] =
-                  hdmock.mockDELETE(hdClient.options, 'bestObjEver', [500]);
+            const [rawKey] = hdmock.mockDELETE(
+                hdClient.options, 'bestObjEver', [[500]]);
             hdClient.delete(rawKey, '1', err => {
                 assert.strictEqual(err.infos.status, 500);
                 done();
@@ -94,6 +95,19 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
                 if (!(err instanceof BadKeyError)) {
                     throw err;
                 }
+                done();
+            });
+        });
+
+        mocha.it('Timeout', function (done) {
+            const hdClient = getDefaultClient();
+            const mockDelay = hdClient.options.requestTimeoutMs + 10;
+            const payloads = [[200, mockDelay]];
+            const [rawKey] = hdmock.mockDELETE(
+                hdClient.options, 'bestObjEver', payloads);
+
+            hdClient.delete(rawKey, '1', err => {
+                assert.ok(err);
                 done();
             });
         });
@@ -197,6 +211,22 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
                 done();
             });
         });
+
+        mocha.it('Timeout', function (done) {
+            const hdClient = getDefaultClient();
+            const mockDelay = hdClient.options.requestTimeoutMs + 10;
+            const payloads = [[200, 'Je suis une mite en pullover',
+                               'data', mockDelay]];
+            const [rawKey] =
+                      hdmock.mockGET(hdClient.options, 'bestObjEver', payloads);
+
+            hdClient.get(
+                rawKey, undefined /* range */, '1',
+                err => {
+                    assert.ok(err);
+                    done();
+                });
+        });
     });
 
     mocha.describe('PUT', function () {
@@ -280,6 +310,43 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
                 keyContext, '1',
                 err => {
                     assert.strictEqual(err.infos.status, 500);
+                    done();
+                });
+        });
+
+        mocha.it('Timeout', function (done) {
+            const hdClient = getDefaultClient();
+            const mockDelay = hdClient.options.requestTimeoutMs + 10;
+            const content = 'Je suis une mite en pullover';
+            const payloads = [[404, content, 'data', mockDelay]];
+            const keyContext = {
+                objectKey: 'bestObjEver',
+            };
+
+            hdmock.mockPUT(hdClient.options, keyContext, payloads);
+
+            let called = false;
+            hdClient.put(
+                hdmock.streamString(content),
+                hdmock.getPayloadLength(content),
+                keyContext, '1',
+                /* PUT is considered successful on timeout as we don't
+                 * whether it really was stored or not
+                 */
+                (err, rawKey) => {
+                    assert.ok(!called);
+                    called = true;
+                    assert.ifError(err);
+                    assert.strictEqual(typeof rawKey, 'string');
+                    const parts = hdclient.keyscheme.deserialize(rawKey);
+
+                    const [endpoint, port] = hdClient.options
+                              .endpoints[0].split(':');
+                    assert.strictEqual(parts.nDataParts, 1);
+                    assert.strictEqual(parts.nCodingParts, 0);
+                    assert.strictEqual(parts.data[0].hostname, endpoint);
+                    assert.strictEqual(parts.data[0].port, Number(port));
+                    assert.ok(parts.data[0].key, keyContext.objectKey);
                     done();
                 });
         });

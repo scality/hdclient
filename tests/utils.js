@@ -49,11 +49,12 @@ function getPayloadLength(payload) {
  * @param {Number} statusCode of the reply
  * @param {fs.ReadStream|String} payload to return
  * @param {String} contentType (only 'data' supported as of now)
+ * @param {Number} timeoutMs Delay reply by X ms
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
 function _mockPutRequest(endpoint, keyContext, statusCode,
-                         payload, contentType) {
+                         payload, contentType, timeoutMs = 0) {
     const len = getPayloadLength(payload);
     const reqheaders = {
         ['Content-Length']: len,
@@ -69,7 +70,7 @@ function _mockPutRequest(endpoint, keyContext, statusCode,
     const expectedPathPrefix =
               `${protocol.specs.STORAGE_BASE_URL}/${keyPrefix}`;
 
-    // TODO find a better solution...
+    // TODO find a better filtering solution...
     return nock(`http://${endpoint}`, { reqheaders })
         .filteringPath(path => {
             if (path.startsWith(expectedPathPrefix)) {
@@ -78,6 +79,7 @@ function _mockPutRequest(endpoint, keyContext, statusCode,
             return path;
         })
         .put(`${protocol.specs.STORAGE_BASE_URL}/defaultkey`)
+        .delay(timeoutMs)
         .reply(statusCode, '', replyheaders);
 }
 
@@ -96,6 +98,7 @@ function _mockPutRequest(endpoint, keyContext, statusCode,
  *          - 0 => HTTP status code to return
  *          - 1 => payload (file system stream or string)
  *          - 2 => payload type ('data', 'usermd', etc) - only data for now
+ *          - 3 => {Number} timeout ms
  * @returns {[Nock.Scope]} nock mocks
  *
  * @comment Endpoints are mocked in order. If you have more
@@ -103,10 +106,10 @@ function _mockPutRequest(endpoint, keyContext, statusCode,
  */
 function mockPUT(clientConfig, keyContext, replies) {
     const mocks = replies.map((reply, idx) => {
-        const [statusCode, payload, contentType] = reply;
+        const [statusCode, payload, contentType, timeoutMs] = reply;
         const endpoint = clientConfig.endpoints[idx];
         return _mockPutRequest(endpoint, keyContext, statusCode,
-                               payload, contentType);
+                               payload, contentType, timeoutMs);
     });
 
     return mocks;
@@ -122,10 +125,12 @@ function mockPUT(clientConfig, keyContext, replies) {
  * @param {Number} statusCode of the reply
  * @param {fs.ReadStream|String} payload to return
  * @param {String} acceptType (only 'data' supported as of now)
+ * @param {Number} timeoutMs Delay reply by X ms
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockGetRequest(location, statusCode, payload, acceptType) {
+function _mockGetRequest(location, statusCode, payload,
+                         acceptType, timeoutMs = 0) {
     const endpoint = `http://${location.hostname}:${location.port}`;
 
     const reqheaders = {
@@ -144,6 +149,7 @@ function _mockGetRequest(location, statusCode, payload, acceptType) {
 
     return nock(endpoint, { reqheaders })
         .get(path)
+        .delay(timeoutMs)
         .reply(statusCode, payload, replyheaders);
 }
 
@@ -158,9 +164,10 @@ function _mockGetRequest(location, statusCode, payload, acceptType) {
  * @param {String} objectKey The object identifier
  * @param {[Reply]} replies description
  * @comment each entry of replies must be an Array with:
- *          - 0 => HTTP status code to return
- *          - 1 => payload (file system stream or string)
- *          - 2 => payload type ('data', 'usermd', etc) - only data for now
+ *          - 0 => {Number} HTTP status code to return
+ *          - 1 => {String|fs.ReadStream} payload (file system stream or string)
+ *          - 2 => {String} payload type ('data', 'usermd', etc)
+ *          - 3 => {Number} timeout ms
  * @returns {[String, [Nock.Scope], [Nock.Scope]]} rawkey,
  *          data mocks and coding mocks
  *
@@ -180,15 +187,17 @@ function mockGET(clientConfig, objectKey, replies) {
 
     // Setup data mocks
     const dataMocks = parts.data.map((part, idx) => {
-        const [statusCode, payload, acceptType] = replies[idx];
-        return _mockGetRequest(part, statusCode, payload, acceptType);
+        const [statusCode, payload, acceptType, timeoutMs] = replies[idx];
+        return _mockGetRequest(part, statusCode, payload,
+                               acceptType, timeoutMs);
     });
 
     // Setup coding mocks
     const codingMocks = parts.coding.map((part, idx) => {
-        const [statusCode, payload, acceptType] =
+        const [statusCode, payload, acceptType, timeoutMs] =
                   replies[idx + clientConfig.dataParts];
-        return _mockGetRequest(part, statusCode, payload, acceptType);
+        return _mockGetRequest(part, statusCode, payload,
+                               acceptType, timeoutMs);
     });
 
     return [keyscheme.serialize(parts), dataMocks, codingMocks];
@@ -202,10 +211,11 @@ function mockGET(clientConfig, objectKey, replies) {
  * @param {Number} location.port to contact
  * @param {String} location.key to retrieve
  * @param {Number} statusCode of the reply
+ * @param {Number} timeoutMs Delay reply by X ms
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockDeleteRequest(location, statusCode) {
+function _mockDeleteRequest(location, statusCode, timeoutMs = 0) {
     const endpoint = `http://${location.hostname}:${location.port}`;
 
     const reqheaders = {
@@ -227,6 +237,7 @@ function _mockDeleteRequest(location, statusCode) {
 
     return nock(endpoint, { reqheaders })
         .delete(path)
+        .delay(timeoutMs)
         .reply(statusCode, '', replyheaders);
 }
 
@@ -239,13 +250,16 @@ function _mockDeleteRequest(location, statusCode) {
  *
  * @param {Object} clientConfig Hyperdrive client configuration
  * @param {String} objectKey The object identifier
- * @param {[Number]} statusCodes HTTP codes to return for each part
- * @returns {[String, [Nock.Scope], [Nock.Scope]]} rawkey,
+ * @param {[Reply]} replies description
+ * @comment each entry of replies must be an Array with:
+ *          - 0 => {Number} HTTP status code to return
+ *          - 1 => {Number} timeout ms
+ * @return {[String, [Nock.Scope], [Nock.Scope]]} rawkey,
  *          data mocks and coding mocks
  *
- * @comment statusCodes.length must be equal to number of parts
+ * @comment replies.length must be equal to number of parts
  */
-function mockDELETE(clientConfig, objectKey, statusCodes) {
+function mockDELETE(clientConfig, objectKey, replies) {
     const nParts = clientConfig.dataParts +
           clientConfig.codingParts;
     const parts = keyscheme.keygen(
@@ -255,18 +269,18 @@ function mockDELETE(clientConfig, objectKey, statusCodes) {
         clientConfig.codingParts
     );
 
-    assert.strictEqual(nParts, statusCodes.length);
+    assert.strictEqual(nParts, replies.length);
 
     // Setup data mocks
     const dataMocks = parts.data.map((part, idx) => {
-        const statusCode = statusCodes[idx];
-        return _mockDeleteRequest(part, statusCode);
+        const [statusCode, timeoutMs] = replies[idx];
+        return _mockDeleteRequest(part, statusCode, timeoutMs);
     });
 
     // Setup coding mocks
     const codingMocks = parts.coding.map((part, idx) => {
-        const statusCode = statusCodes[idx + clientConfig.dataParts];
-        return _mockDeleteRequest(part, statusCode);
+        const [statusCode, timeoutMs] = replies[idx + clientConfig.dataParts];
+        return _mockDeleteRequest(part, statusCode, timeoutMs);
     });
 
     return [keyscheme.serialize(parts), dataMocks, codingMocks];
