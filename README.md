@@ -65,3 +65,62 @@ npm test tests/functional/
 npm test -- -h
 
 ```
+
+### Running as standalone
+Because deploying the full S3 server might be too much of a hassle for your specific need, a HTTP server using HdClient is provided. The mapping between object key and internal keys (the ones actually stored on the hyperdrive) is stored in-memory only. The internal keys are not accessible on the outside, mirrorring behavior of Zenko-like deployment.
+
+ ```shell
+# Start Hyperdrive 'proxy'
+# example conf assumes 1 hyperdrive listening on localhost:7777
+NODE_ENV=production node tests/server.js 8888 tests/example_hdclient_proxy.conf.json &
+
+# Have fun
+curl -XPUT --data @/etc/hosts -v http://localhost:8888/mybucket/testobj
+*   Trying 127.0.0.1...
+* Connected to localhost (127.0.0.1) port 8888 (#0)
+> PUT /mybucket/testobj HTTP/1.1
+> Host: localhost:8888
+> User-Agent: curl/7.47.0
+> Accept: */*
+> Content-Length: 267
+> Content-Type: application/x-www-form-urlencoded
+>
+* upload completely sent off: 267 out of 267 bytes
+< HTTP/1.1 200 OK
+< Date: Wed, 27 Jun 2018 10:44:32 GMT
+< Connection: keep-alive
+< Transfer-Encoding: chunked
+<
+* Connection #0 to host localhost left intact
+
+curl -v http://localhost:8888/mybucket/testobj
+*   Trying 127.0.0.1...
+* Connected to localhost (127.0.0.1) port 8888 (#0)
+> GET /mybucket/testobj HTTP/1.1
+> Host: localhost:8888
+> User-Agent: curl/7.47.0
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Content-Length: 267
+< Date: Wed, 27 Jun 2018 10:44:39 GMT
+< Connection: keep-alive
+<
+* Connection #0 to host localhost left intact
+<payload...>
+
+curl -XDELETE -v http://localhost:8888/mybucket/testobj
+*   Trying 127.0.0.1...
+* Connected to localhost (127.0.0.1) port 8888 (#0)
+> DELETE /mybucket/testobj HTTP/1.1
+> Host: localhost:8888
+> User-Agent: curl/7.47.0
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Date: Wed, 27 Jun 2018 10:44:58 GMT
+< Connection: keep-alive
+< Transfer-Encoding: chunked
+<
+* Connection #0 to host localhost left intact
+```
