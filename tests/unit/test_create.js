@@ -161,6 +161,7 @@ mocha.describe('Hyperdrive Client', function () {
                          };
             const hdclient = new client.HyperdriveClient(args);
             assert.ok(hdclient);
+            assert.strictEqual(hdclient.clientType, 'scality');
             const [confIsOk, err] = config.validate(hdclient.options);
             assert.ok(confIsOk);
             assert.ok(err === null);
