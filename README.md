@@ -124,3 +124,76 @@ curl -XDELETE -v http://localhost:8888/mybucket/testobj
 <
 * Connection #0 to host localhost left intact
 ```
+
+### Running as a CloudServer data backend
+How to run integrated hyperdrive client inside S3 or Zenko deployment? This section is only a work in progress since actual S3 integration code is not yet merged.
+```shell
+# Checkout S3 repository and checkout proper hdclient integration branch
+git clone https://github.com/scality/S3.git
+cd S3/
+git checkout feature/RING-28500-add-hyperdrive-client-data-backend
+
+# Modify package.json to use the version of hdclient you want
+# To use a local repository
+# sed s%scality/hdclient%file:<path to hdclient repository% package.json
+# To use a tag or commit
+sed -i s%scality/hdclient%scality/hdclient#<tag/commit>% package.json
+
+# Add new locationConstraints
+hyperdrive_ipport="127.0.0.1:7777"
+cat <<EOF > hdclient_locationConfig.json
+{
+    "hyperdrive-cluster-1": {
+        "type": "scality",
+        "legacyAwsBehavior": true,
+        "details": {
+            "connector": {
+                "hdclient" : {
+                    "endpoints": ["${hyperdrive_ipport}"],
+                    "dataParts": 1,
+                    "codingParts": 0,
+                    "requestTimeoutMs": 30000
+                }
+            }
+        }
+    }
+}
+EOF
+
+# Pattern match restEndpoints - haven't found a better way yet...
+# Edit config.json restEndpoints section to use hyperdrive-cluster-1
+# e.g. to map localhost onto hdclient: sed -i %"localhost": "us-east-1"%"localhost": "hyperdrive-cluster-1"
+# e.g. to map 127.0.0.1 onto hdclient: sed -i %"127.0.0.1": "us-east-1"%"127.0.0.1": "hyperdrive-cluster-1"
+
+# Install dependencies
+npm install
+
+# Start CloudServer (memory backend ie metadata in-memory)
+# More informations inside S3 repository documentation
+S3DATA=multiple S3_LOCATION_FILE=hdclient_locationConfig.json npm run mem_backend
+```
+
+In a separate tab, have fun with AWS CLI
+```
+# Running S3 server uses default accessKey and secretKey
+export AWS_ACCESS_KEY_ID=accessKey1
+export AWS_SECRET_ACCESS_KEY=verySecretKey1
+
+# Create a bucket
+aws  --endpoint-url=http://localhost:8000 s3 mb s3://brandnewbucket
+
+# List buckets
+aws  --endpoint-url=http://localhost:8000 s3 ls
+
+# Put data
+aws  --endpoint-url=http://localhost:8000 s3 cp /etc/hosts s3://brandnewbucket/shiny_new_object
+
+# List bucket content
+aws  --endpoint-url=http://localhost:8000 s3 ls s3://brandnewbucket
+
+# Get data
+aws  --endpoint-url=http://localhost:8000 s3 cp s3://brandnewbucket/shiny_new_object /tmp/retrieved
+
+# Delete data
+aws  --endpoint-url=http://localhost:8000 s3 rm s3://brandnewbucket/shiny_new_object
+```
