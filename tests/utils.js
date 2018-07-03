@@ -131,12 +131,23 @@ function mockPUT(clientConfig, keyContext, replies) {
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockGetRequest(location, statusCode, payload,
-                         acceptType, timeoutMs = 0) {
+function _mockGetRequest(location,
+                         { statusCode, payload, acceptType, timeoutMs = 0, range }) {
     const endpoint = `http://${location.hostname}:${location.port}`;
+    let content = payload;
+    let len = getPayloadLength(payload);
+    if (typeof(payload) === 'string' && range) {
+        if (range.length === 1) {
+            content = payload.slice(range[0]);
+        } else {
+            // Slice does not include right boundary, while HTTP ranges are inclusive
+            content = payload.slice(range[0], range[1] + 1);
+        }
+        len = content.length;
+    }
 
     const reqheaders = {
-        ['Accept']: protocol.helpers.makeAccept(acceptType),
+        ['Accept']: protocol.helpers.makeAccept([acceptType, range]),
     };
     protocol.specs.GET_QUERY_MANDATORY_HEADERS.forEach(
         header => assert.ok(reqheaders[header] !== undefined)
@@ -144,7 +155,7 @@ function _mockGetRequest(location, statusCode, payload,
 
     /* Set Content-Length iff a valid answer is expected */
     const replyheaders = statusCode === 200 ? {
-        ['Content-Length']: getPayloadLength(payload),
+        ['Content-Length']: len,
     } : {};
 
     const path = `${protocol.specs.STORAGE_BASE_URL}/${location.key}`;
@@ -152,7 +163,7 @@ function _mockGetRequest(location, statusCode, payload,
     return nock(endpoint, { reqheaders })
         .get(path)
         .delay(timeoutMs)
-        .reply(statusCode, payload, replyheaders);
+        .reply(statusCode, content, replyheaders);
 }
 
 /**
@@ -164,12 +175,13 @@ function _mockGetRequest(location, statusCode, payload,
  *
  * @param {Object} clientConfig Hyperdrive client configuration
  * @param {String} objectKey The object identifier
- * @param {[Reply]} replies description
- * @comment each entry of replies must be an Array with:
- *          - 0 => {Number} HTTP status code to return
- *          - 1 => {String|fs.ReadStream} payload (file system stream or string)
- *          - 2 => {String} payload type ('data', 'usermd', etc)
- *          - 3 => {Number} timeout ms
+ * @param {[Object]} replies description
+ * @comment each entry of replies must be an Object with:
+ *          - statusCode => {Number} HTTP status code to return
+ *          - payload => {String|fs.ReadStream} payload (file system stream or string)
+ *          - acceptType => {String} payload type ('data', 'usermd', etc)
+ *          - timeoutMs => {Number} timeout ms
+ *          - range => {undefined | [Number]} range to return
  * @returns {[String, [Nock.Scope], [Nock.Scope]]} rawkey,
  *          data mocks and coding mocks
  *
@@ -188,19 +200,14 @@ function mockGET(clientConfig, objectKey, replies) {
     assert.strictEqual(nParts, replies.length);
 
     // Setup data mocks
-    const dataMocks = parts.data.map((part, idx) => {
-        const [statusCode, payload, acceptType, timeoutMs] = replies[idx];
-        return _mockGetRequest(part, statusCode, payload,
-                               acceptType, timeoutMs);
-    });
+    const dataMocks = parts.data.map(
+        (part, idx) => _mockGetRequest(part, replies[idx])
+    );
 
     // Setup coding mocks
-    const codingMocks = parts.coding.map((part, idx) => {
-        const [statusCode, payload, acceptType, timeoutMs] =
-                  replies[idx + clientConfig.dataParts];
-        return _mockGetRequest(part, statusCode, payload,
-                               acceptType, timeoutMs);
-    });
+    const codingMocks = parts.coding.map(
+        (part, idx) => _mockGetRequest(part, replies[idx])
+    );
 
     return [keyscheme.serialize(parts), dataMocks, codingMocks];
 }
