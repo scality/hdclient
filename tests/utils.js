@@ -1,4 +1,5 @@
 'use strict'; // eslint-disable-line strict
+/* eslint-disable max-len */
 
 /**
  * Test helpers, mock and so forth
@@ -63,7 +64,8 @@ function _mockPutRequest(endpoint, keyContext, statusCode,
     };
 
     const replyheaders = {
-        // TODO return Content-Type of PUT is not parsed
+        ['Content-Type']:
+        `${protocol.specs.HYPERDRIVE_APPLICATION}; ${contentType}=${len}; $crc.${contentType}=0xdeadbeef`,
     };
 
     const keyPrefix = keyContext.objectKey.slice(0, 8);
