@@ -109,7 +109,7 @@ function _mockPutRequest(endpoint, keyContext, statusCode,
 function mockPUT(clientConfig, keyContext, replies) {
     const mocks = replies.map((reply, idx) => {
         const [statusCode, payload, contentType, timeoutMs] = reply;
-        const endpoint = clientConfig.endpoints[idx];
+        const endpoint = clientConfig.policy.locations[idx];
         return _mockPutRequest(endpoint, keyContext, statusCode,
                                payload, contentType, timeoutMs);
     });
@@ -191,7 +191,7 @@ function mockGET(clientConfig, objectKey, replies) {
     const nParts = clientConfig.dataParts +
           clientConfig.codingParts;
     const parts = keyscheme.keygen(
-        clientConfig.endpoints,
+        clientConfig.policy,
         objectKey,
         clientConfig.dataParts,
         clientConfig.codingParts
@@ -272,7 +272,7 @@ function mockDELETE(clientConfig, objectKey, replies) {
     const nParts = clientConfig.dataParts +
           clientConfig.codingParts;
     const parts = keyscheme.keygen(
-        clientConfig.endpoints,
+        clientConfig.policy,
         objectKey,
         clientConfig.dataParts,
         clientConfig.codingParts

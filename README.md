@@ -149,7 +149,9 @@ cat <<EOF > hdclient_locationConfig.json
         "details": {
             "connector": {
                 "hdclient" : {
-                    "endpoints": ["${hyperdrive_ipport}"],
+                    "policy": {
+                        "locations": ["${hyperdrive_ipport}"]
+                    },
                     "dataParts": 1,
                     "codingParts": 0,
                     "requestTimeoutMs": 30000

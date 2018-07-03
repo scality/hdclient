@@ -16,7 +16,7 @@ const BadKeyError = hdclient.keyscheme.KeySchemeDeserializeError;
 function getDefaultClient() {
     const endpoint = 'hyperdrive-store1:8888';
     const conf = {
-        endpoints: [endpoint],
+        policy: { locations: [endpoint] },
         dataParts: 1,
         codingParts: 0,
         requestTimeoutMs: 10,
@@ -39,7 +39,7 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
     mocha.describe('Internals', function () {
         mocha.it('Socket error handling', function (done) {
             const hdClient = getDefaultClient();
-            const [ip, port] = hdClient.options.endpoints[0].split(':');
+            const [ip, port] = hdClient.options.policy.locations[0].split(':');
             const opts = hdClient._getCommonStoreRequestOptions(
                 ip, Number(port), 'test_key'
             );
@@ -48,7 +48,7 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
             const noLog = { error() {} };
             const expectedErrorMessage = 'something awful happened';
 
-            nock(`http://${hdClient.options.endpoints[0]}`)
+            nock(`http://${hdClient.options.policy.locations[0]}`)
                  .get(opts.path)
                  .replyWithError(expectedErrorMessage);
 
@@ -447,8 +447,8 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
                     assert.strictEqual(typeof rawKey, 'string');
                     const parts = hdclient.keyscheme.deserialize(rawKey);
 
-                    const [endpoint, port] = hdClient.options
-                              .endpoints[0].split(':');
+                    const [endpoint, port] =
+                              hdClient.options.policy.locations[0].split(':');
                     assert.strictEqual(parts.nDataParts, 1);
                     assert.strictEqual(parts.nCodingParts, 0);
                     assert.strictEqual(parts.data[0].hostname, endpoint);
@@ -479,8 +479,8 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
                     assert.strictEqual(typeof rawKey, 'string');
                     const parts = hdclient.keyscheme.deserialize(rawKey);
 
-                    const [endpoint, port] = hdClient.options
-                              .endpoints[0].split(':');
+                    const [endpoint, port] =
+                              hdClient.options.policy.locations[0].split(':');
                     assert.strictEqual(parts.nDataParts, 1);
                     assert.strictEqual(parts.nCodingParts, 0);
                     assert.strictEqual(parts.data[0].hostname, endpoint);
@@ -538,8 +538,8 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
                     assert.strictEqual(typeof rawKey, 'string');
                     const parts = hdclient.keyscheme.deserialize(rawKey);
 
-                    const [endpoint, port] = hdClient.options
-                              .endpoints[0].split(':');
+                    const [endpoint, port] =
+                              hdClient.options.policy.locations[0].split(':');
                     assert.strictEqual(parts.nDataParts, 1);
                     assert.strictEqual(parts.nCodingParts, 0);
                     assert.strictEqual(parts.data[0].hostname, endpoint);

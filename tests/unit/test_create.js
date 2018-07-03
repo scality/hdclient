@@ -28,9 +28,19 @@ mocha.describe('Hyperdrive Client', function () {
             done();
         });
 
-        mocha.it('Bad enpoints type', function (done) {
-            const args = { endpoints: 42 };
-            const expectedError = new config.InvalidConfigError('endpoints', 42,
+        mocha.it('No data placement policy', function (done) {
+            const args = {};
+            const expectedError = new config.InvalidConfigError('policy', 'undefined', 'Expected data placement policy');
+            assert.throws(() => create(args),
+                          function (thrown) {
+                              return thrownErrorValidation(thrown, expectedError);
+                          });
+            done();
+        });
+
+        mocha.it('Bad locations type', function (done) {
+            const args = { policy: { locations: 42 } };
+            const expectedError = new config.InvalidConfigError('policy.locations', 42,
                                                                 'Expected an array of string');
             assert.throws(() => create(args),
                           function (thrown) {
@@ -40,8 +50,8 @@ mocha.describe('Hyperdrive Client', function () {
         });
 
         mocha.it('Bad enpoint type', function (done) {
-            const args = { endpoints: ['localhost:8080', 42] };
-            const expectedError = new config.InvalidConfigError('endpoints', ['localhost:8080', 42],
+            const args = { policy: { locations: ['localhost:8080', 42] } };
+            const expectedError = new config.InvalidConfigError('policy.locations', ['localhost:8080', 42],
                                                                 'Expected an array of string');
             assert.throws(() => create(args),
                           function (thrown) {
@@ -51,8 +61,8 @@ mocha.describe('Hyperdrive Client', function () {
         });
 
         mocha.it('No enpoint', function (done) {
-            const args = { endpoints: [] };
-            const expectedError = new config.InvalidConfigError('endpoints', [],
+            const args = { policy: { locations: [] } };
+            const expectedError = new config.InvalidConfigError('policy.locations', [],
                                                                 'Expected at least 1 endpoint');
             assert.throws(() => create(args),
                           function (thrown) {
@@ -62,7 +72,7 @@ mocha.describe('Hyperdrive Client', function () {
         });
 
         mocha.it('No dataParts', function (done) {
-            const args = { endpoints: ['localhost:8080'] };
+            const args = { policy: { locations: ['localhost:8080'] } };
             const expectedError = new config.InvalidConfigError('dataParts', undefined,
                                                                 'Expected integer larger than 1');
             assert.throws(() => create(args),
@@ -73,7 +83,7 @@ mocha.describe('Hyperdrive Client', function () {
         });
 
         mocha.it('Bad dataParts type', function (done) {
-            const args = { endpoints: ['localhost:8080'],
+            const args = { policy: { locations: ['localhost:8080'] },
                            dataParts: 'whatever',
                          };
             const expectedError = new config.InvalidConfigError('dataParts', 'whatever',
@@ -86,7 +96,7 @@ mocha.describe('Hyperdrive Client', function () {
         });
 
         mocha.it('Invalid dataParts value', function (done) {
-            const args = { endpoints: ['localhost:8080'],
+            const args = { policy: { locations: ['localhost:8080'] },
                            dataParts: 0,
                          };
             const expectedError = new config.InvalidConfigError('dataParts', 0,
@@ -99,7 +109,7 @@ mocha.describe('Hyperdrive Client', function () {
         });
 
         mocha.it('No codingParts', function (done) {
-            const args = { endpoints: ['localhost:8080'],
+            const args = { policy: { locations: ['localhost:8080'] },
                            dataParts: 1,
                          };
             const expectedError = new config.InvalidConfigError('codingParts', undefined,
@@ -112,7 +122,7 @@ mocha.describe('Hyperdrive Client', function () {
         });
 
         mocha.it('Bad codingParts type', function (done) {
-            const args = { endpoints: ['localhost:8080'],
+            const args = { policy: { locations: ['localhost:8080'] },
                            dataParts: 1,
                            codingParts: [],
                          };
@@ -126,7 +136,7 @@ mocha.describe('Hyperdrive Client', function () {
         });
 
         mocha.it('Invalid codingParts value', function (done) {
-            const args = { endpoints: ['localhost:8080'],
+            const args = { policy: { locations: ['localhost:8080'] },
                            dataParts: 1,
                            codingParts: -1,
                          };
@@ -140,12 +150,12 @@ mocha.describe('Hyperdrive Client', function () {
         });
 
         mocha.it('Not enough endpoints', function (done) {
-            const args = { endpoints: ['localhost:8080'],
+            const args = { policy: { locations: ['localhost:8080'] },
                            dataParts: 1,
                            codingParts: 1,
                          };
             const expectedError = new config.InvalidConfigError('totalParts', 2,
-                                                                'Expected less parts than endpoints');
+                                                                'Expected less parts than data locations');
             assert.throws(() => create(args),
                           function (thrown) {
                               return thrownErrorValidation(thrown, expectedError);
@@ -154,7 +164,7 @@ mocha.describe('Hyperdrive Client', function () {
         });
 
         mocha.it('Valid configuration', function (done) {
-            const args = { endpoints: ['server1', 'server2', 'server3'],
+            const args = { policy: { locations: ['server1', 'server2', 'server3'] },
                            dataParts: 2,
                            codingParts: 1,
                            requestTimeoutMs: 0,
