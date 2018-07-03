@@ -18,39 +18,66 @@ mocha.describe('Hyperdrive Protocol Specification', function () {
         });
         mocha.it('Data only', function (done) {
             const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; data`;
-            const generated = hdProto.helpers.makeAccept('data');
+            const generated = hdProto.helpers.makeAccept(['data']);
             assert.strictEqual(expected, generated);
             done();
         });
         mocha.it('Usermd only', function (done) {
             const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; usermeta`;
-            const generated = hdProto.helpers.makeAccept('usermeta');
+            const generated = hdProto.helpers.makeAccept(['usermeta']);
             assert.strictEqual(expected, generated);
             done();
         });
         mocha.it('Metadata only', function (done) {
             const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; meta`;
-            const generated = hdProto.helpers.makeAccept('meta');
+            const generated = hdProto.helpers.makeAccept(['meta']);
             assert.strictEqual(expected, generated);
             done();
         });
         mocha.it('Mixture', function (done) {
             // Usermd does not exists, it is usermeta
             const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; usermeta; data; meta`;
-            const generated = hdProto.helpers.makeAccept('usermeta', 'data', 'meta');
+            const generated = hdProto.helpers.makeAccept(['usermeta'], ['data'], ['meta']);
             assert.strictEqual(expected, generated);
             done();
         });
         mocha.it('Failure', function (done) {
             const expected = null;
-            const generated = hdProto.helpers.makeAccept('fake');
+            const generated = hdProto.helpers.makeAccept(['fake']);
             assert.strictEqual(expected, generated);
             done();
         });
         mocha.it('Failure mixture', function (done) {
             // Usermd does not exists, it is usermeta
             const expected = null;
-            const generated = hdProto.helpers.makeAccept('usermd', 'data');
+            const generated = hdProto.helpers.makeAccept(['usermd'], ['data']);
+            assert.strictEqual(expected, generated);
+            done();
+        });
+        mocha.it('Data only - full range', function (done) {
+            const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; data=42-77`;
+            const generated = hdProto.helpers.makeAccept(['data', [42, 77]]);
+            assert.strictEqual(expected, generated);
+            done();
+        });
+        mocha.it('Data only - half range', function (done) {
+            const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; data=5-`;
+            const generated = hdProto.helpers.makeAccept(['data', [5]]);
+            assert.strictEqual(expected, generated);
+            done();
+        });
+        mocha.it('Data only - invalid range', function (done) {
+            const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; data=undefined-undefined`;
+            const generated = hdProto.helpers.makeAccept(['data', []]);
+            assert.strictEqual(expected, generated);
+            done();
+        });
+        mocha.it('Mixture range', function (done) {
+            // Usermd does not exists, it is usermeta
+            const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; usermeta; data=42-; meta=1-5`;
+            const generated = hdProto.helpers.makeAccept(['usermeta'],
+                                                         ['data', [42]],
+                                                         ['meta', [1, 5]]);
             assert.strictEqual(expected, generated);
             done();
         });
