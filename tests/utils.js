@@ -193,6 +193,7 @@ function mockGET(clientConfig, objectKey, replies) {
     const parts = keyscheme.keygen(
         clientConfig.policy,
         objectKey,
+        'CP',
         clientConfig.dataParts,
         clientConfig.codingParts
     );
@@ -274,6 +275,7 @@ function mockDELETE(clientConfig, objectKey, replies) {
     const parts = keyscheme.keygen(
         clientConfig.policy,
         objectKey,
+        'CP',
         clientConfig.dataParts,
         clientConfig.codingParts
     );

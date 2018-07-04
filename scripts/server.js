@@ -138,7 +138,7 @@ function loadConfig(file) {
 function main() {
     const args = process.argv;
     if (args.length < 4) {
-        console.log(`Usage: <port> <conf path> <memindexnodel>
+        console.error(`Usage: <port> <conf path> <memindexnodel>
 {Number} port to listen on
 {String} path to HyperdriveClient json config
 {*}      don't remove in-memory keys on DELETE (used to check
