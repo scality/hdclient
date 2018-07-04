@@ -199,3 +199,97 @@ aws  --endpoint-url=http://localhost:8000 s3 cp s3://brandnewbucket/shiny_new_ob
 # Delete data
 aws  --endpoint-url=http://localhost:8000 s3 rm s3://brandnewbucket/shiny_new_object
 ```
+
+## Useful script & tools
+You can find several utilities located under ./scripts/.
+
+### Generating keys:
+
+```shell
+# Generate PUT key with RS2+1
+node scripts/keygen.js scripts/example_hdclient_proxy.conf.json "RS,2,1" genobj 123456 | jq
+{
+  "parts": {
+    "objectKey": "genobj",
+    "rand": 123456,
+    "code": "RS",
+    "nDataParts": 2,
+    "nCodingParts": 1,
+    "splitSize": 0,
+    "data": [
+      {
+        "location": "localhost:7777",
+        "type": "d",
+        "fragmentId": 0,
+        "hostname": "localhost",
+        "port": 7777,
+        "key": "genobj-123456-0-d-0"
+      },
+      {
+        "location": "localhost:7777",
+        "type": "d",
+        "fragmentId": 1,
+        "hostname": "localhost",
+        "port": 7777,
+        "key": "genobj-123456-0-d-1"
+      }
+    ],
+    "coding": [
+      {
+        "location": "localhost:7777",
+        "type": "c",
+        "fragmentId": 2,
+        "hostname": "localhost",
+        "port": 7777,
+        "key": "genobj-123456-0-c-2"
+      }
+    ]
+  },
+  "genkey": "1#1#1,0#RS,2,1#genobj#123456#localhost:7777#localhost:7777#localhost:7777"
+}
+
+```
+
+### Parsing generated keys
+
+```shell
+node scripts/keyparse.js 1#1#1,0#RS,2,1#genobj#123456#localhost:7777#localhost:7777#localhost:7777 | jq
+{
+  "objectKey": "genobj",
+  "rand": "123456",
+  "splitSize": 0,
+  "code": "RS",
+  "nDataParts": 2,
+  "nCodingParts": 1,
+  "data": [
+    {
+      "location": "localhost:7777",
+      "type": "d",
+      "fragmentId": 0,
+      "hostname": "localhost",
+      "port": 7777,
+      "key": "genobj-123456-0-d-0"
+    },
+    {
+      "location": "localhost:7777",
+      "type": "d",
+      "fragmentId": 1,
+      "hostname": "localhost",
+      "port": 7777,
+      "key": "genobj-123456-0-d-1"
+    }
+  ],
+  "coding": [
+    {
+      "location": "localhost:7777",
+      "type": "c",
+      "fragmentId": 2,
+      "hostname": "localhost",
+      "port": 7777,
+      "key": "genobj-123456-0-c-2"
+    }
+  ]
+}
+```
+
+Invariant of those tools: gen <- keygen(...) && gen["parts] == keyparse(gen["genkey"])
