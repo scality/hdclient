@@ -72,7 +72,7 @@ Because deploying the full S3 server might be too much of a hassle for your spec
  ```shell
 # Start Hyperdrive 'proxy'
 # example conf assumes 1 hyperdrive listening on localhost:7777
-NODE_ENV=production node tests/server.js 8888 tests/example_hdclient_proxy.conf.json &
+NODE_ENV=production node scripts/server.js 8888 scripts/example_hdclient_proxy.conf.json &
 
 # Have fun
 curl -XPUT --data @/etc/hosts -v http://localhost:8888/mybucket/testobj
