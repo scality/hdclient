@@ -140,9 +140,15 @@ git checkout feature/RING-28500-add-hyperdrive-client-data-backend
 sed -i s%scality/hdclient%scality/hdclient#<tag/commit>% package.json
 
 # Add new locationConstraints
+# Region us-east-1 is mandatory, since the default config still references it
 hyperdrive_ipport="127.0.0.1:7777"
 cat <<EOF > hdclient_locationConfig.json
 {
+    "us-east-1": {
+        "type": "file",
+        "legacyAwsBehavior": true,
+        "details": {}
+    },
     "hyperdrive-cluster-1": {
         "type": "scality",
         "legacyAwsBehavior": true,
