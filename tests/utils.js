@@ -107,14 +107,12 @@ function _mockPutRequest(endpoint, keyContext, statusCode,
  *          endpoints than reply, those will not be mocked.
  */
 function mockPUT(clientConfig, keyContext, replies) {
-    const mocks = replies.map((reply, idx) => {
+    return replies.map((reply, idx) => {
         const [statusCode, payload, contentType, timeoutMs] = reply;
         const endpoint = clientConfig.policy.locations[idx];
         return _mockPutRequest(endpoint, keyContext, statusCode,
                                payload, contentType, timeoutMs);
     });
-
-    return mocks;
 }
 
 /**
@@ -225,7 +223,7 @@ function mockGET(clientConfig, objectKey, replies) {
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockDeleteRequest(location, statusCode, timeoutMs = 0) {
+function _mockDeleteRequest(location, { statusCode, timeoutMs = 0 }) {
     const endpoint = `http://${location.hostname}:${location.port}`;
 
     const reqheaders = {
@@ -261,13 +259,11 @@ function _mockDeleteRequest(location, statusCode, timeoutMs = 0) {
  * @param {Object} clientConfig Hyperdrive client configuration
  * @param {String} objectKey The object identifier
  * @param {[Reply]} replies description
- * @comment each entry of replies must be an Array with:
- *          - 0 => {Number} HTTP status code to return
- *          - 1 => {Number} timeout ms
- * @return {[String, [Nock.Scope], [Nock.Scope]]} rawkey,
- *          data mocks and coding mocks
- *
+ * @comment each entry of replies must be an Object with:
+ *          - statusCode => {Number} HTTP status code to return
+ *          [- timeoutMS] => {Number} timeout ms
  * @comment replies.length must be equal to number of parts
+ * @return {Object} with rawKey, dataMocks and codingMocks keys
  */
 function mockDELETE(clientConfig, objectKey, replies) {
     const nParts = clientConfig.dataParts +
@@ -283,18 +279,16 @@ function mockDELETE(clientConfig, objectKey, replies) {
     assert.strictEqual(nParts, replies.length);
 
     // Setup data mocks
-    const dataMocks = parts.data.map((part, idx) => {
-        const [statusCode, timeoutMs] = replies[idx];
-        return _mockDeleteRequest(part, statusCode, timeoutMs);
-    });
+    const dataMocks = parts.data.map(
+        (part, idx) => _mockDeleteRequest(part, replies[idx])
+    );
 
     // Setup coding mocks
-    const codingMocks = parts.coding.map((part, idx) => {
-        const [statusCode, timeoutMs] = replies[idx + clientConfig.dataParts];
-        return _mockDeleteRequest(part, statusCode, timeoutMs);
-    });
+    const codingMocks = parts.coding.map(
+        (part, idx) => _mockDeleteRequest(part, replies[idx + clientConfig.dataParts])
+    );
 
-    return [keyscheme.serialize(parts), dataMocks, codingMocks];
+    return { rawKey: keyscheme.serialize(parts), dataMocks, codingMocks };
 }
 
 module.exports = {

@@ -62,8 +62,11 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
     mocha.describe('DELETE', function () {
         mocha.it('Existing key', function (done) {
             const hdClient = getDefaultClient();
-            const [rawKey] = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', [[200]]);
+            const mocks = [
+                { statusCode: 200 },
+            ];
+            const { rawKey } = hdmock.mockDELETE(
+                hdClient.options, 'bestObjEver', mocks);
             hdClient.delete(rawKey, '1', err => {
                 done(err);
             });
@@ -71,20 +74,26 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
 
         mocha.it('Not found key', function (done) {
             const hdClient = getDefaultClient();
-            const [rawKey] = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', [[404]]);
+            const mocks = [
+                { statusCode: 404 },
+            ];
+            const { rawKey } = hdmock.mockDELETE(
+                hdClient.options, 'bestObjEver', mocks);
             hdClient.delete(rawKey, '1', err => {
-                assert.strictEqual(err.infos.status, 404);
+                assert.strictEqual(err.infos.status, mocks[0].statusCode);
                 done();
             });
         });
 
         mocha.it('Server error', function (done) {
             const hdClient = getDefaultClient();
-            const [rawKey] = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', [[500]]);
+            const mocks = [
+                { statusCode: 500 },
+            ];
+            const { rawKey } = hdmock.mockDELETE(
+                hdClient.options, 'bestObjEver', mocks);
             hdClient.delete(rawKey, '1', err => {
-                assert.strictEqual(err.infos.status, 500);
+                assert.strictEqual(err.infos.status, mocks[0].statusCode);
                 done();
             });
         });
@@ -101,10 +110,14 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
 
         mocha.it('Timeout', function (done) {
             const hdClient = getDefaultClient();
-            const mockDelay = hdClient.options.requestTimeoutMs + 10;
-            const payloads = [[200, mockDelay]];
-            const [rawKey] = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', payloads);
+            const mocks = [
+                {
+                    statusCode: 200,
+                    timeoutMs: hdClient.options.requestTimeoutMs + 10,
+                },
+            ];
+            const { rawKey } = hdmock.mockDELETE(
+                hdClient.options, 'bestObjEver', mocks);
 
             hdClient.delete(rawKey, '1', err => {
                 assert.ok(err);
