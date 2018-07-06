@@ -19,10 +19,10 @@ mocha.describe('Data placement', function () {
     };
 
     mocha.it('Sanity check', function (done) {
-        const [dataLoc, codingLoc] = placement.select(policy, 4, 2);
-        const allLoc = [...dataLoc, ...codingLoc];
-        assert.strictEqual(dataLoc.length, 4);
-        assert.strictEqual(codingLoc.length, 2);
+        const { dataLocations, codingLocations } = placement.select(policy, 4, 2);
+        const allLoc = [...dataLocations, ...codingLocations];
+        assert.strictEqual(dataLocations.length, 4);
+        assert.strictEqual(codingLocations.length, 2);
 
         // Assert all can be found
         allLoc.forEach(loc => {
