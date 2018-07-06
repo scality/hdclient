@@ -14,9 +14,8 @@ const hdmock = require('../utils');
 const BadKeyError = hdclient.keyscheme.KeySchemeDeserializeError;
 
 function getDefaultClient() {
-    const endpoint = 'hyperdrive-store1:8888';
     const conf = {
-        policy: { locations: [endpoint] },
+        policy: { locations: ['hyperdrive-store1:8888'] },
         dataParts: 1,
         codingParts: 0,
         requestTimeoutMs: 10,
@@ -443,17 +442,22 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
     mocha.describe('PUT', function () {
         mocha.it('Success small key', function (done) {
             const hdClient = getDefaultClient();
-            const content = 'Je suis une mite en pullover';
-            const payloads = [[200, content, 'data']];
+            const mocks = [
+                {
+                    statusCode: 200,
+                    payload: 'Je suis une mite en pullover',
+                    contentType: 'data',
+                },
+            ];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, payloads);
+            hdmock.mockPUT(hdClient.options, keyContext, mocks);
 
             hdClient.put(
-                hdmock.streamString(content),
-                hdmock.getPayloadLength(content),
+                hdmock.streamString(mocks[0].payload),
+                hdmock.getPayloadLength(mocks[0].payload),
                 keyContext, '1',
                 (err, rawKey) => {
                     assert.ifError(err);
@@ -476,12 +480,18 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
             /* TODO avoid depending on hardcoded path */
             const content = fs.createReadStream(
                 'tests/functional/random_payload');
-            const payloads = [[200, content, 'data']];
+            const mocks = [
+                {
+                    statusCode: 200,
+                    payload: content,
+                    contentType: 'data',
+                },
+            ];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, payloads);
+            hdmock.mockPUT(hdClient.options, keyContext, mocks);
 
             hdClient.put(
                 content,
@@ -505,41 +515,49 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
 
         mocha.it('Server error', function (done) {
             const hdClient = getDefaultClient();
-            /* TODO avoid depending on hardcoded path */
-            const content = fs.createReadStream(
-                'tests/functional/random_payload');
-            const payloads = [[500, content, 'data']];
+            const mocks = [
+                {
+                    statusCode: 500,
+                    payload: 'Je suis une mite en pullover',
+                    contentType: 'data',
+                },
+            ];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, payloads);
+            hdmock.mockPUT(hdClient.options, keyContext, mocks);
 
             hdClient.put(
-                content,
-                hdmock.getPayloadLength(content),
+                hdmock.streamString(mocks[0].payload),
+                hdmock.getPayloadLength(mocks[0].payload),
                 keyContext, '1',
                 err => {
-                    assert.strictEqual(err.infos.status, 500);
+                    assert.strictEqual(err.infos.status, mocks[0].statusCode);
                     done();
                 });
         });
 
         mocha.it('Timeout', function (done) {
             const hdClient = getDefaultClient();
-            const mockDelay = hdClient.options.requestTimeoutMs + 10;
-            const content = 'Je suis une mite en pullover';
-            const payloads = [[404, content, 'data', mockDelay]];
+            const mocks = [
+                {
+                    statusCode: 404,
+                    payload: 'Je suis une mite en pullover',
+                    contentType: 'data',
+                    timeoutMs: hdClient.options.requestTimeoutMs + 10,
+                },
+            ];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, payloads);
+            hdmock.mockPUT(hdClient.options, keyContext, mocks);
 
             let called = false;
             hdClient.put(
-                hdmock.streamString(content),
-                hdmock.getPayloadLength(content),
+                hdmock.streamString(mocks[0].payload),
+                hdmock.getPayloadLength(mocks[0].payload),
                 keyContext, '1',
                 /* PUT is considered successful on timeout as we don't
                  * whether it really was stored or not

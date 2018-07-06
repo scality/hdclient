@@ -10,7 +10,7 @@ const nock = require('nock'); // HTTP API mocking
 const fs = require('fs');
 const stream = require('stream');
 
-const { protocol, keyscheme } = require('../index');
+const { protocol, keyscheme, placement } = require('../index');
 
 /**
  * Create a readable stream from a buffer/string
@@ -45,7 +45,7 @@ function getPayloadLength(payload) {
 /**
  * Mock a single PUT call on a given host:port
  *
- * @param {String} endpoint (ip:port) to contact
+ * @param {String} location (ip:port) to contact
  * @param {Object} keyContext same as given to actual PUT
  * @param {Number} statusCode of the reply
  * @param {fs.ReadStream|String} payload to return
@@ -54,8 +54,8 @@ function getPayloadLength(payload) {
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockPutRequest(endpoint, keyContext, statusCode,
-                         payload, contentType, timeoutMs = 0) {
+function _mockPutRequest(location, keyContext,
+                         { statusCode, payload, contentType, timeoutMs = 0 }) {
     const len = getPayloadLength(payload);
     const reqheaders = {
         ['Content-Length']: len,
@@ -73,7 +73,7 @@ function _mockPutRequest(endpoint, keyContext, statusCode,
               `${protocol.specs.STORAGE_BASE_URL}/${keyPrefix}`;
 
     // TODO find a better filtering solution...
-    return nock(`http://${endpoint}`, { reqheaders })
+    return nock(`http://${location}`, { reqheaders })
         .filteringPath(path => {
             if (path.startsWith(expectedPathPrefix)) {
                 return `${protocol.specs.STORAGE_BASE_URL}/defaultkey`;
@@ -97,22 +97,32 @@ function _mockPutRequest(endpoint, keyContext, statusCode,
  * @param {String} keyContext same as given to actual PUT
  * @param {[Reply]} replies description
  * @comment each entry of replies must be an Array with:
- *          - 0 => HTTP status code to return
- *          - 1 => payload (file system stream or string)
- *          - 2 => payload type ('data', 'usermd', etc) - only data for now
- *          - 3 => {Number} timeout ms
- * @returns {[Nock.Scope]} nock mocks
- *
- * @comment Endpoints are mocked in order. If you have more
- *          endpoints than reply, those will not be mocked.
+ *          - statusCode => {Number} HTTP status code to return
+ *          - payload {fs.ReadStream | String } body to match (only match size for now)
+ *          - contentType ('data', 'usermd', etc) - only data for now
+ *          [- timeoutMs] => {Number} timeout ms
+ * @return {Object} with dataMocks and codingMocks keys
  */
 function mockPUT(clientConfig, keyContext, replies) {
-    return replies.map((reply, idx) => {
-        const [statusCode, payload, contentType, timeoutMs] = reply;
-        const endpoint = clientConfig.policy.locations[idx];
-        return _mockPutRequest(endpoint, keyContext, statusCode,
-                               payload, contentType, timeoutMs);
-    });
+    const { dataLocations, codingLocations } = placement.select(
+        clientConfig.policy,
+        clientConfig.dataParts,
+        clientConfig.codingParts
+    );
+
+    assert.strictEqual(replies.length,
+                       dataLocations.length + codingLocations.length);
+
+    const dataMocks = dataLocations.map(
+        (loc, idx) => _mockPutRequest(loc, keyContext, replies[idx])
+    );
+
+    const codingMocks = codingLocations.map(
+        (loc, idx) => _mockPutRequest(loc, keyContext,
+                                      replies[dataLocations.length + idx])
+    );
+
+    return { dataMocks, codingMocks };
 }
 
 /**
@@ -178,12 +188,10 @@ function _mockGetRequest(location,
  *          - statusCode => {Number} HTTP status code to return
  *          - payload => {String|fs.ReadStream} payload (file system stream or string)
  *          - acceptType => {String} payload type ('data', 'usermd', etc)
- *          - timeoutMs => {Number} timeout ms
+ *          [- timeoutMs] => {Number} timeout ms
  *          - range => {undefined | [Number]} range to return
- * @returns {[String, [Nock.Scope], [Nock.Scope]]} rawkey,
- *          data mocks and coding mocks
- *
  * @comment replies.length must be equal to number of parts
+ * @return {Object} with rawKey, dataMocks and codingMocks keys
  */
 function mockGET(clientConfig, objectKey, replies) {
     const nParts = clientConfig.dataParts +
