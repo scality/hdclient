@@ -1,0 +1,8 @@
+{
+    "policy": {
+        "locations": ["localhost:7777"]
+    },
+    "dataParts": 1,
+    "codingParts": 0,
+    "requestTimeoutMs": 1000
+}

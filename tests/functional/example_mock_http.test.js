@@ -8,6 +8,9 @@ const http = require('http');
 const nock = require('nock'); // HTTP API mocking
 
 mocha.describe('HTTP Mockup basic example', function () {
+    // Clean all HTTP mocks before starting the test
+    mocha.beforeEach(nock.cleanAll);
+
     mocha.describe('#GET', function () {
         const getPayload = 'je suis une mite en pull over';
         mocha.beforeEach(function () {
