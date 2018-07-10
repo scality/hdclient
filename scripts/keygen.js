@@ -1,5 +1,6 @@
 'use strict'; // eslint-disable-line strict
 /* eslint-disable no-console */
+/* eslint-disable max-len */
 
 /**
  * Utility to parse keys generated on PUT
@@ -10,10 +11,10 @@ const fs = require('fs');
 const { keyscheme, config } = require('../index');
 
 function main() {
-    if (process.argv.length < 5) {
+    if (process.argv.length < 6) {
         const scriptName = process.argv[1].split('/').slice(-1)[0];
         console.error(
-            `${scriptName} <hdc conf> <RS,k,m or CP,n> <object key> [<rand>]`
+            `${scriptName} <hdc conf> <RS,k,m or CP,n> <object key> <size> [<rand>]`
         );
         process.exit(1);
     }
@@ -30,8 +31,9 @@ function main() {
 
     const parts = keyscheme.keygen(hdconf.policy,
                                    process.argv[4],
+                                   process.argv[5],
                                    code, nData, nCoding,
-                                   process.argv[5]);
+                                   process.argv[6]);
 
     const genkey = keyscheme.serialize(parts);
     const output = {
