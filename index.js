@@ -4,4 +4,5 @@ module.exports = {
     keyscheme: require('./lib/keyscheme'),
     placement: require('./lib/placement'),
     protocol: require('./lib/protocol'),
+    split: require('./lib/split'),
 };

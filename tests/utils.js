@@ -199,6 +199,7 @@ function mockGET(clientConfig, objectKey, replies) {
     const parts = keyscheme.keygen(
         clientConfig.policy,
         objectKey,
+        getPayloadLength(replies[0].payload),
         'CP',
         clientConfig.dataParts,
         clientConfig.codingParts
@@ -207,12 +208,12 @@ function mockGET(clientConfig, objectKey, replies) {
     assert.strictEqual(nParts, replies.length);
 
     // Setup data mocks
-    const dataMocks = parts.data.map(
+    const dataMocks = parts.chunks[0].data.map(
         (part, idx) => _mockGetRequest(part, replies[idx])
     );
 
     // Setup coding mocks
-    const codingMocks = parts.coding.map(
+    const codingMocks = parts.chunks[0].coding.map(
         (part, idx) => _mockGetRequest(part, replies[idx])
     );
 
@@ -279,6 +280,7 @@ function mockDELETE(clientConfig, objectKey, replies) {
     const parts = keyscheme.keygen(
         clientConfig.policy,
         objectKey,
+        1024,
         'CP',
         clientConfig.dataParts,
         clientConfig.codingParts
@@ -287,12 +289,12 @@ function mockDELETE(clientConfig, objectKey, replies) {
     assert.strictEqual(nParts, replies.length);
 
     // Setup data mocks
-    const dataMocks = parts.data.map(
+    const dataMocks = parts.chunks[0].data.map(
         (part, idx) => _mockDeleteRequest(part, replies[idx])
     );
 
     // Setup coding mocks
-    const codingMocks = parts.coding.map(
+    const codingMocks = parts.chunks[0].coding.map(
         (part, idx) => _mockDeleteRequest(part, replies[idx + clientConfig.dataParts])
     );
 
