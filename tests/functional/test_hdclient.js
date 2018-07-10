@@ -40,8 +40,7 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
             const hdClient = getDefaultClient();
             const [ip, port] = hdClient.options.policy.locations[0].split(':');
             const opts = hdClient._getCommonStoreRequestOptions(
-                ip, Number(port), 'test_key'
-            );
+                ip, Number(port), 'test_key');
             opts.method = 'GET';
             opts.path = '/jesuisunemiteenpullover';
             const noLog = { error() {} };
@@ -49,12 +48,25 @@ mocha.describe('Hyperdrive Client Single endpoint suite', function () {
 
             nock(`http://${hdClient.options.policy.locations[0]}`)
                  .get(opts.path)
-                 .replyWithError(expectedErrorMessage);
+                .replyWithError(expectedErrorMessage);
 
-            hdClient._newRequest(opts, noLog, err => {
-                assert.strictEqual(expectedErrorMessage, err.message);
-                done();
-            }).end();
+            const opContext = hdclient.httpUtils.makeOperationContext(
+                { nDataParts: 1, nCodingParts: 0, nChunks: 1 });
+            const reqContext = {
+                opContext,
+                chunkId: 0,
+                fragmentId: 0,
+            };
+
+            hdclient.httpUtils.newRequest(
+                opts, noLog, reqContext, 0, opCtx => {
+                    assert.strictEqual(opCtx.status[0].nError, 1);
+                    assert.ok(opCtx.status[0].statuses[0].error);
+                    const returnedError = opCtx.status[0].statuses[0].error;
+                    assert.strictEqual(expectedErrorMessage,
+                                       returnedError.message);
+                    done();
+                }).end();
         });
     });
 
