@@ -33,8 +33,8 @@ mocha.describe('HTTP internals', function () {
     mocha.it('Socket error handling', function (done) {
         const hdClient = getDefaultClient();
         const [ip, port] = hdClient.options.policy.locations[0].split(':');
-        const opts = hdClient._getCommonStoreRequestOptions(
-            ip, Number(port), 'test_key');
+        const opts = hdclient.httpUtils.getCommonStoreRequestOptions(
+            hdClient.httpAgent, ip, Number(port), 'test_key');
         opts.method = 'GET';
         opts.path = '/jesuisunemiteenpullover';
         const noLog = { error() {} };
