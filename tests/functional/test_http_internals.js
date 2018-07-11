@@ -62,5 +62,41 @@ mocha.describe('HTTP internals', function () {
                 done();
             }).end();
     });
+
+    mocha.it('Request timeout', function (done) {
+        const hdClient = getDefaultClient();
+        const [ip, port] = hdClient.options.policy.locations[0].split(':');
+        const opts = hdclient.httpUtils.getCommonStoreRequestOptions(
+            hdClient.httpAgent, ip, Number(port), 'test_key');
+        opts.method = 'GET';
+        opts.path = '/jesuisunemiteenpullover';
+        const noLog = { error() {} };
+        const expectedErrorMessage = 'Timeout';
+
+        nock(`http://${hdClient.options.policy.locations[0]}`)
+            .get(opts.path)
+            .delay(hdClient.options.requestTimeoutMs + 10)
+            .reply(200, 'je suis une mite en pull over');
+
+        const opContext = hdclient.httpUtils.makeOperationContext(
+            { nDataParts: 1, nCodingParts: 0, nChunks: 1 });
+        const reqContext = {
+            opContext,
+            chunkId: 0,
+            fragmentId: 0,
+        };
+
+        hdclient.httpUtils.newRequest(
+            opts, noLog, reqContext,
+            hdClient.options.requestTimeoutMs,
+            opCtx => {
+                assert.strictEqual(opCtx.status[0].nTimeout, 1);
+                assert.ok(opCtx.status[0].statuses[0].error);
+                const returnedError = opCtx.status[0].statuses[0].error;
+                assert.strictEqual(expectedErrorMessage,
+                                   returnedError.message);
+                done();
+            }).end();
+    });
 });
 

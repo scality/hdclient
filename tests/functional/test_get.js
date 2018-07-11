@@ -331,8 +331,8 @@ mocha.describe('Hyperdrive Client GET', function () {
                 hdClient.options,
                 'bestObjEver',
                 [{
-                    statusCode: 500,
-                    payload: '',
+                    statusCode: 200,
+                    payload: 'gné',
                     acceptType: 'data',
                     timeoutMs: mockDelay,
                 }]

@@ -137,7 +137,7 @@ mocha.describe('PUT', function () {
             const hdClient = getDefaultClient();
             const mocks = [
                 {
-                    statusCode: 404,
+                    statusCode: 200,
                     payload: 'Je suis une mite en pullover',
                     contentType: 'data',
                     timeoutMs: hdClient.options.requestTimeoutMs + 10,
