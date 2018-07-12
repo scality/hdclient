@@ -88,17 +88,16 @@ Hyperdrive keys:
 
 Failure to delete a fragment ( != 20X, 404) should not fail the overall operation but must log an appropriate entry into designated Kafka topic, to be cleaned later on by HdRepair.
 
-Topic: purge/delete/?
+Topic: delete
 Content: JSON messages
 Example JSON:
 ```json
 {
-    "objectKey": ... # S3 object key
     "rawKey": .... # associated hdclient metadata
-    "orphans": [
-        hyperdrive_key_missing_fragment1,
-        hyperdrive_key_missing_fragment2,
-        hyperdrive_key_missing_fragment3,
+    "toDelete": [ #[chunkId, fragmentId]
+        [1, 1],
+        [1, 2],
+        [2, 1],
         ...
     ]
 }
