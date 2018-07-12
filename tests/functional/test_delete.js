@@ -11,19 +11,6 @@ const hdmock = require('../utils');
 
 const BadKeyError = hdclient.keyscheme.KeySchemeDeserializeError;
 
-function getDefaultClient() {
-    const conf = {
-        policy: { locations: ['hyperdrive-store1:8888'] },
-        dataParts: 1,
-        codingParts: 0,
-        requestTimeoutMs: 10,
-    };
-
-    const client = new hdclient.client.HyperdriveClient(conf);
-    client.logging.config.update({ level: 'fatal', dump: 'fatal' });
-    return client;
-}
-
 mocha.describe('DELETE', function () {
     // Clean all HTTP mocks before starting the test
     mocha.beforeEach(nock.cleanAll);
@@ -33,7 +20,7 @@ mocha.describe('DELETE', function () {
 
     mocha.describe('Single hyperdrive', function () {
         mocha.it('Existing key', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const mocks = [
                 { statusCode: 200 },
             ];
@@ -45,7 +32,7 @@ mocha.describe('DELETE', function () {
         });
 
         mocha.it('Not found key', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const mocks = [
                 { statusCode: 404 },
             ];
@@ -58,7 +45,7 @@ mocha.describe('DELETE', function () {
         });
 
         mocha.it('Server error', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const mocks = [
                 { statusCode: 500 },
             ];
@@ -71,7 +58,7 @@ mocha.describe('DELETE', function () {
         });
 
         mocha.it('Bad key', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             hdClient.delete('---', '1', err => {
                 if (!(err instanceof BadKeyError)) {
                     throw err;
@@ -81,7 +68,7 @@ mocha.describe('DELETE', function () {
         });
 
         mocha.it('Timeout', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const mocks = [
                 {
                     statusCode: 200,

@@ -10,7 +10,27 @@ const nock = require('nock'); // HTTP API mocking
 const fs = require('fs');
 const stream = require('stream');
 
-const { protocol, keyscheme, placement } = require('../index');
+const { hdclient, protocol, keyscheme, placement } = require('../index');
+
+function getDefaultClient({nLocations = 1,
+                           code = 'CP',
+                           nData = 1,
+                           nCoding = 0 } = {}) {
+    const conf = {
+        code,
+        dataParts: nData,
+        codingParts: nCoding,
+        requestTimeoutMs: 10,
+        policy: {
+            locations: [...Array(nLocations).keys()].map(
+                idx => `hyperdrive-store-${idx}:8888`)
+        },
+    };
+
+    const client = new hdclient.HyperdriveClient(conf);
+    client.logging.config.update({ level: 'fatal', dump: 'fatal' });
+    return client;
+}
 
 /**
  * Create a readable stream from a buffer/string
@@ -281,7 +301,7 @@ function mockDELETE(clientConfig, objectKey, replies) {
         clientConfig.policy,
         objectKey,
         1024,
-        'CP',
+        clientConfig.code,
         clientConfig.dataParts,
         clientConfig.codingParts
     );
@@ -302,6 +322,7 @@ function mockDELETE(clientConfig, objectKey, replies) {
 }
 
 module.exports = {
+    getDefaultClient,
     streamString,
     getPayloadLength,
     mockGET,

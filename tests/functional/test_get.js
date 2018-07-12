@@ -13,19 +13,6 @@ const hdmock = require('../utils');
 
 const BadKeyError = hdclient.keyscheme.KeySchemeDeserializeError;
 
-function getDefaultClient() {
-    const conf = {
-        policy: { locations: ['hyperdrive-store1:8888'] },
-        dataParts: 1,
-        codingParts: 0,
-        requestTimeoutMs: 10,
-    };
-
-    const client = new hdclient.client.HyperdriveClient(conf);
-    client.logging.config.update({ level: 'fatal', dump: 'fatal' });
-    return client;
-}
-
 mocha.describe('Hyperdrive Client GET', function () {
     // Clean all HTTP mocks before starting the test
     mocha.beforeEach(nock.cleanAll);
@@ -35,7 +22,7 @@ mocha.describe('Hyperdrive Client GET', function () {
 
     mocha.describe('Single hyperdrive', function () {
         mocha.it('Existing small key', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const content = 'Je suis une mite en pullover';
             const mockOptions = {
                 statusCode: 200,
@@ -73,7 +60,7 @@ mocha.describe('Hyperdrive Client GET', function () {
         });
 
         mocha.it('Existing larger key (32 KiB)', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             /* TODO avoid depending on hardcoded path */
             const content = fs.createReadStream(
                 'tests/functional/random_payload');
@@ -114,7 +101,7 @@ mocha.describe('Hyperdrive Client GET', function () {
         });
 
         mocha.it('Half range', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const content = 'Je suis une mite en pullover';
             const range = [4];
             const mockOptions = {
@@ -155,7 +142,7 @@ mocha.describe('Hyperdrive Client GET', function () {
         });
 
         mocha.it('Full range', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const range = [4, 8];
             const content = 'Je suis une mite en pullover';
             // Slice right end is not inclusive but HTTP ranges are
@@ -197,7 +184,7 @@ mocha.describe('Hyperdrive Client GET', function () {
         });
 
         mocha.it('Larger-than-size range', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const range = [4, 9999999];
             const content = 'Je suis une mite en pullover';
             const expectedContent = content.slice(...range);
@@ -238,7 +225,7 @@ mocha.describe('Hyperdrive Client GET', function () {
         });
 
         mocha.it('First byte only', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const range = [0, 0];
             const content = 'Je suis une mite en pullover';
             const expectedContent = content[0];
@@ -279,7 +266,7 @@ mocha.describe('Hyperdrive Client GET', function () {
         });
 
         mocha.it('Not found key', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const [rawKey] = hdmock.mockGET(
                 hdClient.options,
                 'bestObjEver',
@@ -297,7 +284,7 @@ mocha.describe('Hyperdrive Client GET', function () {
         });
 
         mocha.it('Server error', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const [rawKey] = hdmock.mockGET(
                 hdClient.options,
                 'bestObjEver',
@@ -315,7 +302,7 @@ mocha.describe('Hyperdrive Client GET', function () {
         });
 
         mocha.it('Bad key', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             hdClient.delete('---', '1', err => {
                 if (!(err instanceof BadKeyError)) {
                     throw err;
@@ -325,7 +312,7 @@ mocha.describe('Hyperdrive Client GET', function () {
         });
 
         mocha.it('Timeout', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const mockDelay = hdClient.options.requestTimeoutMs + 10;
             const [rawKey] = hdmock.mockGET(
                 hdClient.options,

@@ -6,12 +6,12 @@
 const mocha = require('mocha');
 const assert = require('assert');
 
-const { client, config } = require('../../index');
+const { hdclient, config } = require('../../index');
 
 mocha.describe('Hyperdrive Client', function () {
     mocha.describe('Configuration tests', function () {
         const create = function (opts) {
-            return new client.HyperdriveClient(opts);
+            return new hdclient.HyperdriveClient(opts);
         };
 
         const thrownErrorValidation = function (thrown, expected) {
@@ -169,10 +169,10 @@ mocha.describe('Hyperdrive Client', function () {
                            codingParts: 1,
                            requestTimeoutMs: 0,
                          };
-            const hdclient = new client.HyperdriveClient(args);
-            assert.ok(hdclient);
-            assert.strictEqual(hdclient.clientType, 'scality');
-            const { configIsValid, configError } = config.validate(hdclient.options);
+            const client = new hdclient.HyperdriveClient(args);
+            assert.ok(client);
+            assert.strictEqual(client.clientType, 'scality');
+            const { configIsValid, configError } = config.validate(client.options);
             assert.ok(configIsValid);
             assert.ok(configError === null);
             done();

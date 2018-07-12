@@ -10,19 +10,6 @@ const fs = require('fs');
 const hdclient = require('../../index');
 const hdmock = require('../utils');
 
-function getDefaultClient() {
-    const conf = {
-        policy: { locations: ['hyperdrive-store1:8888'] },
-        dataParts: 1,
-        codingParts: 0,
-        requestTimeoutMs: 10,
-    };
-
-    const client = new hdclient.client.HyperdriveClient(conf);
-    client.logging.config.update({ level: 'fatal', dump: 'fatal' });
-    return client;
-}
-
 mocha.describe('PUT', function () {
     // Clean all HTTP mocks before starting the test
     mocha.beforeEach(nock.cleanAll);
@@ -32,7 +19,7 @@ mocha.describe('PUT', function () {
 
     mocha.describe('Single hyperdrive', function () {
         mocha.it('Success small key', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const mocks = [
                 {
                     statusCode: 200,
@@ -69,7 +56,7 @@ mocha.describe('PUT', function () {
         });
 
         mocha.it('Success larger key (32 KiB)', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             /* TODO avoid depending on hardcoded path */
             const content = fs.createReadStream(
                 'tests/functional/random_payload');
@@ -109,7 +96,7 @@ mocha.describe('PUT', function () {
         });
 
         mocha.it('Server error', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const mocks = [
                 {
                     statusCode: 500,
@@ -134,7 +121,7 @@ mocha.describe('PUT', function () {
         });
 
         mocha.it('Timeout', function (done) {
-            const hdClient = getDefaultClient();
+            const hdClient = hdmock.getDefaultClient();
             const mocks = [
                 {
                     statusCode: 200,

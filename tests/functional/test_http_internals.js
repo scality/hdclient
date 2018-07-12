@@ -7,19 +7,7 @@ const assert = require('assert');
 const nock = require('nock');
 
 const hdclient = require('../../index');
-
-function getDefaultClient() {
-    const conf = {
-        policy: { locations: ['hyperdrive-store1:8888'] },
-        dataParts: 1,
-        codingParts: 0,
-        requestTimeoutMs: 10,
-    };
-
-    const client = new hdclient.client.HyperdriveClient(conf);
-    client.logging.config.update({ level: 'fatal', dump: 'fatal' });
-    return client;
-}
+const hdmock = require('../utils');
 
 mocha.describe('HTTP internals', function () {
     // Clean all HTTP mocks before starting the test
@@ -31,7 +19,7 @@ mocha.describe('HTTP internals', function () {
     });
 
     mocha.it('Socket error handling', function (done) {
-        const hdClient = getDefaultClient();
+        const hdClient = hdmock.getDefaultClient();
         const [ip, port] = hdClient.options.policy.locations[0].split(':');
         const opts = hdclient.httpUtils.getCommonStoreRequestOptions(
             hdClient.httpAgent, ip, Number(port), 'test_key');
@@ -64,7 +52,7 @@ mocha.describe('HTTP internals', function () {
     });
 
     mocha.it('Request timeout', function (done) {
-        const hdClient = getDefaultClient();
+        const hdClient = hdmock.getDefaultClient();
         const [ip, port] = hdClient.options.policy.locations[0].split(':');
         const opts = hdclient.httpUtils.getCommonStoreRequestOptions(
             hdClient.httpAgent, ip, Number(port), 'test_key');

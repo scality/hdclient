@@ -1,5 +1,5 @@
 module.exports = {
-    client: require('./lib/hdclient'),
+    hdclient: require('./lib/hdclient'),
     config: require('./lib/config'),
     httpUtils: require('./lib/http_utils'),
     keyscheme: require('./lib/keyscheme'),
