@@ -12,10 +12,43 @@ const stream = require('stream');
 
 const { hdclient, protocol, keyscheme, placement } = require('../index');
 
-function getDefaultClient({nLocations = 1,
-                           code = 'CP',
-                           nData = 1,
-                           nCoding = 0 } = {}) {
+/**
+ * Get object mocking HyperdriveClient errorAgent
+ *
+ * @return {Object} mocked agent
+ */
+function getMockedErrorAgent() {
+    return {
+        nextError: null,
+        logged: new Map(),
+        send(payloads, cb) {
+            payloads.forEach(payload => {
+                const cur = this.logged.has(payload.topic) ?
+                          this.logged.get(payload.topic) :
+                          [];
+                this.logged.set(payload.topic,
+                                cur.concat(payload.messages));
+            });
+            const ret = cb(this.nextError);
+            this.netxtError = null;
+            return ret;
+        },
+    };
+}
+
+/**
+ * Helper to create a HyperdriveClient
+ *
+ * @param {Number} nLocations - how many hyperdrive availables
+ * @param {String} code - Erasure coding or replication
+ * @param {Number} nData - Number of data fragments
+ * @param {Number} nCoding - Number of coding fragments
+ * @return {HyperdriveClient} created client
+ */
+function getDefaultClient({ nLocations = 1,
+                            code = 'CP',
+                            nData = 1,
+                            nCoding = 0 } = {}) {
     const conf = {
         code,
         dataParts: nData,
@@ -23,11 +56,20 @@ function getDefaultClient({nLocations = 1,
         requestTimeoutMs: 10,
         policy: {
             locations: [...Array(nLocations).keys()].map(
-                idx => `hyperdrive-store-${idx}:8888`)
+                idx => `hyperdrive-store-${idx}:8888`),
         },
     };
 
+    hdclient.HyperdriveClient.prototype.setupErrorAgent = function mockedSetup() {
+        this.errorAgent = getMockedErrorAgent();
+    };
+
+    hdclient.HyperdriveClient.prototype.destroyErrorAgent = function mockedDestroy() {
+        this.errorAgent = null;
+    };
+
     const client = new hdclient.HyperdriveClient(conf);
+    // Deactivate all logs
     client.logging.config.update({ level: 'fatal', dump: 'fatal' });
     return client;
 }
