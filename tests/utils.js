@@ -75,6 +75,23 @@ function getDefaultClient({ nLocations = 1,
 }
 
 /**
+ * Get content of a topic
+ *
+ * @param {HyperdriveClient} client - Client used
+ * @param {String} topic - Topic to retrieve
+ * @return {undefined} if topic does not exist
+ * @return {[Object]} array of logged objects
+ */
+function getTopic(client, topic) {
+    const content = client.errorAgent.logged.get(topic);
+    if (content === undefined) {
+        return content;
+    }
+
+    return content.map(log => JSON.parse(log));
+}
+
+/**
  * Create a readable stream from a buffer/string
  *
  * @param {String|Buffer} buffer to stream
@@ -367,6 +384,7 @@ module.exports = {
     getDefaultClient,
     streamString,
     getPayloadLength,
+    getTopic,
     mockGET,
     mockPUT,
     mockDELETE,
