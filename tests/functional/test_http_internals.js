@@ -44,7 +44,8 @@ mocha.describe('HTTP internals', function () {
             opts, noLog, reqContext, 0, reqCtx => {
                 assert.strictEqual(reqCtx.opContext.status[0].nError, 1);
                 assert.ok(reqCtx.opContext.status[0].statuses[0].error);
-                const returnedError = reqCtx.opContext.status[0].statuses[0].error;
+                const returnedError = reqCtx.opContext.status[0].
+                          statuses[0].error;
                 assert.strictEqual(expectedErrorMessage,
                                    returnedError.message);
                 done();
@@ -80,7 +81,8 @@ mocha.describe('HTTP internals', function () {
             reqCtx => {
                 assert.strictEqual(reqCtx.opContext.status[0].nTimeout, 1);
                 assert.ok(reqCtx.opContext.status[0].statuses[0].error);
-                const returnedError = reqCtx.opContext.status[0].statuses[0].error;
+                const returnedError = reqCtx.opContext.status[0]
+                          .statuses[0].error;
                 assert.strictEqual(expectedErrorMessage,
                                    returnedError.message);
                 done();
