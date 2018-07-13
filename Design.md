@@ -86,15 +86,15 @@ Hyperdrive keys:
 
 ### On DELETE
 
-Failure to delete a fragment ( != 20X, 404) should not fail the overall operation but must log an appropriate entry into designated Kafka topic, to be cleaned later on by HdRepair.
+Failure to delete a fragment should not fail the overall operation but must log an appropriate entry into designated Kafka topic, to be cleaned later on by HdRepair.
 
-Topic: delete
-Content: JSON messages
-Example JSON:
+A successful fragment query is considered successful iff resulted in 20X or 404. Everything else, included timeouts, are considered as failures. If any fragment is in error, it must be recorded and persisted in 'delete' topic (Kafka I guess). Failure to persist should fail the overall DELETE. If any fragment succeeds and any errors has been persisted, then DELETE succeeds.
+
+Example of 'delete' topic entry: expects JSON messages
 ```json
 {
     "rawKey": .... # associated hdclient metadata
-    "toDelete": [ #[chunkId, fragmentId]
+    "fragments": [ #[chunkId, fragmentId]
         [1, 1],
         [1, 2],
         [2, 1],
@@ -105,13 +105,24 @@ Example JSON:
 
 ### On PUT
 
-Failure ot PUT any fragment (erasure coded, replicated or split) should fail the overall operation. All fragments already PUT pending must be cleaned afterwards. Cleaning is handled in the same way as orphans created on deletion (refer to On DELETE section).
+A fragment is considered successfully stored iff no error was returned or an timeout. Object PUT is considered successful iff ALL fragments of ALL chunks are considered OK, with only exception of 'too many' fragments in timeout. This threshold is per chunk, with 'too many' = ~50% for replication, nCoding for erasure coding.
 
-Special case of timeout/connection close: a timeout on a PUTing a fragment leaves no clear signal. Is it stored? Queued but not yet written? We could either:
-1. Consider it as not OK and fail the overall PUT
-2. Consider it OK BUT we must log a Kafka entry requesting to check its real status asap (perhaps logging it as a repair action)
+Upon operation failure, all successful fragments must be cleaned up. Cleaning is handled in the same way as orphans created on deletion (refer to On DELETE section).
 
-**Note: we may accept such unsure fragment trick IFF we have enough fragments already stored.** For replication, we must be sure of at least 1 (or 2?). For Reed-Solomon k+m we need at least k real OK (or k+1?).
+Fragments in limbo - ie whose status is unser as on timeout - must also be persisted in a given topic 'check', instructing other processes to quickly ascertain its status. This 'check' topic has the same layout as of 'delete' topic:
+
+Example of 'delete' topic entry: expects JSON messages
+```json
+{
+    "rawKey": .... # associated hdclient metadata
+    "fragments": [ #[chunkId, fragmentId]
+        [1, 1],
+        [1, 2],
+        [2, 1],
+        ...
+    ]
+}
+```
 
 ### On GET
 
