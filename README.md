@@ -61,6 +61,9 @@ npm test tests/unit/
 # Functional tests
 npm test tests/functional/
 
+# Code coverage
+npm run coverage tests/*
+
 # Other options and Mocha help
 npm test -- -h
 

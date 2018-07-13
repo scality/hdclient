@@ -8,7 +8,8 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint $(git ls-files '*.js')",
-    "test": "mocha --use_strict --check-leaks --no-exit "
+    "test": "mocha --use_strict --check-leaks --no-exit ",
+    "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text mocha --use_strict --check-leaks --no-exit "
   },
   "repository": "scality/hdclient",
   "author": "Maxime Lubin",
@@ -16,13 +17,14 @@
     "werelogs": "scality/werelogs#GA7.2.0.5"
   },
   "devDependencies": {
-    "v8-profiler": "5.7.0",
     "eslint": "2.13.1",
     "eslint-config-airbnb": "6.2.0",
     "eslint-config-scality": "scality/Guidelines#GA7.2.0.5",
     "eslint-plugin-react": "4.2.3",
     "mocha": "2.5.3",
-    "nock": "9.3.2"
+    "nock": "9.3.2",
+    "nyc": "12.0.2",
+    "v8-profiler": "5.7.0"
   },
   "license": "Apache-2.0",
   "bugs": {

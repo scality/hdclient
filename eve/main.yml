@@ -26,8 +26,5 @@ stages:
           name: ESLint
           command: npm run lint
       - ShellCommand:
-          name: unit tests
-          command: npm test tests/unit/
-      - ShellCommand:
-          name: functional tests
-          command: npm test tests/functional/
+          name: unit, functional tests with coverage
+          command: npm run coverage tests/*
