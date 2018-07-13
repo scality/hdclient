@@ -6,6 +6,7 @@ const mocha = require('mocha');
 const assert = require('assert');
 const nock = require('nock');
 const fs = require('fs');
+const stream = require('stream');
 
 const hdclient = require('../../index');
 const hdmock = require('../utils');
@@ -580,6 +581,65 @@ mocha.describe('PUT', function () {
                     const chkTopic = hdmock.getTopic(hdClient, checkTopic);
                     hdmock.strictCompareTopicContent(
                         chkTopic, undefined);
+                    done();
+                });
+        });
+    });
+
+    mocha.describe('Input stream  failures', function () {
+        mocha.it('Error', function (done) {
+            const hdClient = hdmock.getDefaultClient();
+            const content = fs.createReadStream(
+                'tests/functional/random_payload');
+
+            /* Fake error when half-way through */
+            const leftover = Math.floor(hdmock.getPayloadLength(content) / 2);
+            const errorStream = new stream.Transform({
+                transform(chunk, encoding, callback) {
+                    if (leftover < chunk.length) {
+                        this.emit('error', new Error('My bad...'));
+                    } else {
+                        this.leftover -= chunk.length;
+                        this.push(chunk);
+                    }
+                    callback();
+                },
+            });
+
+            const mocks = [
+                {
+                    statusCode: 200,
+                    payload: content,
+                    contentType: 'data',
+                },
+            ];
+            const keyContext = {
+                objectKey: 'bestObjEver',
+            };
+
+            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+            content.pipe(errorStream);
+
+            hdClient.put(
+                errorStream,
+                hdmock.getPayloadLength(content),
+                keyContext, '1',
+                (err, rawKey) => {
+                    /* Check generated key */
+                    assert.strictEqual(typeof rawKey, 'string');
+                    hdclient.keyscheme.deserialize(rawKey);
+
+                    /* Check cleanup mechanism */
+                    const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                    hdmock.strictCompareTopicContent(
+                        delTopic, undefined);
+                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    hdmock.strictCompareTopicContent(
+                        chkTopic, undefined);
+
+                    /* Check for errors */
+                    assert.ok(err);
+                    assert.strictEqual(err.message, 'My bad...');
                     done();
                 });
         });
