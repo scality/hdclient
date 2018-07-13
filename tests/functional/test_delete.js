@@ -11,27 +11,6 @@ const hdmock = require('../utils');
 
 const BadKeyError = hdclient.keyscheme.KeySchemeDeserializeError;
 
-function strictCompareTopicContent(realContent, expectedContent) {
-    if (realContent === undefined || expectedContent === undefined) {
-        assert.strictEqual(realContent, expectedContent);
-        return;
-    }
-
-    assert.strictEqual(realContent.length,
-                       expectedContent.length);
-    realContent.forEach((realLog, i) => {
-        const expectedLog = expectedContent[i];
-        assert.strictEqual(realLog.rawKey, expectedLog.rawKey);
-        assert.strictEqual(realLog.toDelete.length,
-                           expectedLog.toDelete.length);
-        realLog.toDelete.forEach((realDeleted, j) => {
-            const expectedDeleted = expectedLog.toDelete[j];
-            assert.strictEqual(realDeleted[0], expectedDeleted[0]);
-            assert.strictEqual(realDeleted[0], expectedDeleted[0]);
-        });
-    });
-}
-
 mocha.describe('DELETE', function () {
     // Clean all HTTP mocks before starting the test
     mocha.beforeEach(nock.cleanAll);
@@ -51,7 +30,8 @@ mocha.describe('DELETE', function () {
                 hdClient.options, 'bestObjEver', mocks);
             hdClient.delete(rawKey, '1', err => {
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
-                strictCompareTopicContent(topic, undefined);
+                hdmock.strictCompareDeleteTopicContent(
+                    topic, undefined);
                 done(err);
             });
         });
@@ -65,7 +45,8 @@ mocha.describe('DELETE', function () {
                 hdClient.options, 'bestObjEver', mocks);
             hdClient.delete(rawKey, '1', err => {
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
-                strictCompareTopicContent(topic, undefined);
+                hdmock.strictCompareDeleteTopicContent(
+                    topic, undefined);
                 done(err);
             });
         });
@@ -86,7 +67,8 @@ mocha.describe('DELETE', function () {
                 assert.strictEqual(err.infos.status, mocks[0].statusCode);
                 assert.strictEqual(err.infos.method, 'DELETE');
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
-                strictCompareTopicContent(topic, expectedLoggedErrors);
+                hdmock.strictCompareDeleteTopicContent(
+                    topic, expectedLoggedErrors);
                 done();
             });
         });
@@ -121,7 +103,8 @@ mocha.describe('DELETE', function () {
                 assert.strictEqual(err.infos.status, 500);
                 assert.strictEqual(err.infos.method, 'DELETE');
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
-                strictCompareTopicContent(topic, expectedLoggedErrors);
+                hdmock.strictCompareDeleteTopicContent(
+                    topic, expectedLoggedErrors);
                 done();
             });
         });
@@ -145,7 +128,8 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    strictCompareTopicContent(topic, undefined);
+                    hdmock.strictCompareDeleteTopicContent(
+                        topic, undefined);
                     done(err);
                 });
             });
@@ -166,7 +150,8 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    strictCompareTopicContent(topic, undefined);
+                    hdmock.strictCompareDeleteTopicContent(
+                        topic, undefined);
                     done(err);
                 });
             });
@@ -192,7 +177,8 @@ mocha.describe('DELETE', function () {
 
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    strictCompareTopicContent(topic, expectedLogged);
+                    hdmock.strictCompareDeleteTopicContent(
+                        topic, expectedLogged);
                     done(err);
                 });
             });
@@ -221,7 +207,8 @@ mocha.describe('DELETE', function () {
                     assert.strictEqual(err.infos.status, 503);
                     assert.strictEqual(err.infos.method, 'DELETE');
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    strictCompareTopicContent(topic, expectedLogged);
+                    hdmock.strictCompareDeleteTopicContent(
+                        topic, expectedLogged);
                     done();
                 });
             });
@@ -244,7 +231,8 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    strictCompareTopicContent(topic, undefined);
+                    hdmock.strictCompareDeleteTopicContent(
+                        topic, undefined);
                     done(err);
                 });
             });
@@ -265,7 +253,8 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    strictCompareTopicContent(topic, undefined);
+                    hdmock.strictCompareDeleteTopicContent(
+                        topic, undefined);
                     done(err);
                 });
             });
@@ -291,7 +280,8 @@ mocha.describe('DELETE', function () {
 
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    strictCompareTopicContent(topic, expectedLogged);
+                    hdmock.strictCompareDeleteTopicContent(
+                        topic, expectedLogged);
                     done(err);
                 });
             });
@@ -320,7 +310,8 @@ mocha.describe('DELETE', function () {
                     assert.strictEqual(err.infos.status, 500);
                     assert.strictEqual(err.infos.method, 'DELETE');
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    strictCompareTopicContent(topic, expectedLogged);
+                    hdmock.strictCompareDeleteTopicContent(
+                        topic, expectedLogged);
                     done();
                 });
             });
@@ -357,7 +348,8 @@ mocha.describe('DELETE', function () {
                 assert.strictEqual(err.infos.status, 500);
                 assert.strictEqual(err.message, 'Failed to queue');
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
-                strictCompareTopicContent(topic, expectedLogged);
+                hdmock.strictCompareDeleteTopicContent(
+                    topic, expectedLogged);
                 done();
             });
         });
