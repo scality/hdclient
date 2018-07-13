@@ -516,4 +516,71 @@ mocha.describe('PUT', function () {
             });
         });
     });
+
+    mocha.describe('Persisting error edge cases', function () {
+        mocha.it('Failed to persit', function (done) {
+            /* Same exact scenario as 'Timeout < 50%'
+             * but we failed to persist errors/warnings, expecting resulting error
+             */
+            const hdClient = hdmock.getDefaultClient({
+                nLocations: 3,
+                code: 'CP',
+                nData: 3,
+                nCoding: 0,
+            });
+            const content = fs.createReadStream(
+                'tests/functional/random_payload');
+            const mocks = [
+                {
+                    statusCode: 200,
+                    payload: content,
+                    contentType: 'data',
+                },
+                {
+                    statusCode: 200,
+                    payload: content,
+                    contentType: 'data',
+                    timeoutMs: hdClient.options.requestTimeoutMs + 10,
+                },
+                {
+                    statusCode: 200,
+                    payload: content,
+                    contentType: 'data',
+                },
+            ];
+            const keyContext = {
+                objectKey: 'bestObjEver',
+            };
+
+            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+            hdClient.errorAgent.nextError = new Error('Failed to queue');
+
+            hdClient.put(
+                content,
+                hdmock.getPayloadLength(content),
+                keyContext, '1',
+                (err, rawKey) => {
+                    /* Check for errors */
+                    assert.ok(err);
+                    assert.strictEqual(err.infos.status, 500);
+                    assert.strictEqual(err.message, 'Failed to queue');
+
+                    /* Key should still be valid */
+                    assert.strictEqual(typeof rawKey, 'string');
+                    const parts = hdclient.keyscheme.deserialize(rawKey);
+                    assert.strictEqual(parts.nDataParts, 3);
+                    assert.strictEqual(parts.nCodingParts, 0);
+                    assert.strictEqual(parts.nChunks, 1);
+
+                    /* Check cleanup mechanism */
+                    const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                    hdmock.strictCompareTopicContent(
+                        delTopic, undefined);
+                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    hdmock.strictCompareTopicContent(
+                        chkTopic, undefined);
+                    done();
+                });
+        });
+    });
 });
