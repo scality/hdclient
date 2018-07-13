@@ -122,6 +122,23 @@ function getPayloadLength(payload) {
 }
 
 /**
+ * Retrieve epxected mocked request body
+ *
+ * GET replies must fill the Conten-Length header
+ * @param {fs.ReadStream|String} payload to size
+ * @returns {Number} payload's length
+ * @comment Blocking! Use for test purposes only
+ */
+function getExpectedBody(payload) {
+    if (payload instanceof fs.ReadStream) {
+        return fs.readFileSync(payload.path,
+                               'hex' /* encoding */);
+    }
+
+    return payload;
+}
+
+/**
  * Mock a single PUT call on a given host:port
  *
  * @param {String} location (ip:port) to contact
@@ -136,6 +153,7 @@ function getPayloadLength(payload) {
 function _mockPutRequest(location, keyContext,
                          { statusCode, payload, contentType, timeoutMs = 0 }) {
     const len = getPayloadLength(payload);
+    const expectedBody = getExpectedBody(payload);
     const reqheaders = {
         ['Content-Length']: len,
         ['Content-Type']: protocol.helpers.makePutContentType(
@@ -159,7 +177,7 @@ function _mockPutRequest(location, keyContext,
             }
             return path;
         })
-        .put(`${protocol.specs.STORAGE_BASE_URL}/defaultkey`)
+        .put(`${protocol.specs.STORAGE_BASE_URL}/defaultkey`, expectedBody)
         .delay(timeoutMs)
         .reply(statusCode, '', replyheaders);
 }
