@@ -336,12 +336,7 @@ mocha.describe('DELETE', function () {
             ];
             const { rawKey } = hdmock.mockDELETE(
                 hdClient.options, 'bestObjEver', mocks);
-
             hdClient.errorAgent.nextError = new Error('Failed to queue');
-            const expectedLogged = [{
-                rawKey,
-                fragments: [[0, 1]],
-            }];
 
             hdClient.delete(rawKey, '1', err => {
                 assert.ok(err);
@@ -349,7 +344,7 @@ mocha.describe('DELETE', function () {
                 assert.strictEqual(err.message, 'Failed to queue');
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
                 hdmock.strictCompareTopicContent(
-                    topic, expectedLogged);
+                    topic, undefined);
                 done();
             });
         });

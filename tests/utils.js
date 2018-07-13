@@ -22,13 +22,15 @@ function getMockedErrorAgent() {
         nextError: null,
         logged: new Map(),
         send(payloads, cb) {
-            payloads.forEach(payload => {
-                const cur = this.logged.has(payload.topic) ?
-                          this.logged.get(payload.topic) :
-                          [];
-                this.logged.set(payload.topic,
-                                cur.concat(payload.messages));
-            });
+            if (!this.nextError) {
+                payloads.forEach(payload => {
+                    const cur = this.logged.has(payload.topic) ?
+                              this.logged.get(payload.topic) :
+                              [];
+                    this.logged.set(payload.topic,
+                                    cur.concat(payload.messages));
+                });
+            }
             const ret = cb(this.nextError);
             this.netxtError = null;
             return ret;
