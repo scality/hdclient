@@ -88,5 +88,41 @@ mocha.describe('HTTP internals', function () {
                 done();
             }).end();
     });
+
+    mocha.it('Request abort', function (done) {
+        const hdClient = hdmock.getDefaultClient();
+        const [ip, port] = hdClient.options.policy.locations[0].split(':');
+        const opts = hdclient.httpUtils.getCommonStoreRequestOptions(
+            hdClient.httpAgent, ip, Number(port), 'test_key');
+        opts.method = 'GET';
+        opts.path = '/jesuisunemiteenpullover';
+        const noLog = { error() {} };
+
+        nock(`http://${hdClient.options.policy.locations[0]}`)
+            .get(opts.path)
+            .delay(hdClient.options.requestTimeoutMs - 1)
+            .reply(200, 'je suis une mite en pull over');
+
+        const opContext = hdclient.httpUtils.makeOperationContext(
+            { nDataParts: 1, nCodingParts: 0, nChunks: 1 });
+        const reqContext = {
+            opContext,
+            chunkId: 0,
+            fragmentId: 0,
+        };
+
+        const request = hdclient.httpUtils.newRequest(
+            opts, noLog, reqContext,
+            hdClient.options.requestTimeoutMs,
+            reqCtx => {
+                assert.strictEqual(reqCtx.opContext.status[0].nTimeout, 0);
+                assert.strictEqual(reqCtx.opContext.status[0].nError, 1);
+                assert.strictEqual(reqCtx.opContext.status[0].nOk, 0);
+                assert.ok(reqCtx.opContext.status[0].statuses[0].error);
+                done();
+            });
+
+        request.abort();
+    });
 });
 
