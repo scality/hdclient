@@ -163,6 +163,21 @@ mocha.describe('Hyperdrive Client', function () {
             done();
         });
 
+        mocha.it('Invalid request timeout', function (done) {
+            const args = { policy: { locations: ['localhost:8080'] },
+                           dataParts: 1,
+                           codingParts: 0,
+                           requestTimeoutMs: -1,
+                         };
+            const expectedError = new config.InvalidConfigError('requestTimeoutMs', -1,
+                                                                'Expected a positive number');
+            assert.throws(() => create(args),
+                          function (thrown) {
+                              return thrownErrorValidation(thrown, expectedError);
+                          });
+            done();
+        });
+
         mocha.it('Valid configuration', function (done) {
             const args = { policy: { locations: ['server1', 'server2', 'server3'] },
                            dataParts: 2,

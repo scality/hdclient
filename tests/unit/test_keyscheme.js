@@ -292,5 +292,16 @@ mocha.describe('Keyscheme', function () {
                 done();
             }
         });
+
+        mocha.it('Bad split section', function (done) {
+            try {
+                keyscheme.deserialize('1#1#whatever-gné#RS,4,1#obj#123#hd1#hd2#hd3#hd4#hd5');
+                done(new Error('Shoud never have been reached'));
+            } catch (err) {
+                assert.ok(err instanceof keyscheme.KeySchemeDeserializeError);
+                assert.strictEqual(err.message, 'Failed to deserialize split section: whatever-gné');
+                done();
+            }
+        });
     });
 });

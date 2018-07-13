@@ -131,4 +131,44 @@ mocha.describe('Hyperdrive Protocol Specification', function () {
             done();
         });
     });
+
+    mocha.describe('PUT Reply Content-Type', function () {
+        mocha.it('Empty', function (done) {
+            assert.throws(
+                () => hdProto.helpers.parseReturnedContentType(''),
+                thrown => (thrown instanceof assert.AssertionError));
+            done();
+        });
+
+        mocha.it('Bad', function (done) {
+            assert.throws(
+                () => hdProto.helpers.parseReturnedContentType('Fake'),
+                thrown => (thrown instanceof assert.AssertionError));
+            done();
+        });
+
+        mocha.it('Valid app with no content to advertise', function (done) {
+            const returnedCtype = `${hdProto.specs.HYPERDRIVE_APPLICATION}`;
+            const ctypes = hdProto.helpers.parseReturnedContentType(returnedCtype);
+            assert.ok(ctypes);
+            assert.strictEqual(Array.from(ctypes.keys()).length, 0);
+            done();
+        });
+
+        mocha.it('Valid app with everything', function (done) {
+            const app = hdProto.specs.HYPERDRIVE_APPLICATION;
+            const advertised = ['data=1024', 'meta=36',
+                                '$crc.meta=0xcafebabe',
+                                '$crc.data=0xdeadbeef'].join('; ');
+            const returnedCtype = `${app}; ${advertised}`;
+            const ctypes = hdProto.helpers.parseReturnedContentType(returnedCtype);
+            assert.ok(ctypes);
+            assert.strictEqual(Array.from(ctypes.keys()).length, 4);
+            assert.strictEqual(ctypes.get('data'), 1024);
+            assert.strictEqual(ctypes.get('meta'), 36);
+            assert.strictEqual(ctypes.get('$crc.data'), 0xdeadbeef);
+            assert.strictEqual(ctypes.get('$crc.meta'), 0xcafebabe);
+            done();
+        });
+    });
 });
