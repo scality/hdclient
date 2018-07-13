@@ -18,6 +18,7 @@ mocha.describe('PUT', function () {
     mocha.afterEach(function () { assert.ok(nock.isDone); });
 
     const deleteTopic = hdclient.httpUtils.topics.delete;
+    const checkTopic = hdclient.httpUtils.topics.check;
 
     mocha.describe('Single hyperdrive', function () {
         mocha.it('Success small key', function (done) {
@@ -55,9 +56,12 @@ mocha.describe('PUT', function () {
                     assert.ok(fragment.key, keyContext.objectKey);
 
                     /* Check cleanup mechanism */
-                    const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    hdmock.strictCompareDeleteTopicContent(
-                        topic, undefined);
+                    const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                    hdmock.strictCompareTopicContent(
+                        delTopic, undefined);
+                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    hdmock.strictCompareTopicContent(
+                        chkTopic, undefined);
 
                     /* Check for errors */
                     done(err);
@@ -102,9 +106,12 @@ mocha.describe('PUT', function () {
                     assert.ok(fragment.key, keyContext.objectKey);
 
                     /* Check cleanup mechanism */
-                    const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    hdmock.strictCompareDeleteTopicContent(
-                        topic, undefined);
+                    const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                    hdmock.strictCompareTopicContent(
+                        delTopic, undefined);
+                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    hdmock.strictCompareTopicContent(
+                        chkTopic, undefined);
 
                     /* Check for errors */
                     done(err);
@@ -132,9 +139,12 @@ mocha.describe('PUT', function () {
                 keyContext, '1',
                 err => {
                     /* Check cleanup mechanism */
-                    const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    hdmock.strictCompareDeleteTopicContent(
-                        topic, undefined);
+                    const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                    hdmock.strictCompareTopicContent(
+                        delTopic, undefined);
+                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    hdmock.strictCompareTopicContent(
+                        chkTopic, undefined);
 
                     /* Check for errors */
                     assert.strictEqual(err.infos.status, mocks[0].statusCode);
@@ -168,13 +178,16 @@ mocha.describe('PUT', function () {
                     called = true;
 
                     /* Check cleanup mechanism */
-                    const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    const expectedLoggedErrors = [{
+                    const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                    const delLoggedErrors = [{
                         rawKey,
-                        toDelete: [[0, 0]],
+                        fragments: [[0, 0]],
                     }];
-                    hdmock.strictCompareDeleteTopicContent(
-                        topic, expectedLoggedErrors);
+                    hdmock.strictCompareTopicContent(
+                        delTopic, delLoggedErrors);
+                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    hdmock.strictCompareTopicContent(
+                        chkTopic, undefined);
 
                     /* Check for errors */
                     assert.strictEqual(err.infos.status, 500);
@@ -228,10 +241,13 @@ mocha.describe('PUT', function () {
                         assert.strictEqual(parts.nCodingParts, 0);
                         assert.strictEqual(parts.nChunks, 1);
 
-                        /* Check cleanup mechanism */
-                        const topic = hdmock.getTopic(hdClient, deleteTopic);
-                        hdmock.strictCompareDeleteTopicContent(
-                            topic, undefined);
+                        /* Check cleanup mechanism */;
+                        const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                        hdmock.strictCompareTopicContent(
+                            delTopic, undefined);
+                        const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                        hdmock.strictCompareTopicContent(
+                            chkTopic, undefined);
 
                         /* Check for errors */
                         done(err);
@@ -287,13 +303,17 @@ mocha.describe('PUT', function () {
                         assert.strictEqual(parts.nChunks, 1);
 
                         /* Check cleanup mechanism */
-                        const topic = hdmock.getTopic(hdClient, deleteTopic);
-                        const expectedLoggedErrors = [{
+                        const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                        const delLoggedErrors = [{
                             rawKey,
-                            toDelete: [[0, 0], [0, 1]],
+                            fragments: [[0, 0], [0, 1]],
                         }];
-                        hdmock.strictCompareDeleteTopicContent(
-                            topic, expectedLoggedErrors);
+                        hdmock.strictCompareTopicContent(
+                            delTopic, delLoggedErrors);
+                        const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                        hdmock.strictCompareTopicContent(
+                            chkTopic, undefined);
+
                         done();
                     });
             });
@@ -347,13 +367,17 @@ mocha.describe('PUT', function () {
                         assert.strictEqual(parts.nChunks, 1);
 
                         /* Check cleanup mechanism */
-                        const topic = hdmock.getTopic(hdClient, deleteTopic);
-                        const expectedLoggedErrors = [{
+                        const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                        const delLoggedErrors = [{
                             rawKey,
-                            toDelete: [[0, 1]],
+                            fragments: [[0, 1]],
                         }];
-                        hdmock.strictCompareDeleteTopicContent(
-                            topic, expectedLoggedErrors);
+                        hdmock.strictCompareTopicContent(
+                            delTopic, delLoggedErrors);
+                        const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                        hdmock.strictCompareTopicContent(
+                            chkTopic, undefined);
+
                         done();
                     });
             });
@@ -404,9 +428,16 @@ mocha.describe('PUT', function () {
                         assert.strictEqual(parts.nChunks, 1);
 
                         /* Check cleanup mechanism */
-                        const topic = hdmock.getTopic(hdClient, deleteTopic);
-                        hdmock.strictCompareDeleteTopicContent(
-                            topic, undefined);
+                        const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                        hdmock.strictCompareTopicContent(
+                            delTopic, undefined);
+                        const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                        const chkLoggedErrors = [{
+                            rawKey,
+                            fragments: [[0, 1]],
+                        }];
+                        hdmock.strictCompareTopicContent(
+                            chkTopic, chkLoggedErrors);
 
                         /* Check for errors */
                         done(err);
@@ -473,13 +504,13 @@ mocha.describe('PUT', function () {
                         assert.strictEqual(parts.nChunks, 1);
 
                         /* Check cleanup mechanism */
-                        const topic = hdmock.getTopic(hdClient, deleteTopic);
-                        const expectedLoggedErrors = [{
+                        const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                        const delLoggedErrors = [{
                             rawKey,
-                            toDelete: [[0, 0], [0, 1], [0, 2], [0, 3]],
+                            fragments: [[0, 0], [0, 1], [0, 2], [0, 3]],
                         }];
-                        hdmock.strictCompareDeleteTopicContent(
-                            topic, expectedLoggedErrors);
+                        hdmock.strictCompareTopicContent(
+                            delTopic, delLoggedErrors);
                         done();
                     });
             });

@@ -37,14 +37,14 @@ function getMockedErrorAgent() {
 }
 
 /**
- * Strict, deep comparison of 'delete' topics
+ * Strict, deep comparison of topics
  *
  * @param {Object} realContent - What we have
  * @param {Object} expectedContent - What we want
  * @return {undefined}
  * @throw {AssertionError} if anything is fishy
  */
-function strictCompareDeleteTopicContent(realContent, expectedContent) {
+function strictCompareTopicContent(realContent, expectedContent) {
     if (realContent === undefined || expectedContent === undefined) {
         assert.strictEqual(realContent, expectedContent);
         return;
@@ -55,12 +55,12 @@ function strictCompareDeleteTopicContent(realContent, expectedContent) {
     realContent.forEach((realLog, i) => {
         const expectedLog = expectedContent[i];
         assert.strictEqual(realLog.rawKey, expectedLog.rawKey);
-        assert.strictEqual(realLog.toDelete.length,
-                           expectedLog.toDelete.length);
-        realLog.toDelete.forEach((realDeleted, j) => {
-            const expectedDeleted = expectedLog.toDelete[j];
-            assert.strictEqual(realDeleted[0], expectedDeleted[0]);
-            assert.strictEqual(realDeleted[0], expectedDeleted[0]);
+        assert.strictEqual(realLog.fragments.length,
+                           expectedLog.fragments.length);
+        realLog.fragments.forEach((realFragment, j) => {
+            const expectedFragment = expectedLog.fragments[j];
+            assert.strictEqual(expectedFragment[0], expectedFragment[0]);
+            assert.strictEqual(expectedFragment[0], expectedFragment[0]);
         });
     });
 }
@@ -429,7 +429,7 @@ function mockDELETE(clientConfig, objectKey, replies) {
 
 module.exports = {
     getDefaultClient,
-    strictCompareDeleteTopicContent,
+    strictCompareTopicContent,
     streamString,
     getPayloadLength,
     getTopic,

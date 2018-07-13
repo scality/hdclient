@@ -30,7 +30,7 @@ mocha.describe('DELETE', function () {
                 hdClient.options, 'bestObjEver', mocks);
             hdClient.delete(rawKey, '1', err => {
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
-                hdmock.strictCompareDeleteTopicContent(
+                hdmock.strictCompareTopicContent(
                     topic, undefined);
                 done(err);
             });
@@ -45,7 +45,7 @@ mocha.describe('DELETE', function () {
                 hdClient.options, 'bestObjEver', mocks);
             hdClient.delete(rawKey, '1', err => {
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
-                hdmock.strictCompareDeleteTopicContent(
+                hdmock.strictCompareTopicContent(
                     topic, undefined);
                 done(err);
             });
@@ -60,14 +60,14 @@ mocha.describe('DELETE', function () {
                 hdClient.options, 'bestObjEver', mocks);
             const expectedLoggedErrors = [{
                 rawKey,
-                toDelete: [[0, 0]],
+                fragments: [[0, 0]],
             }];
 
             hdClient.delete(rawKey, '1', err => {
                 assert.strictEqual(err.infos.status, mocks[0].statusCode);
                 assert.strictEqual(err.infos.method, 'DELETE');
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
-                hdmock.strictCompareDeleteTopicContent(
+                hdmock.strictCompareTopicContent(
                     topic, expectedLoggedErrors);
                 done();
             });
@@ -95,7 +95,7 @@ mocha.describe('DELETE', function () {
                 hdClient.options, 'bestObjEver', mocks);
             const expectedLoggedErrors = [{
                 rawKey,
-                toDelete: [[0, 0]],
+                fragments: [[0, 0]],
             }];
 
             hdClient.delete(rawKey, '1', err => {
@@ -103,7 +103,7 @@ mocha.describe('DELETE', function () {
                 assert.strictEqual(err.infos.status, 500);
                 assert.strictEqual(err.infos.method, 'DELETE');
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
-                hdmock.strictCompareDeleteTopicContent(
+                hdmock.strictCompareTopicContent(
                     topic, expectedLoggedErrors);
                 done();
             });
@@ -128,7 +128,7 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    hdmock.strictCompareDeleteTopicContent(
+                    hdmock.strictCompareTopicContent(
                         topic, undefined);
                     done(err);
                 });
@@ -150,7 +150,7 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    hdmock.strictCompareDeleteTopicContent(
+                    hdmock.strictCompareTopicContent(
                         topic, undefined);
                     done(err);
                 });
@@ -172,12 +172,12 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 const expectedLogged = [{
                     rawKey,
-                    toDelete: [[0, 2]],
+                    fragments: [[0, 2]],
                 }];
 
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    hdmock.strictCompareDeleteTopicContent(
+                    hdmock.strictCompareTopicContent(
                         topic, expectedLogged);
                     done(err);
                 });
@@ -199,7 +199,7 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 const expectedLogged = [{
                     rawKey,
-                    toDelete: [[0, 0], [0, 1], [0, 2]],
+                    fragments: [[0, 0], [0, 1], [0, 2]],
                 }];
 
                 hdClient.delete(rawKey, '1', err => {
@@ -207,7 +207,7 @@ mocha.describe('DELETE', function () {
                     assert.strictEqual(err.infos.status, 503);
                     assert.strictEqual(err.infos.method, 'DELETE');
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    hdmock.strictCompareDeleteTopicContent(
+                    hdmock.strictCompareTopicContent(
                         topic, expectedLogged);
                     done();
                 });
@@ -231,7 +231,7 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    hdmock.strictCompareDeleteTopicContent(
+                    hdmock.strictCompareTopicContent(
                         topic, undefined);
                     done(err);
                 });
@@ -253,7 +253,7 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    hdmock.strictCompareDeleteTopicContent(
+                    hdmock.strictCompareTopicContent(
                         topic, undefined);
                     done(err);
                 });
@@ -275,12 +275,12 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 const expectedLogged = [{
                     rawKey,
-                    toDelete: [[0, 1]],
+                    fragments: [[0, 1]],
                 }];
 
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    hdmock.strictCompareDeleteTopicContent(
+                    hdmock.strictCompareTopicContent(
                         topic, expectedLogged);
                     done(err);
                 });
@@ -302,7 +302,7 @@ mocha.describe('DELETE', function () {
                     hdClient.options, 'bestObjEver', mocks);
                 const expectedLogged = [{
                     rawKey,
-                    toDelete: [[0, 0], [0, 1], [0, 2]],
+                    fragments: [[0, 0], [0, 1], [0, 2]],
                 }];
 
                 hdClient.delete(rawKey, '1', err => {
@@ -310,7 +310,7 @@ mocha.describe('DELETE', function () {
                     assert.strictEqual(err.infos.status, 500);
                     assert.strictEqual(err.infos.method, 'DELETE');
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
-                    hdmock.strictCompareDeleteTopicContent(
+                    hdmock.strictCompareTopicContent(
                         topic, expectedLogged);
                     done();
                 });
@@ -340,7 +340,7 @@ mocha.describe('DELETE', function () {
             hdClient.errorAgent.nextError = new Error('Failed to queue');
             const expectedLogged = [{
                 rawKey,
-                toDelete: [[0, 1]],
+                fragments: [[0, 1]],
             }];
 
             hdClient.delete(rawKey, '1', err => {
@@ -348,7 +348,7 @@ mocha.describe('DELETE', function () {
                 assert.strictEqual(err.infos.status, 500);
                 assert.strictEqual(err.message, 'Failed to queue');
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
-                hdmock.strictCompareDeleteTopicContent(
+                hdmock.strictCompareTopicContent(
                     topic, expectedLogged);
                 done();
             });
