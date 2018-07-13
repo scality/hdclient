@@ -241,7 +241,7 @@ mocha.describe('PUT', function () {
                         assert.strictEqual(parts.nCodingParts, 0);
                         assert.strictEqual(parts.nChunks, 1);
 
-                        /* Check cleanup mechanism */;
+                        /* Check cleanup mechanism */
                         const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                         hdmock.strictCompareTopicContent(
                             delTopic, undefined);
@@ -520,7 +520,8 @@ mocha.describe('PUT', function () {
     mocha.describe('Persisting error edge cases', function () {
         mocha.it('Failed to persit', function (done) {
             /* Same exact scenario as 'Timeout < 50%'
-             * but we failed to persist errors/warnings, expecting resulting error
+             * but we failed to persist errors/warnings,
+             * expecting resulting error
              */
             const hdClient = hdmock.getDefaultClient({
                 nLocations: 3,
