@@ -147,19 +147,7 @@ mocha.describe('PUT', function () {
                 (err, rawKey) => {
                     assert.ok(!called);
                     called = true;
-                    assert.ifError(err);
-                    assert.strictEqual(typeof rawKey, 'string');
-                    const parts = hdclient.keyscheme.deserialize(rawKey);
-
-                    const [endpoint, port] =
-                              hdClient.options.policy.locations[0].split(':');
-                    assert.strictEqual(parts.nDataParts, 1);
-                    assert.strictEqual(parts.nCodingParts, 0);
-                    assert.strictEqual(parts.nChunks, 1);
-                    const fragment = parts.chunks[0].data[0];
-                    assert.strictEqual(fragment.hostname, endpoint);
-                    assert.strictEqual(fragment.port, Number(port));
-                    assert.ok(fragment.key, keyContext.objectKey);
+                    assert.ok(err);
                     done();
                 });
         });
