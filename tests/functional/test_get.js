@@ -20,6 +20,8 @@ mocha.describe('Hyperdrive Client GET', function () {
     // Verify all mocks have been used - no garbage
     mocha.afterEach(function () { assert.ok(nock.isDone); });
 
+    const repairTopic = hdclient.httpUtils.topics.repair;
+
     mocha.describe('Single hyperdrive', function () {
         mocha.it('Existing small key', function (done) {
             const hdClient = hdmock.getDefaultClient();
@@ -36,7 +38,6 @@ mocha.describe('Hyperdrive Client GET', function () {
             hdClient.get(
                 rawKey, undefined /* range */, '1',
                 (err, httpReply) => {
-                    assert.ifError(err);
                     assert.ok(httpReply);
 
                     // Sanity checks before buffering the stream
@@ -44,6 +45,10 @@ mocha.describe('Hyperdrive Client GET', function () {
                                        mockOptions.statusCode);
                     assert.strictEqual(httpReply.headers['content-length'],
                                        content.length);
+
+                    const topic = hdmock.getTopic(hdClient, repairTopic);
+                    hdmock.strictCompareTopicContent(
+                        topic, undefined);
 
                     // Buffer the whole stream and perform checks on 'end' event
                     const readBufs = [];
@@ -54,7 +59,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         const buf = readBufs.join('');
                         assert.strictEqual(buf.length, content.length);
                         assert.strictEqual(buf, content);
-                        done();
+                        done(err);
                     });
                 });
         });
@@ -78,7 +83,6 @@ mocha.describe('Hyperdrive Client GET', function () {
             hdClient.get(
                 rawKey, undefined /* range */, '1',
                 (err, httpReply) => {
-                    assert.ifError(err);
                     assert.ok(httpReply);
 
                     // Sanity checks before buffering the stream
@@ -86,6 +90,10 @@ mocha.describe('Hyperdrive Client GET', function () {
                                        mockOptions.statusCode);
                     assert.strictEqual(httpReply.headers['content-length'],
                                        contentLength);
+
+                    const topic = hdmock.getTopic(hdClient, repairTopic);
+                    hdmock.strictCompareTopicContent(
+                        topic, undefined);
 
                     // Compute return valud md5
                     const hash = crypto.createHash('md5');
@@ -95,7 +103,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     httpReply.on('end', function () {
                         const getDigest = hash.digest('hex');
                         assert.strictEqual(getDigest, expectedDigest);
-                        done();
+                        done(err);
                     });
                 });
         });
@@ -118,7 +126,6 @@ mocha.describe('Hyperdrive Client GET', function () {
             hdClient.get(
                 rawKey, range, '1',
                 (err, httpReply) => {
-                    assert.ifError(err);
                     assert.ok(httpReply);
 
                     // Sanity checks before buffering the stream
@@ -126,6 +133,10 @@ mocha.describe('Hyperdrive Client GET', function () {
                                        mockOptions.statusCode);
                     assert.strictEqual(httpReply.headers['content-length'],
                                        expectedContent.length);
+
+                    const topic = hdmock.getTopic(hdClient, repairTopic);
+                    hdmock.strictCompareTopicContent(
+                        topic, undefined);
 
                     // Buffer the whole stream and perform checks on 'end' event
                     const readBufs = [];
@@ -136,7 +147,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         const buf = readBufs.join('');
                         assert.strictEqual(buf.length, expectedContent.length);
                         assert.strictEqual(buf, expectedContent);
-                        done();
+                        done(err);
                     });
                 });
         });
@@ -160,7 +171,6 @@ mocha.describe('Hyperdrive Client GET', function () {
             hdClient.get(
                 rawKey, range, '1',
                 (err, httpReply) => {
-                    assert.ifError(err);
                     assert.ok(httpReply);
 
                     // Sanity checks before buffering the stream
@@ -178,7 +188,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         const buf = readBufs.join('');
                         assert.strictEqual(buf.length, expectedContent.length);
                         assert.strictEqual(buf, expectedContent);
-                        done();
+                        done(err);
                     });
                 });
         });
@@ -201,7 +211,6 @@ mocha.describe('Hyperdrive Client GET', function () {
             hdClient.get(
                 rawKey, range, '1',
                 (err, httpReply) => {
-                    assert.ifError(err);
                     assert.ok(httpReply);
 
                     // Sanity checks before buffering the stream
@@ -209,6 +218,10 @@ mocha.describe('Hyperdrive Client GET', function () {
                                        mockOptions.statusCode);
                     assert.strictEqual(httpReply.headers['content-length'],
                                        expectedContent.length);
+
+                    const topic = hdmock.getTopic(hdClient, repairTopic);
+                    hdmock.strictCompareTopicContent(
+                        topic, undefined);
 
                     // Buffer the whole stream and perform checks on 'end' event
                     const readBufs = [];
@@ -219,7 +232,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         const buf = readBufs.join('');
                         assert.strictEqual(buf.length, expectedContent.length);
                         assert.strictEqual(buf, expectedContent);
-                        done();
+                        done(err);
                     });
                 });
         });
@@ -242,7 +255,6 @@ mocha.describe('Hyperdrive Client GET', function () {
             hdClient.get(
                 rawKey, range, '1',
                 (err, httpReply) => {
-                    assert.ifError(err);
                     assert.ok(httpReply);
 
                     // Sanity checks before buffering the stream
@@ -250,6 +262,10 @@ mocha.describe('Hyperdrive Client GET', function () {
                                        mockOptions.statusCode);
                     assert.strictEqual(httpReply.headers['content-length'],
                                        expectedContent.length);
+
+                    const topic = hdmock.getTopic(hdClient, repairTopic);
+                    hdmock.strictCompareTopicContent(
+                        topic, undefined);
 
                     // Buffer the whole stream and perform checks on 'end' event
                     const readBufs = [];
@@ -260,7 +276,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         const buf = readBufs.join('');
                         assert.strictEqual(buf.length, expectedContent.length);
                         assert.strictEqual(buf, expectedContent);
-                        done();
+                        done(err);
                     });
                 });
         });
@@ -279,6 +295,13 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             hdClient.get(rawKey, null /* range */, '1', err => {
                 assert.strictEqual(err.infos.status, 404);
+
+                const topic = hdmock.getTopic(hdClient, repairTopic);
+                hdmock.strictCompareTopicContent(
+                    topic, [{
+                        rawKey,
+                        fragments: [[0, 0]],
+                    }]);
                 done();
             });
         });
@@ -297,6 +320,9 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             hdClient.get(rawKey, null /* range */, '1', err => {
                 assert.strictEqual(err.infos.status, 500);
+                const topic = hdmock.getTopic(hdClient, repairTopic);
+                hdmock.strictCompareTopicContent(
+                        topic, undefined);
                 done();
             });
         });
@@ -329,8 +355,456 @@ mocha.describe('Hyperdrive Client GET', function () {
                 rawKey, undefined /* range */, '1',
                 err => {
                     assert.ok(err);
+                    const topic = hdmock.getTopic(hdClient, repairTopic);
+                    hdmock.strictCompareTopicContent(
+                        topic, undefined);
                     done();
                 });
+        });
+    });
+
+    mocha.describe('Multiple hyperdrives', function () {
+        mocha.describe('Replication', function () {
+            mocha.it('All success', function (done) {
+                const hdClient = hdmock.getDefaultClient({
+                    nLocations: 2,
+                    code: 'CP',
+                    nData: 2,
+                });
+                const content = 'Je suis une mite en pullover';
+                const mockOptions = [
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        acceptType: 'data',
+                    },
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        acceptType: 'data',
+                    }];
+                const [rawKey] = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', mockOptions);
+
+                hdClient.get(
+                    rawKey, undefined /* range */, '1',
+                    (err, httpReply) => {
+                        assert.ok(httpReply);
+
+                        // Sanity checks before buffering the stream
+                        assert.strictEqual(httpReply.statusCode,
+                                           mockOptions[0].statusCode);
+                        assert.strictEqual(httpReply.headers['content-length'],
+                                           content.length);
+
+                        const topic = hdmock.getTopic(hdClient, repairTopic);
+                        hdmock.strictCompareTopicContent(
+                            topic, undefined);
+
+                        // Buffer the whole stream and perform
+                        // checks on 'end' event
+                        const readBufs = [];
+                        httpReply.on('data', function (chunk) {
+                            readBufs.push(chunk);
+                        });
+                        httpReply.on('end', function () {
+                            const buf = readBufs.join('');
+                            assert.strictEqual(buf.length, content.length);
+                            assert.strictEqual(buf, content);
+                            done(err);
+                        });
+                    });
+            });
+
+            mocha.it('1 OK, 1 straggler (not timeout)', function (done) {
+                const hdClient = hdmock.getDefaultClient({
+                    nLocations: 2,
+                    code: 'CP',
+                    nData: 2,
+                });
+                const content = 'Je suis une mite en pullover';
+                const mockOptions = [
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        acceptType: 'data',
+                    },
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        acceptType: 'data',
+                        timeoutMs: hdClient.options.requestTimeoutMs - 1,
+                    }];
+                const [rawKey] = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', mockOptions);
+
+                const opCtx = hdClient.get(
+                    rawKey, undefined /* range */, '1',
+                    (err, httpReply) => {
+                        assert.ifError(err);
+                        assert.ok(httpReply);
+
+                        // Sanity checks before buffering the stream
+                        assert.strictEqual(httpReply.statusCode,
+                                           mockOptions[0].statusCode);
+                        assert.strictEqual(httpReply.headers['content-length'],
+                                           content.length);
+
+                        // Buffer the whole stream and perform checks
+                        // on 'end' event
+                        const readBufs = [];
+                        httpReply.on('data', function (chunk) {
+                            readBufs.push(chunk);
+                        });
+                        httpReply.on('end', function () {
+                            const buf = readBufs.join('');
+                            assert.strictEqual(buf.length, content.length);
+                            assert.strictEqual(buf, content);
+                        });
+                    });
+
+                /* Force waiting for all fragment ops to be over
+                 * Note: the first 200 responds to the client
+                 * but we must hcekc fo rthe cleanup
+                 */
+                function verifyEnd() {
+                    if (opCtx.nPending > 0) {
+                        setTimeout(verifyEnd, 1);
+                        return;
+                    }
+
+                    const topic = hdmock.getTopic(hdClient, repairTopic);
+                    hdmock.strictCompareTopicContent(
+                        topic, undefined);
+                    done();
+                }
+
+                verifyEnd();
+            });
+
+            mocha.it('1 OK, 1 500', function (done) {
+                const hdClient = hdmock.getDefaultClient({
+                    nLocations: 2,
+                    code: 'CP',
+                    nData: 2,
+                });
+                const content = 'Je suis une mite en pullover';
+                const mockOptions = [
+                    {
+                        statusCode: 500,
+                        payload: content,
+                        acceptType: 'data',
+                    },
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        acceptType: 'data',
+                    }];
+                const [rawKey] = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', mockOptions);
+
+                const opCtx = hdClient.get(
+                    rawKey, undefined /* range */, '1',
+                    (err, httpReply) => {
+                        assert.ok(httpReply);
+
+                        assert.strictEqual(opCtx.status[0].nOk, 1);
+                        assert.strictEqual(opCtx.status[0].nError, 1);
+                        assert.strictEqual(opCtx.status[0].nTimeout, 0);
+                        assert.ok(!opCtx.status[0].statuses[1].error);
+                        assert.strictEqual(
+                            500,
+                            opCtx.status[0].statuses[0]
+                                .error.infos.status, 500);
+
+                        // Sanity checks before buffering the stream
+                        assert.strictEqual(httpReply.statusCode, 200);
+                        assert.strictEqual(httpReply.headers['content-length'],
+                                           content.length);
+
+                        const topic = hdmock.getTopic(hdClient, repairTopic);
+                        hdmock.strictCompareTopicContent(
+                            topic, undefined);
+
+                        // Buffer the whole stream and perform checks
+                        // on 'end' event
+                        const readBufs = [];
+                        httpReply.on('data', function (chunk) {
+                            readBufs.push(chunk);
+                        });
+                        httpReply.on('end', function () {
+                            const buf = readBufs.join('');
+                            assert.strictEqual(buf.length, content.length);
+                            assert.strictEqual(buf, content);
+                            done(err);
+                        });
+                    });
+            });
+
+            mocha.it('1 OK, 1 404', function (done) {
+                const hdClient = hdmock.getDefaultClient({
+                    nLocations: 2,
+                    code: 'CP',
+                    nData: 2,
+                });
+                const content = 'Je suis une mite en pullover';
+                const mockOptions = [
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        acceptType: 'data',
+                    },
+                    {
+                        statusCode: 404,
+                        payload: content,
+                        acceptType: 'data',
+                    }];
+                const [rawKey] = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', mockOptions);
+
+                const opCtx = hdClient.get(
+                    rawKey, undefined /* range */, '1',
+                    (err, httpReply) => {
+                        assert.ifError(err);
+                        assert.ok(httpReply);
+
+                        // Sanity checks before buffering the stream
+                        assert.strictEqual(httpReply.statusCode, 200);
+                        assert.strictEqual(httpReply.headers['content-length'],
+                                           content.length);
+
+                        // Buffer the whole stream and perform checks
+                        // on 'end' event
+                        const readBufs = [];
+                        httpReply.on('data', function (chunk) {
+                            readBufs.push(chunk);
+                        });
+                        httpReply.on('end', function () {
+                            const buf = readBufs.join('');
+                            assert.strictEqual(buf.length, content.length);
+                            assert.strictEqual(buf, content);
+                        });
+                    });
+
+                /* Force waiting for all fragment ops to be over
+                 * Note: the first 200 responds to the client
+                 * but we must hcekc fo rthe cleanup
+                 */
+                function verifyEnd() {
+                    if (opCtx.nPending > 0) {
+                        setTimeout(verifyEnd, 1);
+                        return;
+                    }
+
+                    assert.strictEqual(opCtx.status[0].nOk, 1);
+                    assert.strictEqual(opCtx.status[0].nError, 1);
+                    assert.strictEqual(opCtx.status[0].nTimeout, 0);
+                    assert.ok(!opCtx.status[0].statuses[0].error);
+                    assert.strictEqual(
+                        opCtx.status[0].statuses[1].error.infos.status, 404);
+                    const topic = hdmock.getTopic(hdClient, repairTopic);
+                    hdmock.strictCompareTopicContent(
+                        topic, [{
+                            rawKey,
+                            fragments: [[0, 1]],
+                        }]);
+                    done();
+                }
+
+                verifyEnd();
+            });
+
+            mocha.it('All errors', function (done) {
+                const hdClient = hdmock.getDefaultClient({
+                    nLocations: 2,
+                    code: 'CP',
+                    nData: 2,
+                });
+                const content = 'Je suis une mite en pullover';
+                const mockOptions = [
+                    {
+                        statusCode: 404,
+                        payload: content,
+                        acceptType: 'data',
+                    },
+                    {
+                        statusCode: 404,
+                        payload: content,
+                        acceptType: 'data',
+                    }];
+                const [rawKey] = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', mockOptions);
+
+                hdClient.get(
+                    rawKey, undefined /* range */, '1',
+                    (err, httpReply) => {
+                        assert.ok(err);
+                        assert.ok(!httpReply);
+                        assert.strictEqual(err.infos.status, 404);
+
+                        const topic = hdmock.getTopic(hdClient, repairTopic);
+                        hdmock.strictCompareTopicContent(
+                            topic, [{
+                                rawKey,
+                                fragments: [[0, 0], [0, 1]],
+                            }]);
+                        done();
+                    });
+            });
+
+            mocha.it('Worst errors selection', function (done) {
+                const hdClient = hdmock.getDefaultClient({
+                    nLocations: 2,
+                    code: 'CP',
+                    nData: 2,
+                });
+                const content = 'Je suis une mite en pullover';
+                const mockOptions = [
+                    {
+                        statusCode: 404,
+                        payload: content,
+                        acceptType: 'data',
+                    },
+                    {
+                        statusCode: 500,
+                        payload: content,
+                        acceptType: 'data',
+                    }];
+                const [rawKey] = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', mockOptions);
+
+                hdClient.get(
+                    rawKey, undefined /* range */, '1',
+                    (err, httpReply) => {
+                        assert.ok(err);
+                        assert.ok(!httpReply);
+                        assert.strictEqual(err.infos.status, 500);
+
+                        const topic = hdmock.getTopic(hdClient, repairTopic);
+                        hdmock.strictCompareTopicContent(
+                            topic, [{
+                                rawKey,
+                                fragments: [[0, 1]],
+                            }]);
+                        done();
+                    });
+            });
+        });
+    });
+
+    mocha.describe('Persisting error edge cases', function () {
+        mocha.it('All errors: failed to persit', function (done) {
+            const hdClient = hdmock.getDefaultClient({
+                nLocations: 2,
+                code: 'CP',
+                nData: 2,
+            });
+            const content = 'Je suis une mite en pullover';
+            const mockOptions = [
+                {
+                    statusCode: 404,
+                    payload: content,
+                    acceptType: 'data',
+                },
+                {
+                    statusCode: 404,
+                    payload: content,
+                    acceptType: 'data',
+                }];
+            const [rawKey] = hdmock.mockGET(
+                hdClient.options, 'bestObjEver', mockOptions);
+
+            hdClient.errorAgent.nextError = new Error('Demo effect!');
+
+            hdClient.get(
+                rawKey, undefined /* range */, '1',
+                (err, httpReply) => {
+                    /* Check failure to persist to-repair fragments */
+                    assert.ok(!httpReply);
+                    assert.strictEqual(err.infos.status, 500);
+                    assert.strictEqual(err.message, 'Demo effect!');
+                    const topic = hdmock.getTopic(hdClient, repairTopic);
+                    hdmock.strictCompareTopicContent(
+                        topic, undefined);
+                    done();
+                });
+        });
+
+        mocha.it('Success but failed to persit', function (done) {
+            /* Slightly different scenario: we replied to the client
+             * but there was fragments to repair. And we failed to persist them...
+             * NOTE: idk how/if we can handle this case
+             */
+            const hdClient = hdmock.getDefaultClient({
+                nLocations: 2,
+                code: 'CP',
+                nData: 2,
+            });
+            const content = 'Je suis une mite en pullover';
+            const mockOptions = [
+                {
+                    statusCode: 200,
+                    payload: content,
+                    acceptType: 'data',
+                },
+                {
+                    statusCode: 404,
+                    payload: content,
+                    acceptType: 'data',
+                }];
+            const [rawKey] = hdmock.mockGET(
+                hdClient.options, 'bestObjEver', mockOptions);
+
+            hdClient.errorAgent.nextError = new Error('Demo effect!');
+
+            const opCtx = hdClient.get(
+                rawKey, undefined /* range */, '1',
+                (err, httpReply) => {
+                    assert.ifError(err);
+                    assert.ok(httpReply);
+
+                    // Sanity checks before buffering the stream
+                    assert.strictEqual(httpReply.statusCode, 200);
+                    assert.strictEqual(httpReply.headers['content-length'],
+                                       content.length);
+
+                    // Buffer the whole stream and perform checks
+                    // on 'end' event
+                    const readBufs = [];
+                    httpReply.on('data', function (chunk) {
+                        readBufs.push(chunk);
+                    });
+                    httpReply.on('end', function () {
+                        const buf = readBufs.join('');
+                        assert.strictEqual(buf.length, content.length);
+                        assert.strictEqual(buf, content);
+                    });
+                });
+
+            /* Force waiting for all fragment ops to be over
+             * Note: the first 200 responds to the client
+             * but we must hcekc fo rthe cleanup
+             */
+            function verifyEnd() {
+                if (opCtx.nPending > 0) {
+                    setTimeout(verifyEnd, 1);
+                    return;
+                }
+
+                assert.strictEqual(opCtx.status[0].nOk, 1);
+                assert.strictEqual(opCtx.status[0].nError, 1);
+                assert.strictEqual(opCtx.status[0].nTimeout, 0);
+                assert.ok(!opCtx.status[0].statuses[0].error);
+                assert.strictEqual(
+                    opCtx.status[0].statuses[1].error.infos.status, 404);
+                const topic = hdmock.getTopic(hdClient, repairTopic);
+                hdmock.strictCompareTopicContent(
+                    topic, undefined);
+                assert.strictEqual(opCtx.failedToPersist, true);
+                done();
+            }
+
+            verifyEnd();
         });
     });
 });
