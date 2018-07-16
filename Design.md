@@ -126,7 +126,20 @@ Example of 'delete' topic entry: expects JSON messages
 
 ### On GET
 
-If we are able to provide the caller with the data, we must do so. For replication it equals being able to contact and read data from a single hyperdrive. For erasure coding we must repair data online if we can. In any case, a detected error (404, correupted or else) must be logged and a corresponding Kafka entry must be persisted, asking hdrepair to check and do its magic if need be. Only exception is failure to contact a hyperdrive.
+If we are able to provide the caller with the data, we must do so. For replication it equals being able to contact and read data from a single hyperdrive. For erasure coding we must repair data online if we can. In any case, a detected error (404, correupted or else) must be logged and a corresponding Kafka entry must be persisted, asking hdrepair to check and do its magic if need be. Only exception is failure to contact a hyperdrive. Repair topic has exactly the same layout as 'delete' and 'check' topics.
+
+Example of 'repair' topic entry: expects JSON messages
+```json
+{
+    "rawKey": .... # associated hdclient metadata
+    "fragments": [ #[chunkId, fragmentId]
+        [1, 1],
+        [1, 2],
+        [2, 1],
+        ...
+    ]
+}
+```
 
 ## Data placement
 
