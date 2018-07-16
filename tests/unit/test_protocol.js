@@ -67,7 +67,7 @@ mocha.describe('Hyperdrive Protocol Specification', function () {
             done();
         });
         mocha.it('Data only - invalid range', function (done) {
-            const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; data=undefined-undefined`;
+            const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; data=undefined-`;
             const generated = hdProto.helpers.makeAccept(['data', []]);
             assert.strictEqual(expected, generated);
             done();
