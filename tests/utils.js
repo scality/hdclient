@@ -183,13 +183,7 @@ function getReturnedBody(payload, range, trailingCRCs) {
          * Identity transform, and on 'end'
          * event append the CRCs, then end.
          */
-        const content = new stream.Transform({
-            transform(chunk, encoding, callback) {
-                this.push(chunk);
-                callback();
-            },
-        });
-
+        const content = new stream.PassThrough();
         payload.pipe(content, { end: false });
         payload.once('end', () => {
             content.write(trailingCRCs);
