@@ -138,7 +138,7 @@ function streamString(buffer) {
 /**
  * Retrieve payload length
  *
- * GET replies must fill the Conten-Length header
+ * GET replies must fill the Content-Type header
  * @param {fs.ReadStream|String} payload to size
  * @returns {Number} payload's length
  * @comment Blocking! Use for test purposes only
@@ -153,9 +153,58 @@ function getPayloadLength(payload) {
 }
 
 /**
- * Retrieve epxected mocked request body
+ * Retrieve Content Length (can include trailing CRCs)
  *
- * GET replies must fill the Conten-Length header
+ * GET replies must fill the Content-Length header
+ * @param {Number} size of payload (see getPayloadLength)
+ * @param {null|[Number]} range requested
+ * @returns {Number} content's length
+ * @comment Blocking! Use for test purposes only
+ */
+function getContentLength(size, range) {
+    return range ? size : size + 12; /* 3 * 4 bytes CRC32 */
+}
+
+/**
+ * Get body to return (potentially adding CRCs)
+ *
+ * @param {fs.ReadStream|Buffer} payload to size
+ * @param {null|[Number]} range requested
+ * @param {String} trailingCRCs to append
+ * @returns {fs.ReadStream|Buffer} body to return
+ */
+function getReturnedBody(payload, range, trailingCRCs) {
+    if (range) {
+        return payload;
+    }
+
+    if (payload instanceof fs.ReadStream) {
+        /* Concat payload with trailingCRCs
+         * Identity transform, and on 'end'
+         * event append the CRCs, then end.
+         */
+        const content = new stream.Transform({
+            transform(chunk, encoding, callback) {
+                this.push(chunk);
+                callback();
+            },
+        });
+
+        payload.pipe(content, { end: false });
+        payload.once('end', () => {
+            content.write(trailingCRCs);
+            content.emit('end');
+        });
+        return content;
+    }
+
+    return Buffer.concat([Buffer.from(payload), trailingCRCs]);
+}
+
+/**
+ * Retrieve expected mocked request body
+ *
+ * PUT replies must fill the ContenT-Length header
  * @param {fs.ReadStream|String} payload to size
  * @returns {Number} payload's length
  * @comment Blocking! Use for test purposes only
@@ -264,14 +313,24 @@ function mockPUT(clientConfig, keyContext, replies) {
  * @param {fs.ReadStream|String} payload to return
  * @param {String} acceptType (only 'data' supported as of now)
  * @param {Number} timeoutMs Delay reply by X ms
+ * @param {Number} storedCRC CRC retrieved from the index
+ * @param {Number} actualCRC CRC computed by 'reading' the data
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
 function _mockGetRequest(location,
-                         { statusCode, payload, acceptType, timeoutMs = 0, range }) {
+                         { statusCode, payload, acceptType,
+                           timeoutMs = 0, range,
+                           storedCRC = 0xdeadbeef,
+                           actualCRC = 0xdeadbeef,
+                         }) {
+    const storedCRCstr = storedCRC.toString(16);
+    /* Hyperdrive returns CRC as Little-Endian byte array... */
+    const trailingCRCs = Buffer.alloc(12);
+    trailingCRCs.writeUInt32LE(actualCRC);
+
     const endpoint = `http://${location.hostname}:${location.port}`;
     let content = payload;
-    let len = getPayloadLength(payload);
     if (typeof(payload) === 'string' && range) {
         if (range.length === 1) {
             content = payload.slice(range[0]);
@@ -279,27 +338,37 @@ function _mockGetRequest(location,
             // Slice does not include right boundary, while HTTP ranges are inclusive
             content = payload.slice(range[0], range[1] + 1);
         }
-        len = content.length;
     }
+    const len = getPayloadLength(content);
 
     const reqheaders = {
-        ['Accept']: protocol.helpers.makeAccept([acceptType, range]),
+        ['Accept']: protocol.helpers.makeAccept(
+            [acceptType, range], ['crc']),
     };
     protocol.specs.GET_QUERY_MANDATORY_HEADERS.forEach(
         header => assert.ok(reqheaders[header] !== undefined)
     );
 
+    const contentTypes = [`${protocol.specs.HYPERDRIVE_APPLICATION}`,
+                          `data=${len}`];
+    if (!range) {
+        contentTypes.push('crc=12');
+        contentTypes.push(`$crc.data=0x${storedCRCstr}`);
+    }
+
     /* Set Content-Length iff a valid answer is expected */
     const replyheaders = statusCode === 200 ? {
-        ['Content-Length']: len,
+        ['Content-Length']: getContentLength(len, range),
+        ['Content-Type']: contentTypes.join('; '),
     } : {};
 
     const path = `${protocol.specs.STORAGE_BASE_URL}/${location.key}`;
+    const returnedBody = getReturnedBody(content, range, trailingCRCs);
 
     return nock(endpoint, { reqheaders })
         .get(path)
         .delay(timeoutMs)
-        .reply(statusCode, content, replyheaders);
+        .reply(statusCode, returnedBody, replyheaders);
 }
 
 /**
@@ -316,8 +385,10 @@ function _mockGetRequest(location,
  *          - statusCode => {Number} HTTP status code to return
  *          - payload => {String|fs.ReadStream} payload (file system stream or string)
  *          - acceptType => {String} payload type ('data', 'usermd', etc)
- *          [- timeoutMs] => {Number} timeout ms
  *          - range => {undefined | [Number]} range to return
+ *          [- timeoutMs] => {Number} timeout ms
+ *          [- storedCRC => {Number} CRC retrieved from the index]
+ *          [- actualCRC => {Number} CRC computed by 'reading' the data
  * @comment replies.length must be equal to number of parts
  * @return {Object} with rawKey, dataMocks and codingMocks keys
  */

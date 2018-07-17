@@ -78,7 +78,7 @@ Because deploying the full S3 server might be too much of a hassle for your spec
 NODE_ENV=production node scripts/server.js 8888 scripts/example_hdclient_proxy.conf.json &
 
 # Have fun
-curl -XPUT --data @/etc/hosts -v http://localhost:8888/mybucket/testobj
+curl -XPUT --data-binary @/etc/hosts -v http://localhost:8888/mybucket/testobj
 *   Trying 127.0.0.1...
 * Connected to localhost (127.0.0.1) port 8888 (#0)
 > PUT /mybucket/testobj HTTP/1.1

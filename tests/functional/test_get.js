@@ -37,14 +37,14 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             hdClient.get(
                 rawKey, undefined /* range */, '1',
-                (err, httpReply) => {
-                    assert.ok(httpReply);
+                (err, reply) => {
+                    assert.ok(reply);
 
                     // Sanity checks before buffering the stream
-                    assert.strictEqual(httpReply.statusCode,
+                    assert.strictEqual(reply.statusCode,
                                        mockOptions.statusCode);
-                    assert.strictEqual(httpReply.headers['content-length'],
-                                       content.length);
+                    assert.strictEqual(reply.headers['content-length'],
+                                       content.length + 12 /* crc */);
 
                     const topic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
@@ -52,10 +52,10 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                     // Buffer the whole stream and perform checks on 'end' event
                     const readBufs = [];
-                    httpReply.on('data', function (chunk) {
+                    reply.on('data', function (chunk) {
                         readBufs.push(chunk);
                     });
-                    httpReply.on('end', function () {
+                    reply.once('end', function () {
                         const buf = readBufs.join('');
                         assert.strictEqual(buf.length, content.length);
                         assert.strictEqual(buf, content);
@@ -67,10 +67,12 @@ mocha.describe('Hyperdrive Client GET', function () {
         mocha.it('Existing larger key (32 KiB)', function (done) {
             const hdClient = hdmock.getDefaultClient();
             /* TODO avoid depending on hardcoded path */
+            /* Random payload contains the CRC */
             const content = fs.createReadStream(
                 'tests/functional/random_payload');
+            /* MD5 of file without ending CRCs (size - 12 bytes) */
             const expectedDigest = '2b7a12623e736ee1773fc3efc6c289e8';
-            const contentLength = hdmock.getPayloadLength(content);
+            const dataLength = hdmock.getPayloadLength(content);
             const mockOptions = {
                 statusCode: 200,
                 payload: content,
@@ -82,14 +84,14 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             hdClient.get(
                 rawKey, undefined /* range */, '1',
-                (err, httpReply) => {
-                    assert.ok(httpReply);
+                (err, reply) => {
+                    assert.ok(reply);
 
                     // Sanity checks before buffering the stream
-                    assert.strictEqual(httpReply.statusCode,
+                    assert.strictEqual(reply.statusCode,
                                        mockOptions.statusCode);
-                    assert.strictEqual(httpReply.headers['content-length'],
-                                       contentLength);
+                    assert.strictEqual(reply.headers['content-length'],
+                                       dataLength + 12 /* CRCs */);
 
                     const topic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
@@ -97,10 +99,10 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                     // Compute return valud md5
                     const hash = crypto.createHash('md5');
-                    httpReply.on('data', function (data) {
+                    reply.on('data', function (data) {
                         hash.update(data, 'utf8');
                     });
-                    httpReply.on('end', function () {
+                    reply.once('end', function () {
                         const getDigest = hash.digest('hex');
                         assert.strictEqual(getDigest, expectedDigest);
                         done(err);
@@ -125,13 +127,13 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             hdClient.get(
                 rawKey, range, '1',
-                (err, httpReply) => {
-                    assert.ok(httpReply);
+                (err, reply) => {
+                    assert.ok(reply);
 
                     // Sanity checks before buffering the stream
-                    assert.strictEqual(httpReply.statusCode,
+                    assert.strictEqual(reply.statusCode,
                                        mockOptions.statusCode);
-                    assert.strictEqual(httpReply.headers['content-length'],
+                    assert.strictEqual(reply.headers['content-length'],
                                        expectedContent.length);
 
                     const topic = hdmock.getTopic(hdClient, repairTopic);
@@ -140,10 +142,10 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                     // Buffer the whole stream and perform checks on 'end' event
                     const readBufs = [];
-                    httpReply.on('data', function (chunk) {
+                    reply.on('data', function (chunk) {
                         readBufs.push(chunk);
                     });
-                    httpReply.on('end', function () {
+                    reply.once('end', function () {
                         const buf = readBufs.join('');
                         assert.strictEqual(buf.length, expectedContent.length);
                         assert.strictEqual(buf, expectedContent);
@@ -170,21 +172,21 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             hdClient.get(
                 rawKey, range, '1',
-                (err, httpReply) => {
-                    assert.ok(httpReply);
+                (err, reply) => {
+                    assert.ok(reply);
 
                     // Sanity checks before buffering the stream
-                    assert.strictEqual(httpReply.statusCode,
+                    assert.strictEqual(reply.statusCode,
                                        mockOptions.statusCode);
-                    assert.strictEqual(httpReply.headers['content-length'],
+                    assert.strictEqual(reply.headers['content-length'],
                                        expectedContent.length);
 
                     // Buffer the whole stream and perform checks on 'end' event
                     const readBufs = [];
-                    httpReply.on('data', function (chunk) {
+                    reply.on('data', function (chunk) {
                         readBufs.push(chunk);
                     });
-                    httpReply.on('end', function () {
+                    reply.once('end', function () {
                         const buf = readBufs.join('');
                         assert.strictEqual(buf.length, expectedContent.length);
                         assert.strictEqual(buf, expectedContent);
@@ -210,13 +212,13 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             hdClient.get(
                 rawKey, range, '1',
-                (err, httpReply) => {
-                    assert.ok(httpReply);
+                (err, reply) => {
+                    assert.ok(reply);
 
                     // Sanity checks before buffering the stream
-                    assert.strictEqual(httpReply.statusCode,
+                    assert.strictEqual(reply.statusCode,
                                        mockOptions.statusCode);
-                    assert.strictEqual(httpReply.headers['content-length'],
+                    assert.strictEqual(reply.headers['content-length'],
                                        expectedContent.length);
 
                     const topic = hdmock.getTopic(hdClient, repairTopic);
@@ -225,10 +227,10 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                     // Buffer the whole stream and perform checks on 'end' event
                     const readBufs = [];
-                    httpReply.on('data', function (chunk) {
+                    reply.on('data', function (chunk) {
                         readBufs.push(chunk);
                     });
-                    httpReply.on('end', function () {
+                    reply.once('end', function () {
                         const buf = readBufs.join('');
                         assert.strictEqual(buf.length, expectedContent.length);
                         assert.strictEqual(buf, expectedContent);
@@ -254,13 +256,13 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             hdClient.get(
                 rawKey, range, '1',
-                (err, httpReply) => {
-                    assert.ok(httpReply);
+                (err, reply) => {
+                    assert.ok(reply);
 
                     // Sanity checks before buffering the stream
-                    assert.strictEqual(httpReply.statusCode,
+                    assert.strictEqual(reply.statusCode,
                                        mockOptions.statusCode);
-                    assert.strictEqual(httpReply.headers['content-length'],
+                    assert.strictEqual(reply.headers['content-length'],
                                        expectedContent.length);
 
                     const topic = hdmock.getTopic(hdClient, repairTopic);
@@ -269,10 +271,10 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                     // Buffer the whole stream and perform checks on 'end' event
                     const readBufs = [];
-                    httpReply.on('data', function (chunk) {
+                    reply.on('data', function (chunk) {
                         readBufs.push(chunk);
                     });
-                    httpReply.on('end', function () {
+                    reply.once('end', function () {
                         const buf = readBufs.join('');
                         assert.strictEqual(buf.length, expectedContent.length);
                         assert.strictEqual(buf, expectedContent);
@@ -361,6 +363,57 @@ mocha.describe('Hyperdrive Client GET', function () {
                     done();
                 });
         });
+
+        mocha.it('Corrupted', function (done) {
+            const hdClient = hdmock.getDefaultClient();
+            const content = 'Je suis une mite en pullover';
+            const mockOptions = {
+                statusCode: 200,
+                payload: content,
+                acceptType: 'data',
+                storedCRC: 0x1234,
+                actualCRC: 0xdead,
+            };
+            const [rawKey] = hdmock.mockGET(
+                hdClient.options, 'bestObjEver', [mockOptions]
+            );
+
+            hdClient.get(
+                rawKey, undefined /* range */, '1',
+                (err, reply) => {
+                    /* Everything is green when starting to read... */
+
+                    // Sanity checks before buffering the stream
+                    assert.strictEqual(reply.statusCode,
+                                       mockOptions.statusCode);
+                    assert.strictEqual(reply.headers['content-length'],
+                                       content.length + 12 /* crc */);
+
+                    /* Nothing to repair yet */
+                    const topic = hdmock.getTopic(hdClient, repairTopic);
+                    hdmock.strictCompareTopicContent(
+                        topic, undefined);
+
+                    // Use up the whole stream, expects error before end
+                    reply.on('error', err => {
+                        assert.strictEqual(err.message, 'Corrupted data');
+                        assert.strictEqual(err.infos.status, 422);
+
+                        /* 1 fragment to repair, eventually */
+                        setTimeout(() => {
+                            const topic = hdmock.getTopic(
+                                hdClient, repairTopic);
+                            hdmock.strictCompareTopicContent(
+                                topic,
+                                [{
+                                    rawKey,
+                                    fragments: [[0, 0]],
+                                }]);
+                            done();
+                        }, 10);
+                    });
+                });
+        });
     });
 
     mocha.describe('Multiple hyperdrives', function () {
@@ -388,14 +441,8 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                 hdClient.get(
                     rawKey, undefined /* range */, '1',
-                    (err, httpReply) => {
-                        assert.ok(httpReply);
-
-                        // Sanity checks before buffering the stream
-                        assert.strictEqual(httpReply.statusCode,
-                                           mockOptions[0].statusCode);
-                        assert.strictEqual(httpReply.headers['content-length'],
-                                           content.length);
+                    (err, reply) => {
+                        assert.ok(reply);
 
                         const topic = hdmock.getTopic(hdClient, repairTopic);
                         hdmock.strictCompareTopicContent(
@@ -404,10 +451,10 @@ mocha.describe('Hyperdrive Client GET', function () {
                         // Buffer the whole stream and perform
                         // checks on 'end' event
                         const readBufs = [];
-                        httpReply.on('data', function (chunk) {
+                        reply.on('data', function (chunk) {
                             readBufs.push(chunk);
                         });
-                        httpReply.on('end', function () {
+                        reply.once('end', function () {
                             const buf = readBufs.join('');
                             assert.strictEqual(buf.length, content.length);
                             assert.strictEqual(buf, content);
@@ -440,23 +487,17 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                 const opCtx = hdClient.get(
                     rawKey, undefined /* range */, '1',
-                    (err, httpReply) => {
+                    (err, reply) => {
                         assert.ifError(err);
-                        assert.ok(httpReply);
-
-                        // Sanity checks before buffering the stream
-                        assert.strictEqual(httpReply.statusCode,
-                                           mockOptions[0].statusCode);
-                        assert.strictEqual(httpReply.headers['content-length'],
-                                           content.length);
+                        assert.ok(reply);
 
                         // Buffer the whole stream and perform checks
                         // on 'end' event
                         const readBufs = [];
-                        httpReply.on('data', function (chunk) {
+                        reply.on('data', function (chunk) {
                             readBufs.push(chunk);
                         });
-                        httpReply.on('end', function () {
+                        reply.once('end', function () {
                             const buf = readBufs.join('');
                             assert.strictEqual(buf.length, content.length);
                             assert.strictEqual(buf, content);
@@ -505,8 +546,8 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                 const opCtx = hdClient.get(
                     rawKey, undefined /* range */, '1',
-                    (err, httpReply) => {
-                        assert.ok(httpReply);
+                    (err, reply) => {
+                        assert.ok(reply);
 
                         assert.strictEqual(opCtx.status[0].nOk, 1);
                         assert.strictEqual(opCtx.status[0].nError, 1);
@@ -517,11 +558,6 @@ mocha.describe('Hyperdrive Client GET', function () {
                             opCtx.status[0].statuses[0]
                                 .error.infos.status, 500);
 
-                        // Sanity checks before buffering the stream
-                        assert.strictEqual(httpReply.statusCode, 200);
-                        assert.strictEqual(httpReply.headers['content-length'],
-                                           content.length);
-
                         const topic = hdmock.getTopic(hdClient, repairTopic);
                         hdmock.strictCompareTopicContent(
                             topic, undefined);
@@ -529,10 +565,10 @@ mocha.describe('Hyperdrive Client GET', function () {
                         // Buffer the whole stream and perform checks
                         // on 'end' event
                         const readBufs = [];
-                        httpReply.on('data', function (chunk) {
+                        reply.on('data', function (chunk) {
                             readBufs.push(chunk);
                         });
-                        httpReply.on('end', function () {
+                        reply.once('end', function () {
                             const buf = readBufs.join('');
                             assert.strictEqual(buf.length, content.length);
                             assert.strictEqual(buf, content);
@@ -564,22 +600,17 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                 const opCtx = hdClient.get(
                     rawKey, undefined /* range */, '1',
-                    (err, httpReply) => {
+                    (err, reply) => {
                         assert.ifError(err);
-                        assert.ok(httpReply);
-
-                        // Sanity checks before buffering the stream
-                        assert.strictEqual(httpReply.statusCode, 200);
-                        assert.strictEqual(httpReply.headers['content-length'],
-                                           content.length);
+                        assert.ok(reply);
 
                         // Buffer the whole stream and perform checks
                         // on 'end' event
                         const readBufs = [];
-                        httpReply.on('data', function (chunk) {
+                        reply.on('data', function (chunk) {
                             readBufs.push(chunk);
                         });
-                        httpReply.on('end', function () {
+                        reply.once('end', function () {
                             const buf = readBufs.join('');
                             assert.strictEqual(buf.length, content.length);
                             assert.strictEqual(buf, content);
@@ -637,9 +668,9 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                 hdClient.get(
                     rawKey, undefined /* range */, '1',
-                    (err, httpReply) => {
+                    (err, reply) => {
                         assert.ok(err);
-                        assert.ok(!httpReply);
+                        assert.ok(!reply);
                         assert.strictEqual(err.infos.status, 404);
 
                         const topic = hdmock.getTopic(hdClient, repairTopic);
@@ -675,9 +706,9 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                 hdClient.get(
                     rawKey, undefined /* range */, '1',
-                    (err, httpReply) => {
+                    (err, reply) => {
                         assert.ok(err);
-                        assert.ok(!httpReply);
+                        assert.ok(!reply);
                         assert.strictEqual(err.infos.status, 500);
 
                         const topic = hdmock.getTopic(hdClient, repairTopic);
@@ -693,7 +724,7 @@ mocha.describe('Hyperdrive Client GET', function () {
     });
 
     mocha.describe('Persisting error edge cases', function () {
-        mocha.it('All errors: failed to persit', function (done) {
+        mocha.it('All errors: failed to persist', function (done) {
             const hdClient = hdmock.getDefaultClient({
                 nLocations: 2,
                 code: 'CP',
@@ -718,9 +749,9 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             hdClient.get(
                 rawKey, undefined /* range */, '1',
-                (err, httpReply) => {
+                (err, reply) => {
                     /* Check failure to persist to-repair fragments */
-                    assert.ok(!httpReply);
+                    assert.ok(!reply);
                     assert.strictEqual(err.infos.status, 500);
                     assert.strictEqual(err.message, 'Demo effect!');
                     const topic = hdmock.getTopic(hdClient, repairTopic);
@@ -730,9 +761,10 @@ mocha.describe('Hyperdrive Client GET', function () {
                 });
         });
 
-        mocha.it('Success but failed to persit', function (done) {
+        mocha.it('Success but failed to persist', function (done) {
             /* Slightly different scenario: we replied to the client
-             * but there was fragments to repair. And we failed to persist them...
+             * but there was fragments to repair. And we failed to
+             * persist them...
              * NOTE: idk how/if we can handle this case
              */
             const hdClient = hdmock.getDefaultClient({
@@ -759,22 +791,17 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             const opCtx = hdClient.get(
                 rawKey, undefined /* range */, '1',
-                (err, httpReply) => {
+                (err, reply) => {
                     assert.ifError(err);
-                    assert.ok(httpReply);
-
-                    // Sanity checks before buffering the stream
-                    assert.strictEqual(httpReply.statusCode, 200);
-                    assert.strictEqual(httpReply.headers['content-length'],
-                                       content.length);
+                    assert.ok(reply);
 
                     // Buffer the whole stream and perform checks
                     // on 'end' event
                     const readBufs = [];
-                    httpReply.on('data', function (chunk) {
+                    reply.on('data', function (chunk) {
                         readBufs.push(chunk);
                     });
-                    httpReply.on('end', function () {
+                    reply.once('end', function () {
                         const buf = readBufs.join('');
                         assert.strictEqual(buf.length, content.length);
                         assert.strictEqual(buf, content);
