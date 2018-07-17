@@ -26,6 +26,49 @@ const hdclient = require('../index');
 let removeMemIndexOnDelete = true;
 
 /**
+ * Implement Fs-backed errorAgent
+ * Async write to several files: 1 per topic in current directory:
+ * (repair|delete|check).topic.log
+ *
+ * @return {Object} mocked agent
+ */
+function getFsErrorAgent() {
+    return {
+        topics: {
+            check: fs.createWriteStream('check.topic.log'),
+            delete: fs.createWriteStream('delete.topic.log'),
+            repair: fs.createWriteStream('repair.topic.log'),
+        },
+        send(payloads, cb) {
+            payloads.forEach(payload => {
+                this.topics[payload.topic].write(
+                    payload.messages.join('\n')); // 1 JSON per line
+                cb(null);
+            });
+        },
+        close() {
+            this.topics.check.write(null);
+            this.topics.delete.write(null);
+            this.topics.repair.write(null);
+        },
+    };
+}
+
+function getHyperdriveClient(config) {
+    /* Override errorAgent methods */
+    hdclient.hdclient.HyperdriveClient.
+        prototype.setupErrorAgent = function fsLog() {
+            this.errorAgent = getFsErrorAgent();
+        };
+    hdclient.hdclient.HyperdriveClient.
+        prototype.destroyErrorAgent = function fsClose() {
+            this.errorAgent.close();
+        };
+
+    return new hdclient.hdclient.HyperdriveClient(config);
+}
+
+/**
  * Main HTTP server callback
  *
  * @param {client.hdclient.HyperdriveClient} client to use
@@ -46,7 +89,7 @@ function serverCallback(client, objectMap, request, response) {
                 } else {
                     client.get(
                         rawKey, null /* range */, '1',
-                        (err, httpReply) => {
+                        (err, reply) => {
                             if (err) {
                                 response.writeHead(
                                     err.infos ? err.infos.status : 500);
@@ -54,9 +97,15 @@ function serverCallback(client, objectMap, request, response) {
                                 return;
                             }
 
-                            const len = httpReply.headers['content-length'];
+                            const ctypes = hdclient.protocol.helpers.
+                                      parseReturnedContentType(
+                                          reply.headers['content-type']);
+                            const len = ctypes.get('data');
                             response.writeHead(200, { 'Content-Length': len });
-                            httpReply.pipe(response);
+                            /* Forward output and chain errors */
+                            reply.on('error',
+                                     err => response.emit('error', err));
+                            reply.pipe(response);
                         }
                     );
                 }
@@ -154,7 +203,7 @@ function main() {
     const port = Number(args[2]);
     const config = loadConfig(args[3]);
 
-    const client = new hdclient.client.HyperdriveClient(config);
+    const client = getHyperdriveClient(config);
     const object2rawkey = new Map();
     const server = http.createServer(
         (req, res) => serverCallback(client, object2rawkey, req, res));
