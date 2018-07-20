@@ -138,11 +138,15 @@ mocha.describe('PUT', function () {
                 hdmock.streamString(mocks[0].payload),
                 hdmock.getPayloadLength(mocks[0].payload),
                 keyContext, '1',
-                err => {
+                (err, rawKey) => {
                     /* Check cleanup mechanism */
                     const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
-                        delTopic, undefined);
+                        delTopic,
+                        [{
+                            rawKey,
+                            fragments: [[0, 0]],
+                        }]);
                     const chkTopic = hdmock.getTopic(hdClient, checkTopic);
                     hdmock.strictCompareTopicContent(
                         chkTopic, undefined);
@@ -307,7 +311,7 @@ mocha.describe('PUT', function () {
                         const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                         const delLoggedErrors = [{
                             rawKey,
-                            fragments: [[0, 0], [0, 1]],
+                            fragments: [[0, 0], [0, 1], [0, 2]],
                         }];
                         hdmock.strictCompareTopicContent(
                             delTopic, delLoggedErrors);
@@ -371,7 +375,7 @@ mocha.describe('PUT', function () {
                         const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                         const delLoggedErrors = [{
                             rawKey,
-                            fragments: [[0, 1]],
+                            fragments: [[0, 0], [0, 1], [0, 2]],
                         }];
                         hdmock.strictCompareTopicContent(
                             delTopic, delLoggedErrors);
@@ -632,7 +636,11 @@ mocha.describe('PUT', function () {
                     /* Check cleanup mechanism */
                     const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
-                        delTopic, undefined);
+                        delTopic,
+                        [{
+                            rawKey,
+                            fragments: [[0, 0]],
+                        }]);
                     const chkTopic = hdmock.getTopic(hdClient, checkTopic);
                     hdmock.strictCompareTopicContent(
                         chkTopic, undefined);
