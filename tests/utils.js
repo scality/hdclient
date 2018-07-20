@@ -10,7 +10,8 @@ const nock = require('nock'); // HTTP API mocking
 const fs = require('fs');
 const stream = require('stream');
 
-const { hdclient, protocol, keyscheme, placement } = require('../index');
+const { hdclient, protocol, keyscheme,
+        placement, utils: libUtils } = require('../index');
 
 /**
  * Get object mocking HyperdriveClient errorAgent
@@ -86,7 +87,7 @@ function getDefaultClient({ nLocations = 1,
         codingParts: nCoding,
         requestTimeoutMs: 10,
         policy: {
-            locations: [...Array(nLocations).keys()].map(
+            locations: libUtils.range(nLocations).map(
                 idx => `hyperdrive-store-${idx}:8888`),
         },
     };

@@ -6,16 +6,11 @@
 const mocha = require('mocha');
 const assert = require('assert');
 
-const { placement } = require('../../index');
-
-function range(n) {
-    /* Javascript... */
-    return [...Array(n).keys()];
-}
+const { placement, utils: libUtils } = require('../../index');
 
 mocha.describe('Data placement', function () {
     const policy = {
-        locations: range(8).map(idx => `hyperdrive${idx}`),
+        locations: libUtils.range(8).map(idx => `hyperdrive${idx}`),
     };
 
     mocha.it('Sanity check', function (done) {

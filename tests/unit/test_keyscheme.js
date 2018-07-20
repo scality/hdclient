@@ -6,11 +6,11 @@
 const mocha = require('mocha');
 const assert = require('assert');
 
-const { keyscheme } = require('../../index');
+const { keyscheme, utils: libUtils } = require('../../index');
 
 mocha.describe('Keyscheme', function () {
     const policy = {
-        locations: [...Array(10).keys()].map(
+        locations: libUtils.range(10).map(
             idx => `hyperdrive${idx}):${idx}${idx}${idx}`),
     };
 

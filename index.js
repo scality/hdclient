@@ -1,7 +1,7 @@
 module.exports = {
     hdclient: require('./lib/hdclient'),
     config: require('./lib/config'),
-    errorUtils: require('./lib/error_utils'),
+    utils: require('./lib/utils'),
     httpUtils: require('./lib/http_utils'),
     keyscheme: require('./lib/keyscheme'),
     placement: require('./lib/placement'),
