@@ -411,7 +411,7 @@ function mockGET(clientConfig, objectKey, replies) {
         (part, idx) => _mockGetRequest(part, replies[idx])
     );
 
-    return [keyscheme.serialize(parts), dataMocks, codingMocks];
+    return { rawKey: keyscheme.serialize(parts), dataMocks, codingMocks };
 }
 
 /**
