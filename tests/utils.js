@@ -13,6 +13,28 @@ const stream = require('stream');
 const { hdclient, protocol, keyscheme,
         placement, utils: libUtils } = require('../index');
 
+
+/** Override placement policy for determinism in tests */
+placement.select = function (policy, nData, nCoding) {
+    const len = policy.locations.length;
+    let pos = 0;
+
+    const dataLocations = [];
+    for (let i = 0; i < nData; ++i) {
+        dataLocations.push(policy.locations[pos]);
+        pos = (pos + 1) % len;
+    }
+
+    const codingLocations = [];
+    for (let i = 0; i < nCoding; ++i) {
+        codingLocations.push(policy.locations[pos]);
+        pos = (pos + 1) % len;
+    }
+
+    return { dataLocations, codingLocations };
+};
+
+
 /**
  * Get object mocking HyperdriveClient errorAgent
  *
@@ -48,24 +70,7 @@ function getMockedErrorAgent() {
  * @throw {AssertionError} if anything is fishy
  */
 function strictCompareTopicContent(realContent, expectedContent) {
-    if (realContent === undefined || expectedContent === undefined) {
-        assert.strictEqual(realContent, expectedContent);
-        return;
-    }
-
-    assert.strictEqual(realContent.length,
-                       expectedContent.length);
-    realContent.forEach((realLog, i) => {
-        const expectedLog = expectedContent[i];
-        assert.strictEqual(realLog.rawKey, expectedLog.rawKey);
-        assert.strictEqual(realLog.fragments.length,
-                           expectedLog.fragments.length);
-        realLog.fragments.forEach((realFragment, j) => {
-            const expectedFragment = expectedLog.fragments[j];
-            assert.strictEqual(expectedFragment[0], expectedFragment[0]);
-            assert.strictEqual(expectedFragment[0], expectedFragment[0]);
-        });
-    });
+    assert.deepStrictEqual(realContent, expectedContent);
 }
 
 /**
@@ -399,6 +404,7 @@ function mockGET(clientConfig, objectKey, replies) {
         clientConfig.codingParts
     );
 
+    assert.strictEqual(parts.nChunks, 1); // split not supported
     assert.strictEqual(nParts, replies.length);
 
     // Setup data mocks
@@ -480,6 +486,7 @@ function mockDELETE(clientConfig, objectKey, replies) {
         clientConfig.codingParts
     );
 
+    assert.strictEqual(parts.nChunks, 1); // split not supported
     assert.strictEqual(nParts, replies.length);
 
     // Setup data mocks
