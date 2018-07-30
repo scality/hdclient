@@ -710,7 +710,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         hdmock.strictCompareTopicContent(
                             topic, [{
                                 rawKey,
-                                fragments: [[0, 1]],
+                                fragments: [[0, 0]],
                             }]);
                         done();
                     });
