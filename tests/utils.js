@@ -227,11 +227,14 @@ function getExpectedBody(payload) {
  * @param {fs.ReadStream|String} payload to return
  * @param {String} contentType (only 'data' supported as of now)
  * @param {Number} timeoutMs Delay reply by X ms
+ * @param {String} type - 'data' or 'coding'
+ * @param {Number} offset - Position in the data or coding parts
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
 function _mockPutRequest(location, keyContext,
-                         { statusCode, payload, contentType, timeoutMs = 0 }) {
+                         { statusCode, payload, contentType, timeoutMs = 0 },
+                         type, offset) {
     const len = getPayloadLength(payload);
     const expectedBody = getExpectedBody(payload);
     const reqheaders = {
@@ -253,11 +256,11 @@ function _mockPutRequest(location, keyContext,
     return nock(`http://${location}`, { reqheaders })
         .filteringPath(path => {
             if (path.startsWith(expectedPathPrefix)) {
-                return `${protocol.specs.STORAGE_BASE_URL}/defaultkey`;
+                return `${protocol.specs.STORAGE_BASE_URL}/${type}-${offset}`;
             }
             return path;
         })
-        .put(`${protocol.specs.STORAGE_BASE_URL}/defaultkey`, expectedBody)
+        .put(`${protocol.specs.STORAGE_BASE_URL}/${type}-${offset}`, expectedBody)
         .delay(timeoutMs)
         .reply(statusCode, '', replyheaders);
 }
@@ -268,7 +271,7 @@ function _mockPutRequest(location, keyContext,
  * This function can mock PUT for all parts,
  * and return specific codes for each.
  * /!\ ALL ENDPOINTS ARE MOCKED, you must have a setup
- * that enables you to know which are going to contacted
+ * that enables you to know which are going to be contacted
  *
  * @param {Object} clientConfig Hyperdrive client configuration
  * @param {String} keyContext same as given to actual PUT
@@ -291,12 +294,14 @@ function mockPUT(clientConfig, keyContext, replies) {
                        dataLocations.length + codingLocations.length);
 
     const dataMocks = dataLocations.map(
-        (loc, idx) => _mockPutRequest(loc, keyContext, replies[idx])
+        (loc, idx) => _mockPutRequest(loc, keyContext, replies[idx],
+                                      'data', idx)
     );
 
     const codingMocks = codingLocations.map(
         (loc, idx) => _mockPutRequest(loc, keyContext,
-                                      replies[dataLocations.length + idx])
+                                      replies[dataLocations.length + idx],
+                                      'coding', idx)
     );
 
     return { dataMocks, codingMocks };
