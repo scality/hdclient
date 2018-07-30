@@ -523,7 +523,7 @@ mocha.describe('PUT', function () {
     });
 
     mocha.describe('Persisting error edge cases', function () {
-        mocha.it('Failed to persit', function (done) {
+        mocha.it('Failed to persist', function (done) {
             /* Same exact scenario as 'Timeout < 50%'
              * but we failed to persist errors/warnings,
              * expecting resulting error

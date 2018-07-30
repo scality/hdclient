@@ -810,7 +810,7 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             /* Force waiting for all fragment ops to be over
              * Note: the first 200 responds to the client
-             * but we must hcekc fo rthe cleanup
+             * but we must check for the cleanup
              */
             function verifyEnd() {
                 if (opCtx.nPending > 0) {
