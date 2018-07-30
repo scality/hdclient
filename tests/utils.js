@@ -22,19 +22,21 @@ function getMockedErrorAgent() {
     return {
         nextError: null,
         logged: new Map(),
-        send(payloads, cb) {
-            if (!this.nextError) {
-                payloads.forEach(payload => {
-                    const cur = this.logged.has(payload.topic) ?
-                              this.logged.get(payload.topic) :
-                              [];
-                    this.logged.set(payload.topic,
-                                    cur.concat(payload.messages));
-                });
-            }
-            const ret = cb(this.nextError);
-            this.netxtError = null;
-            return ret;
+        produce(topic, partition, message) {
+            return new Promise((resolve, reject) => {
+                if (this.nextError) {
+                    const err = this.nextError;
+                    this.netxtError = null;
+                    reject(err);
+                    return;
+                }
+
+                const cur = this.logged.has(topic) ?
+                          this.logged.get(topic) : [];
+                cur.push(message);
+                this.logged.set(topic, cur);
+                resolve();
+            });
         },
     };
 }
@@ -90,6 +92,7 @@ function getDefaultClient({ nLocations = 1,
             locations: libUtils.range(nLocations).map(
                 idx => `hyperdrive-store-${idx}:8888`),
         },
+        errorAgent: { kafkaBrokers: 'who cares?' },
     };
 
     hdclient.HyperdriveClient.prototype.setupErrorAgent = function mockedSetup() {

@@ -178,11 +178,27 @@ mocha.describe('Hyperdrive Client', function () {
             done();
         });
 
+        mocha.it('Invalid error agent options', function (done) {
+            const args = { policy: { locations: ['server1', 'server2', 'server3'] },
+                           dataParts: 2,
+                           codingParts: 1,
+                           requestTimeoutMs: 0,
+                         };
+            const expectedError = new config.InvalidConfigError('errorAgent.kafkaBrokers', undefined,
+                                                                'Expected a CSV list of hostnames');
+            assert.throws(() => create(args),
+                          function (thrown) {
+                              return thrownErrorValidation(thrown, expectedError);
+                          });
+            done();
+        });
+
         mocha.it('Valid configuration', function (done) {
             const args = { policy: { locations: ['server1', 'server2', 'server3'] },
                            dataParts: 2,
                            codingParts: 1,
                            requestTimeoutMs: 0,
+                           errorAgent: { kafkaBrokers: 'fake-1:7777,fake-2:1234' },
                          };
             const client = new hdclient.HyperdriveClient(args);
             assert.ok(client);
