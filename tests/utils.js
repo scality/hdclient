@@ -14,8 +14,8 @@ const { hdclient, protocol, keyscheme,
         placement, utils: libUtils } = require('../index');
 
 
-/** Override placement policy for determinism in tests */
-placement.select = function (policy, nData, nCoding) {
+/* Override placement policy for determinism in tests */
+placement.select = function deterministicPlacement(policy, nData, nCoding) {
     const len = policy.locations.length;
     let pos = 0;
 
@@ -223,18 +223,17 @@ function getExpectedBody(payload) {
  *
  * @param {String} location (ip:port) to contact
  * @param {Object} keyContext same as given to actual PUT
+ * @param {String} type - 'data' or 'coding'
+ * @param {Number} offset - Position in the data or coding parts
  * @param {Number} statusCode of the reply
  * @param {fs.ReadStream|String} payload to return
  * @param {String} contentType (only 'data' supported as of now)
  * @param {Number} timeoutMs Delay reply by X ms
- * @param {String} type - 'data' or 'coding'
- * @param {Number} offset - Position in the data or coding parts
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockPutRequest(location, keyContext,
-                         { statusCode, payload, contentType, timeoutMs = 0 },
-                         type, offset) {
+function _mockPutRequest(location, keyContext, type, offset,
+                         { statusCode, payload, contentType, timeoutMs = 0 }) {
     const len = getPayloadLength(payload);
     const expectedBody = getExpectedBody(payload);
     const reqheaders = {
@@ -294,14 +293,13 @@ function mockPUT(clientConfig, keyContext, replies) {
                        dataLocations.length + codingLocations.length);
 
     const dataMocks = dataLocations.map(
-        (loc, idx) => _mockPutRequest(loc, keyContext, replies[idx],
-                                      'data', idx)
+        (loc, idx) => _mockPutRequest(loc, keyContext, 'data', idx,
+                                      replies[idx])
     );
 
     const codingMocks = codingLocations.map(
-        (loc, idx) => _mockPutRequest(loc, keyContext,
-                                      replies[dataLocations.length + idx],
-                                      'coding', idx)
+        (loc, idx) => _mockPutRequest(loc, keyContext, 'coding', idx,
+                                      replies[dataLocations.length + idx])
     );
 
     return { dataMocks, codingMocks };
