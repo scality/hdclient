@@ -6,7 +6,7 @@
 const mocha = require('mocha');
 const assert = require('assert');
 
-const { keyscheme, utils: libUtils } = require('../../index');
+const { keyscheme, placement, utils: libUtils } = require('../../index');
 
 mocha.describe('Keyscheme', function () {
     const policy = {
@@ -25,30 +25,30 @@ mocha.describe('Keyscheme', function () {
             assert.strictEqual(fragments.code, 'RS');
             assert.strictEqual(fragments.nDataParts, 2);
             assert.strictEqual(fragments.nCodingParts, 1);
-            assert.strictEqual(fragments.rand, 314159);
+            assert.strictEqual(fragments.stripeSize, 0);
+            assert.strictEqual(fragments.rand, '4cb2f');
             assert.strictEqual(fragments.nChunks, 1);
-            assert.strictEqual(fragments.splitSize, 0);
+            assert.strictEqual(fragments.size, 4096);
+            assert.strictEqual(fragments.splitSize, 4096);
 
             /* Verify each fragment */
             assert.strictEqual(fragments.chunks.length, 1);
             assert.strictEqual(fragments.chunks[0].data.length, 2);
             assert.strictEqual(fragments.chunks[0].coding.length, 1);
             fragments.chunks[0].data.forEach((f, i) => {
-                assert.strictEqual(f.type, 'd');
                 assert.strictEqual(typeof f.port, 'number');
                 assert.strictEqual(typeof f.hostname, 'string');
                 assert.strictEqual(f.fragmentId, i);
                 assert.strictEqual(
-                    f.key, `testObj-314159-0-d-${i}`);
+                    f.key, `testObj-4cb2f-0-1-RS,2,1,0-${i}`);
             });
 
             fragments.chunks[0].coding.forEach((f, i) => {
-                assert.strictEqual(f.type, 'c');
                 assert.strictEqual(typeof f.port, 'number');
                 assert.strictEqual(typeof f.hostname, 'string');
                 assert.strictEqual(f.fragmentId, 2 + i);
                 assert.strictEqual(
-                    f.key, `testObj-314159-0-c-${2 + i}`);
+                    f.key, `testObj-4cb2f-0-1-RS,2,1,0-${2 + i}`);
             });
 
             done();
@@ -120,43 +120,10 @@ mocha.describe('Keyscheme', function () {
                         const sections = serialized.split(keyscheme.SECTION_SEPARATOR);
                         assert.strictEqual(sections.length, 6 + nData + nCoding);
                         assert.strictEqual(sections[0], String(keyscheme.KEYSCHEME_VERSION));
-                        assert.strictEqual(sections[1], String(keyscheme.TOPOLOGY_VERSION));
+                        assert.strictEqual(sections[1], String(placement.PLACEMENT_POLICY_VERSION));
 
                         /* Check fragments === parsed */
-                        assert.strictEqual(fragments.objectKey, parsed.objectKey);
-                        assert.strictEqual(fragments.rand, parsed.rand);
-                        assert.strictEqual(fragments.code, parsed.code);
-                        assert.strictEqual(fragments.nDataParts, parsed.nDataParts);
-                        assert.strictEqual(fragments.nCodingParts, parsed.nCodingParts);
-                        assert.strictEqual(fragments.nChunks, parsed.nChunks);
-                        assert.strictEqual(fragments.splitSize, parsed.splitSize);
-
-                        assert.strictEqual(fragments.chunks.length, parsed.chunks.length);
-                        fragments.chunks.forEach((chunk, chunkid) => {
-                            assert.strictEqual(chunk.data.length,
-                                               parsed.chunks[chunkid].data.length);
-                            chunk.data.forEach((f, i) => {
-                                const p = parsed.chunks[chunkid].data[i];
-                                assert.strictEqual(f.type, p.type);
-                                assert.strictEqual(f.fragmentId, p.fragmentId);
-                                assert.strictEqual(f.key, p.key);
-                                assert.strictEqual(f.hostname, p.hostname);
-                                assert.strictEqual(f.port, p.port);
-                                assert.strictEqual(f.location, p.location);
-                            });
-
-                            assert.strictEqual(chunk.coding.length,
-                                               parsed.chunks[chunkid].coding.length);
-                            chunk.coding.forEach((f, i) => {
-                                const p = parsed.chunks[chunkid].coding[i];
-                                assert.strictEqual(f.type, p.type);
-                                assert.strictEqual(f.fragmentId, p.fragmentId);
-                                assert.strictEqual(f.key, p.key);
-                                assert.strictEqual(f.hostname, p.hostname);
-                                assert.strictEqual(f.port, p.port);
-                                assert.strictEqual(f.location, p.location);
-                            });
-                        });
+                        assert.deepStrictEqual(fragments, parsed);
                         done();
                     });
                 }
