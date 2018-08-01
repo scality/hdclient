@@ -87,13 +87,15 @@ function strictCompareTopicContent(realContent, expectedContent) {
 function getDefaultClient({ nLocations = 1,
                             code = 'CP',
                             nData = 1,
-                            nCoding = 0 } = {}) {
+                            nCoding = 0,
+                            minSplitSize = 0 } = {}) {
     const conf = {
         code,
         dataParts: nData,
         codingParts: nCoding,
         requestTimeoutMs: 10,
         policy: {
+            minSplitSize,
             locations: libUtils.range(nLocations).map(
                 idx => `hyperdrive-store-${idx}:8888`),
         },
