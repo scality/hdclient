@@ -1,0 +1,8 @@
+{
+    "policy": {
+        "locations": ["localhost:4244", "localhost:4243", "localhost:4242"]
+    },
+    "dataParts": 2,
+    "codingParts": 0,
+    "requestTimeoutMs": 1000
+}

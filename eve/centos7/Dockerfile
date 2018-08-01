@@ -42,8 +42,11 @@ RUN mkdir -p /home/eve/workspace \
     && mkdir -p /home/eve/.ssh/ \
     && /bin/echo -e "Host bitbucket.org\n\tStrictHostKeyChecking no\n" >> /home/eve/.ssh/config
 
-ENV LANG=C.UTF-8 \
-    BUILD_DISTRO=centos7
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+ENV BUILD_DISTRO=centos7
 
 #
 # Run buildbot-worker on startup
