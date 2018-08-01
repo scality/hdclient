@@ -6,18 +6,21 @@
 const mocha = require('mocha');
 const assert = require('assert');
 
-const { keyscheme, placement, utils: libUtils } = require('../../index');
+const { keyscheme, placement, utils: libUtils, split } = require('../../index');
 
-mocha.describe('Keyscheme', function () {
-    const policy = {
+function getPlacementPolicy(minSplitSize = 0) {
+    return {
+        minSplitSize,
         locations: libUtils.range(10).map(
             idx => `hyperdrive${idx}):${idx}${idx}${idx}`),
     };
+}
 
+mocha.describe('Keyscheme', function () {
     mocha.describe('Keygen', function () {
         mocha.it('Basic', function (done) {
             const fragments = keyscheme.keygen(
-                policy, 'testObj', 4096, 'RS', 2, 1, 314159
+                getPlacementPolicy(), 'testObj', split.DATA_ALIGN, 'RS', 2, 1, 314159
             );
 
             /* Verify globals */
@@ -25,11 +28,11 @@ mocha.describe('Keyscheme', function () {
             assert.strictEqual(fragments.code, 'RS');
             assert.strictEqual(fragments.nDataParts, 2);
             assert.strictEqual(fragments.nCodingParts, 1);
-            assert.strictEqual(fragments.stripeSize, 0);
+            assert.strictEqual(fragments.stripeSize, split.DATA_ALIGN);
             assert.strictEqual(fragments.rand, '4cb2f');
             assert.strictEqual(fragments.nChunks, 1);
-            assert.strictEqual(fragments.size, 4096);
-            assert.strictEqual(fragments.splitSize, 4096);
+            assert.strictEqual(fragments.size, split.DATA_ALIGN);
+            assert.strictEqual(fragments.splitSize, split.DATA_ALIGN);
 
             /* Verify each fragment */
             assert.strictEqual(fragments.chunks.length, 1);
@@ -40,7 +43,7 @@ mocha.describe('Keyscheme', function () {
                 assert.strictEqual(typeof f.hostname, 'string');
                 assert.strictEqual(f.fragmentId, i);
                 assert.strictEqual(
-                    f.key, `testObj-4cb2f-0-1-RS,2,1,0-${i}`);
+                    f.key, `testObj-4cb2f-0-1-RS,2,1,4096-${i}`);
             });
 
             fragments.chunks[0].coding.forEach((f, i) => {
@@ -48,13 +51,14 @@ mocha.describe('Keyscheme', function () {
                 assert.strictEqual(typeof f.hostname, 'string');
                 assert.strictEqual(f.fragmentId, 2 + i);
                 assert.strictEqual(
-                    f.key, `testObj-4cb2f-0-1-RS,2,1,0-${2 + i}`);
+                    f.key, `testObj-4cb2f-0-1-RS,2,1,4096-${2 + i}`);
             });
 
             done();
         });
 
         mocha.it('Random part', function (done) {
+            const policy = getPlacementPolicy();
             const fragments1 = keyscheme.keygen(
                 policy, 'testObj', 123456, 'CP', 2, 0
             );
@@ -99,35 +103,72 @@ mocha.describe('Keyscheme', function () {
 
             done();
         });
+
+        mocha.it('Split', function (done) {
+            const fragments = keyscheme.keygen(
+                getPlacementPolicy(split.DATA_ALIGN * 4 - 1), // final splitSize should be aligned
+                'testObj',
+                split.DATA_ALIGN * 8 + 1, // Tough luck, worst possible overhead
+                'CP', 3, 0, 314159
+            );
+
+            /* Verify globals */
+            assert.strictEqual(fragments.objectKey, 'testObj');
+            assert.strictEqual(fragments.code, 'CP');
+            assert.strictEqual(fragments.nDataParts, 3);
+            assert.strictEqual(fragments.nCodingParts, 0);
+            assert.strictEqual(fragments.stripeSize, 0);
+            assert.strictEqual(fragments.rand, '4cb2f');
+            assert.strictEqual(fragments.nChunks, 3);
+            assert.strictEqual(fragments.size, split.DATA_ALIGN * 8 + 1);
+            assert.strictEqual(fragments.splitSize, split.DATA_ALIGN * 4);
+
+            /* Verify each fragment */
+            assert.strictEqual(fragments.chunks.length, 3);
+            fragments.chunks.forEach((chunk, chunkId) => {
+                const startOffset = fragments.splitSize * chunkId;
+                assert.strictEqual(chunk.data.length, 3);
+                assert.strictEqual(chunk.coding.length, 0);
+                chunk.data.forEach((f, i) => {
+                    assert.strictEqual(typeof f.port, 'number');
+                    assert.strictEqual(typeof f.hostname, 'string');
+                    assert.strictEqual(f.fragmentId, i);
+                    assert.strictEqual(
+                        f.key, `testObj-4cb2f-${startOffset}-1-CP,3-${i}`);
+                });
+            });
+
+            done();
+        });
     });
 
     mocha.describe('(De)Serialize invariant', function () {
-        ['CP', 'RS'].forEach(code => {
-            for (let nData = 1; nData < 6; ++nData) {
-                for (let nCoding = 0; nCoding < 3; ++nCoding) {
-                    if (code === 'CP' && nCoding > 0) {
-                        continue;
+        [16384, 5000, 333].forEach(splitSize => {
+            ['CP', 'RS'].forEach(code => {
+                for (let nData = 1; nData < 6; ++nData) {
+                    for (let nCoding = 0; nCoding < 3; ++nCoding) {
+                        if (code === 'CP' && nCoding > 0) {
+                            continue;
+                        }
+                        mocha.it(`Invariant ${code}${nData}${nCoding}`, function (done) {
+                            getPlacementPolicy(splitSize);
+                            const fragments = keyscheme.keygen(
+                                getPlacementPolicy(splitSize), 'fake', 10000, code, nData, nCoding);
+                            const serialized = keyscheme.serialize(fragments);
+                            const parsed = keyscheme.deserialize(serialized);
+
+                            const sections = serialized.split(keyscheme.SECTION_SEPARATOR);
+                            assert.strictEqual(sections.length, 6 + nData + nCoding);
+                            assert.strictEqual(sections[0], String(keyscheme.KEYSCHEME_VERSION));
+                            assert.strictEqual(sections[1], String(placement.PLACEMENT_POLICY_VERSION));
+
+                            /* Check fragments === parsed */
+                            assert.deepStrictEqual(fragments, parsed);
+                            done();
+                        });
                     }
-
-                    // TODO: test split cases
-
-                    mocha.it(`Invariant ${code}${nData}${nCoding}`, function (done) {
-                        const fragments = keyscheme.keygen(
-                            policy, 'fake', 1024, code, nData, nCoding);
-                        const serialized = keyscheme.serialize(fragments);
-                        const parsed = keyscheme.deserialize(serialized);
-
-                        const sections = serialized.split(keyscheme.SECTION_SEPARATOR);
-                        assert.strictEqual(sections.length, 6 + nData + nCoding);
-                        assert.strictEqual(sections[0], String(keyscheme.KEYSCHEME_VERSION));
-                        assert.strictEqual(sections[1], String(placement.PLACEMENT_POLICY_VERSION));
-
-                        /* Check fragments === parsed */
-                        assert.deepStrictEqual(fragments, parsed);
-                        done();
-                    });
                 }
-            }
+            });
         });
     });
 
