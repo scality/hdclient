@@ -383,6 +383,7 @@ function _mockGetRequest(location,
  *
  * @param {Object} clientConfig Hyperdrive client configuration
  * @param {String} objectKey The object identifier
+ * @param {Number} objectSize Total object size
  * @param {[Object]} replies description
  * @comment each entry of replies must be an Object with:
  *          - statusCode => {Number} HTTP status code to return
@@ -395,19 +396,20 @@ function _mockGetRequest(location,
  * @comment replies.length must be equal to number of parts
  * @return {Object} with rawKey, dataMocks and codingMocks keys
  */
-function mockGET(clientConfig, objectKey, replies) {
+function mockGET(clientConfig, objectKey, objectSize, replies) {
     const nParts = clientConfig.dataParts +
           clientConfig.codingParts;
     const parts = keyscheme.keygen(
         clientConfig.policy,
         objectKey,
-        getPayloadLength(replies[0].payload),
+        objectSize,
         'CP',
         clientConfig.dataParts,
         clientConfig.codingParts
     );
 
     assert.strictEqual(parts.nChunks, 1); // split not supported
+    assert.strictEqual(clientConfig.codingParts, 0); // erasure coding not supported
     assert.strictEqual(nParts, replies.length);
 
     // Setup data mocks
