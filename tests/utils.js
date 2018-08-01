@@ -477,39 +477,48 @@ function _mockDeleteRequest(location, { statusCode, timeoutMs = 0 }) {
  *
  * @param {Object} clientConfig Hyperdrive client configuration
  * @param {String} objectKey The object identifier
- * @param {[Reply]} replies description
+ * @param {Number} objectSize Total object size
+ * @param {[[Reply]]} replies description
+ * @comment replies are organized:  [replies] per chunk
  * @comment each entry of replies must be an Object with:
  *          - statusCode => {Number} HTTP status code to return
  *          [- timeoutMS] => {Number} timeout ms
  * @comment replies.length must be equal to number of parts
- * @return {Object} with rawKey, dataMocks and codingMocks keys
+ * @return {Object} with rawKey and mocks
+ * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockDELETE(clientConfig, objectKey, replies) {
+function mockDELETE(clientConfig, objectKey, objectSize, replies) {
     const nParts = clientConfig.dataParts +
           clientConfig.codingParts;
     const parts = keyscheme.keygen(
         clientConfig.policy,
         objectKey,
-        1024,
+        objectSize,
         clientConfig.code,
         clientConfig.dataParts,
         clientConfig.codingParts
     );
 
-    assert.strictEqual(parts.nChunks, 1); // split not supported
-    assert.strictEqual(nParts, replies.length);
+    assert.strictEqual(parts.nChunks, replies.length);
+    assert.ok(replies.every(c => c.length === nParts));
 
-    // Setup data mocks
-    const dataMocks = parts.chunks[0].data.map(
-        (part, idx) => _mockDeleteRequest(part, replies[idx])
-    );
+    const mocks = parts.chunks.map((chunk, chunkId) => {
+        // Setup data mocks
+        const dataMocks = chunk.data.map(
+            (part, idx) => _mockDeleteRequest(
+                part, replies[chunkId][idx])
+        );
 
-    // Setup coding mocks
-    const codingMocks = parts.chunks[0].coding.map(
-        (part, idx) => _mockDeleteRequest(part, replies[idx + clientConfig.dataParts])
-    );
+        // Setup coding mocks
+        const codingMocks = chunk.coding.map(
+            (part, idx) => _mockDeleteRequest(
+                part, replies[chunkId][idx + clientConfig.dataParts])
+        );
 
-    return { rawKey: keyscheme.serialize(parts), dataMocks, codingMocks };
+        return { dataMocks, codingMocks };
+    });
+
+    return { rawKey: keyscheme.serialize(parts), mocks };
 }
 
 module.exports = {
