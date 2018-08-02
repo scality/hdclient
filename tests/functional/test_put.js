@@ -24,13 +24,14 @@ mocha.describe('PUT', function () {
     mocha.describe('Single hyperdrive', function () {
         mocha.it('Success small key', function (done) {
             const hdClient = hdmock.getDefaultClient();
-            const mocks = [
+            const content = 'Je suis une mite en pullover';
+            const mocks = [[
                 {
                     statusCode: 200,
-                    payload: 'Je suis une mite en pullover',
+                    payload: content,
                     contentType: 'data',
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
@@ -38,8 +39,8 @@ mocha.describe('PUT', function () {
             hdmock.mockPUT(hdClient.options, keyContext, mocks);
 
             hdClient.put(
-                hdmock.streamString(mocks[0].payload),
-                hdmock.getPayloadLength(mocks[0].payload),
+                hdmock.streamString(content),
+                hdmock.getPayloadLength(content),
                 keyContext, '1',
                 (err, rawKey) => {
                     /* Check generated key */
@@ -74,13 +75,13 @@ mocha.describe('PUT', function () {
             /* TODO avoid depending on hardcoded path */
             const content = fs.createReadStream(
                 'tests/functional/random_payload');
-            const mocks = [
+            const mocks = [[
                 {
                     statusCode: 200,
                     payload: content,
                     contentType: 'data',
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
@@ -121,13 +122,14 @@ mocha.describe('PUT', function () {
 
         mocha.it('Server error', function (done) {
             const hdClient = hdmock.getDefaultClient();
-            const mocks = [
+            const content = 'Je suis une mite en pullover';
+            const mocks = [[
                 {
                     statusCode: 500,
-                    payload: 'Je suis une mite en pullover',
+                    payload: content,
                     contentType: 'data',
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
@@ -135,8 +137,8 @@ mocha.describe('PUT', function () {
             hdmock.mockPUT(hdClient.options, keyContext, mocks);
 
             hdClient.put(
-                hdmock.streamString(mocks[0].payload),
-                hdmock.getPayloadLength(mocks[0].payload),
+                hdmock.streamString(content),
+                hdmock.getPayloadLength(content),
                 keyContext, '1',
                 (err, rawKey) => {
                     /* Check cleanup mechanism */
@@ -152,21 +154,23 @@ mocha.describe('PUT', function () {
                         chkTopic, undefined);
 
                     /* Check for errors */
-                    assert.strictEqual(err.infos.status, mocks[0].statusCode);
+                    assert.strictEqual(err.infos.status,
+                                       mocks[0][0].statusCode);
                     done();
                 });
         });
 
         mocha.it('Timeout', function (done) {
             const hdClient = hdmock.getDefaultClient();
-            const mocks = [
+            const content = 'Je suis une mite en pullover';
+            const mocks = [[
                 {
                     statusCode: 200,
-                    payload: 'Je suis une mite en pullover',
+                    payload: content,
                     contentType: 'data',
                     timeoutMs: hdClient.options.requestTimeoutMs + 10,
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
@@ -175,8 +179,8 @@ mocha.describe('PUT', function () {
 
             let called = false;
             hdClient.put(
-                hdmock.streamString(mocks[0].payload),
-                hdmock.getPayloadLength(mocks[0].payload),
+                hdmock.streamString(content),
+                hdmock.getPayloadLength(content),
                 keyContext, '1',
                 (err, rawKey) => {
                     assert.ok(!called);
@@ -211,7 +215,7 @@ mocha.describe('PUT', function () {
                     nCoding: 0,
                 });
                 const content = 'Je suis une mite en pullover';
-                const mocks = [
+                const mocks = [[
                     {
                         statusCode: 200,
                         payload: content,
@@ -227,7 +231,7 @@ mocha.describe('PUT', function () {
                         payload: content,
                         contentType: 'data',
                     },
-                ];
+                ]];
                 const keyContext = {
                     objectKey: 'bestObjEver',
                 };
@@ -268,7 +272,7 @@ mocha.describe('PUT', function () {
                 });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
-                const mocks = [
+                const mocks = [[
                     {
                         statusCode: 200,
                         payload: content,
@@ -284,7 +288,7 @@ mocha.describe('PUT', function () {
                         payload: content,
                         contentType: 'data',
                     },
-                ];
+                ]];
                 const keyContext = {
                     objectKey: 'bestObjEver',
                 };
@@ -332,7 +336,7 @@ mocha.describe('PUT', function () {
                 });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
-                const mocks = [
+                const mocks = [[
                     {
                         statusCode: 403,
                         payload: content,
@@ -348,7 +352,7 @@ mocha.describe('PUT', function () {
                         payload: content,
                         contentType: 'data',
                     },
-                ];
+                ]];
                 const keyContext = {
                     objectKey: 'bestObjEver',
                 };
@@ -396,7 +400,7 @@ mocha.describe('PUT', function () {
                 });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
-                const mocks = [
+                const mocks = [[
                     {
                         statusCode: 200,
                         payload: content,
@@ -413,7 +417,7 @@ mocha.describe('PUT', function () {
                         payload: content,
                         contentType: 'data',
                     },
-                ];
+                ]];
                 const keyContext = {
                     objectKey: 'bestObjEver',
                 };
@@ -462,7 +466,7 @@ mocha.describe('PUT', function () {
                 });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
-                const mocks = [
+                const mocks = [[
                     {
                         statusCode: 200,
                         payload: content,
@@ -485,7 +489,7 @@ mocha.describe('PUT', function () {
                         contentType: 'data',
                         timeoutMs: hdClient.options.requestTimeoutMs + 10,
                     },
-                ];
+                ]];
                 const keyContext = {
                     objectKey: 'bestObjEver',
                 };
@@ -536,7 +540,7 @@ mocha.describe('PUT', function () {
             });
             const content = fs.createReadStream(
                 'tests/functional/random_payload');
-            const mocks = [
+            const mocks = [[
                 {
                     statusCode: 200,
                     payload: content,
@@ -553,7 +557,7 @@ mocha.describe('PUT', function () {
                     payload: content,
                     contentType: 'data',
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
@@ -610,13 +614,13 @@ mocha.describe('PUT', function () {
                 },
             });
 
-            const mocks = [
+            const mocks = [[
                 {
                     statusCode: 200,
                     payload: content,
                     contentType: 'data',
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
