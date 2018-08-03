@@ -290,6 +290,8 @@ function mockPUT(clientConfig, keyContext, repliess) {
         clientConfig.dataParts,
         clientConfig.codingParts
     );
+
+    assert.strictEqual(clientConfig.codingParts, 0); // erasure coding not supported
     const nParts = dataLocations.length + codingLocations.length;
     assert.ok(repliess.every(c => c.length === nParts));
 
@@ -335,6 +337,9 @@ function _mockGetRequest(location,
                            storedCRC = 0xdeadbeef,
                            actualCRC = 0xdeadbeef,
                          }) {
+    if (statusCode === undefined) {
+        return null;
+    }
     const storedCRCstr = storedCRC.toString(16);
     /* Hyperdrive returns CRC as Little-Endian byte array... */
     const trailingCRCs = Buffer.alloc(12);
@@ -356,6 +361,7 @@ function _mockGetRequest(location,
         ['Accept']: protocol.helpers.makeAccept(
             [acceptType, range], ['crc']),
     };
+
     protocol.specs.GET_QUERY_MANDATORY_HEADERS.forEach(
         header => assert.ok(reqheaders[header] !== undefined)
     );
@@ -392,7 +398,7 @@ function _mockGetRequest(location,
  * @param {Object} clientConfig Hyperdrive client configuration
  * @param {String} objectKey The object identifier
  * @param {Number} objectSize Total object size
- * @param {[Object]} replies description
+ * @param {[[Reply]]} repliess description
  * @comment each entry of replies must be an Object with:
  *          - statusCode => {Number} HTTP status code to return
  *          - payload => {String|fs.ReadStream} payload (file system stream or string)
@@ -401,10 +407,11 @@ function _mockGetRequest(location,
  *          [- timeoutMs] => {Number} timeout ms
  *          [- storedCRC => {Number} CRC retrieved from the index]
  *          [- actualCRC => {Number} CRC computed by 'reading' the data
- * @comment replies.length must be equal to number of parts
- * @return {Object} with rawKey, dataMocks and codingMocks keys
+ * @comment replies.length must be equal to nChunks * nPparts
+ * @return {Object} with rawKey and mocks
+ * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockGET(clientConfig, objectKey, objectSize, replies) {
+function mockGET(clientConfig, objectKey, objectSize, repliess) {
     const nParts = clientConfig.dataParts +
           clientConfig.codingParts;
     const parts = keyscheme.keygen(
@@ -416,21 +423,36 @@ function mockGET(clientConfig, objectKey, objectSize, replies) {
         clientConfig.codingParts
     );
 
-    assert.strictEqual(parts.nChunks, 1); // split not supported
-    assert.strictEqual(clientConfig.codingParts, 0); // erasure coding not supported
-    assert.strictEqual(nParts, replies.length);
+    assert.strictEqual(parts.nChunks, repliess.length);
+    assert.ok(repliess.every(c => c.length === nParts));
 
-    // Setup data mocks
-    const dataMocks = parts.chunks[0].data.map(
-        (part, idx) => _mockGetRequest(part, replies[idx])
-    );
+    const mocks = parts.chunks.map((chunk, chunkId) => {
+        // Setup data mocks
+        const dataMocks = chunk.data.map(
+            (part, idx) => {
+                const mockedReply = repliess[chunkId][idx];
+                const { use, chunkRange } = libUtils.getChunkRange(parts, chunkId, mockedReply.range);
+                assert.ok(use);
+                mockedReply.range = chunkRange;
+                return _mockGetRequest(part, mockedReply);
+            }
+        );
 
-    // Setup coding mocks
-    const codingMocks = parts.chunks[0].coding.map(
-        (part, idx) => _mockGetRequest(part, replies[idx])
-    );
+        // Setup coding mocks
+        const codingMocks = chunk.coding.map(
+            (part, idx) => {
+                const mockedReply = repliess[chunkId][clientConfig.dataParts + idx];
+                const { use, range } = libUtils.getChunkRange(parts, chunkId, mockedReply.range);
+                assert.ok(use);
+                mockedReply.range = range;
+                return _mockGetRequest(part, mockedReply);
+            }
+        );
 
-    return { rawKey: keyscheme.serialize(parts), dataMocks, codingMocks };
+        return { dataMocks, codingMocks };
+    });
+
+    return { rawKey: keyscheme.serialize(parts), mocks };
 }
 
 /**
@@ -481,7 +503,7 @@ function _mockDeleteRequest(location, { statusCode, timeoutMs = 0 }) {
  * @param {Object} clientConfig Hyperdrive client configuration
  * @param {String} objectKey The object identifier
  * @param {Number} objectSize Total object size
- * @param {[[Reply]]} replies description
+ * @param {[[Reply]]} repliess description
  * @comment replies are organized:  [replies] per chunk
  * @comment each entry of replies must be an Object with:
  *          - statusCode => {Number} HTTP status code to return
@@ -490,7 +512,7 @@ function _mockDeleteRequest(location, { statusCode, timeoutMs = 0 }) {
  * @return {Object} with rawKey and mocks
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockDELETE(clientConfig, objectKey, objectSize, replies) {
+function mockDELETE(clientConfig, objectKey, objectSize, repliess) {
     const nParts = clientConfig.dataParts +
           clientConfig.codingParts;
     const parts = keyscheme.keygen(
@@ -502,20 +524,20 @@ function mockDELETE(clientConfig, objectKey, objectSize, replies) {
         clientConfig.codingParts
     );
 
-    assert.strictEqual(parts.nChunks, replies.length);
-    assert.ok(replies.every(c => c.length === nParts));
+    assert.strictEqual(parts.nChunks, repliess.length);
+    assert.ok(repliess.every(c => c.length === nParts));
 
     const mocks = parts.chunks.map((chunk, chunkId) => {
         // Setup data mocks
         const dataMocks = chunk.data.map(
             (part, idx) => _mockDeleteRequest(
-                part, replies[chunkId][idx])
+                part, repliess[chunkId][idx])
         );
 
         // Setup coding mocks
         const codingMocks = chunk.coding.map(
             (part, idx) => _mockDeleteRequest(
-                part, replies[chunkId][idx + clientConfig.dataParts])
+                part, repliess[chunkId][idx + clientConfig.dataParts])
         );
 
         return { dataMocks, codingMocks };

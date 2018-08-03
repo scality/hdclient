@@ -33,7 +33,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 acceptType: 'data',
             };
             const { rawKey } = hdmock.mockGET(
-                hdClient.options, 'bestObjEver', content.length, [mockOptions]);
+                hdClient.options, 'bestObjEver', content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, undefined /* range */, '1',
@@ -81,7 +81,7 @@ mocha.describe('Hyperdrive Client GET', function () {
             const { rawKey } = hdmock.mockGET(
                 hdClient.options, 'bestObjEver',
                 hdmock.getPayloadLength(content),
-                [mockOptions]);
+                [[mockOptions]]);
 
             hdClient.get(
                 rawKey, undefined /* range */, '1',
@@ -123,7 +123,7 @@ mocha.describe('Hyperdrive Client GET', function () {
             };
             const expectedContent = content.slice(...range);
             const { rawKey } = hdmock.mockGET(
-                hdClient.options, 'bestObjEver', content.length, [mockOptions]);
+                hdClient.options, 'bestObjEver', content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, range, '1',
@@ -167,7 +167,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 range,
             };
             const { rawKey } = hdmock.mockGET(
-                hdClient.options, 'bestObjEver', content.length, [mockOptions]);
+                hdClient.options, 'bestObjEver', content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, range, '1',
@@ -206,7 +206,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 range,
             };
             const { rawKey } = hdmock.mockGET(
-                hdClient.options, 'bestObjEver', content.length, [mockOptions]);
+                hdClient.options, 'bestObjEver', content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, range, '1',
@@ -249,7 +249,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 range,
             };
             const { rawKey } = hdmock.mockGET(
-                hdClient.options, 'bestObjEver', content.length, [mockOptions]);
+                hdClient.options, 'bestObjEver', content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, range, '1',
@@ -286,11 +286,11 @@ mocha.describe('Hyperdrive Client GET', function () {
                 hdClient.options,
                 'bestObjEver',
                 1024,
-                [{
+                [[{
                     statusCode: 404,
                     payload: '',
                     acceptType: 'data',
-                }]
+                }]]
             );
 
             hdClient.get(rawKey, null /* range */, '1', err => {
@@ -313,11 +313,11 @@ mocha.describe('Hyperdrive Client GET', function () {
                 hdClient.options,
                 'bestObjEver',
                 1024,
-                [{
+                [[{
                     statusCode: 500,
                     payload: '',
                     acceptType: 'data',
-                }]
+                }]]
             );
 
             hdClient.get(rawKey, null /* range */, '1', err => {
@@ -347,12 +347,12 @@ mocha.describe('Hyperdrive Client GET', function () {
                 hdClient.options,
                 'bestObjEver',
                 314159,
-                [{
+                [[{
                     statusCode: 200,
                     payload: 'gné',
                     acceptType: 'data',
                     timeoutMs: mockDelay,
-                }]
+                }]]
             );
 
             hdClient.get(
@@ -377,7 +377,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 actualCRC: 0xdead,
             };
             const { rawKey } = hdmock.mockGET(
-                hdClient.options, 'bestObjEver', content.length, [mockOptions]);
+                hdClient.options, 'bestObjEver', content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, undefined /* range */, '1',
@@ -426,7 +426,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     nData: 2,
                 });
                 const content = 'Je suis une mite en pullover';
-                const mockOptions = [
+                const mockOptions = [[
                     {
                         statusCode: 200,
                         payload: content,
@@ -436,7 +436,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         statusCode: 200,
                         payload: content,
                         acceptType: 'data',
-                    }];
+                    }]];
                 const { rawKey } = hdmock.mockGET(
                     hdClient.options, 'bestObjEver', content.length, mockOptions);
 
@@ -471,7 +471,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     nData: 2,
                 });
                 const content = 'Je suis une mite en pullover';
-                const mockOptions = [
+                const mockOptions = [[
                     {
                         statusCode: 200,
                         payload: content,
@@ -482,7 +482,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         payload: content,
                         acceptType: 'data',
                         timeoutMs: hdClient.options.requestTimeoutMs - 1,
-                    }];
+                    }]];
                 const { rawKey } = hdmock.mockGET(
                     hdClient.options, 'bestObjEver', content.length, mockOptions);
 
@@ -531,7 +531,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     nData: 2,
                 });
                 const content = 'Je suis une mite en pullover';
-                const mockOptions = [
+                const mockOptions = [[
                     {
                         statusCode: 500,
                         payload: content,
@@ -541,7 +541,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         statusCode: 200,
                         payload: content,
                         acceptType: 'data',
-                    }];
+                    }]];
                 const { rawKey } = hdmock.mockGET(
                     hdClient.options, 'bestObjEver', content.length, mockOptions);
 
@@ -585,7 +585,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     nData: 2,
                 });
                 const content = 'Je suis une mite en pullover';
-                const mockOptions = [
+                const mockOptions = [[
                     {
                         statusCode: 200,
                         payload: content,
@@ -595,7 +595,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         statusCode: 404,
                         payload: content,
                         acceptType: 'data',
-                    }];
+                    }]];
                 const { rawKey } = hdmock.mockGET(
                     hdClient.options, 'bestObjEver', content.length, mockOptions);
 
@@ -653,7 +653,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     nData: 2,
                 });
                 const content = 'Je suis une mite en pullover';
-                const mockOptions = [
+                const mockOptions = [[
                     {
                         statusCode: 404,
                         payload: content,
@@ -663,7 +663,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         statusCode: 404,
                         payload: content,
                         acceptType: 'data',
-                    }];
+                    }]];
                 const { rawKey } = hdmock.mockGET(
                     hdClient.options, 'bestObjEver', content.length, mockOptions);
 
@@ -691,7 +691,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     nData: 2,
                 });
                 const content = 'Je suis une mite en pullover';
-                const mockOptions = [
+                const mockOptions = [[
                     {
                         statusCode: 404,
                         payload: content,
@@ -701,7 +701,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         statusCode: 500,
                         payload: content,
                         acceptType: 'data',
-                    }];
+                    }]];
                 const { rawKey } = hdmock.mockGET(
                     hdClient.options, 'bestObjEver', content.length, mockOptions);
 
@@ -732,7 +732,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 nData: 2,
             });
             const content = 'Je suis une mite en pullover';
-            const mockOptions = [
+            const mockOptions = [[
                 {
                     statusCode: 404,
                     payload: content,
@@ -742,7 +742,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     statusCode: 404,
                     payload: content,
                     acceptType: 'data',
-                }];
+                }]];
             const { rawKey } = hdmock.mockGET(
                 hdClient.options, 'bestObjEver', content.length, mockOptions);
 
@@ -774,7 +774,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 nData: 2,
             });
             const content = 'Je suis une mite en pullover';
-            const mockOptions = [
+            const mockOptions = [[
                 {
                     statusCode: 200,
                     payload: content,
@@ -784,7 +784,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     statusCode: 404,
                     payload: content,
                     acceptType: 'data',
-                }];
+                }]];
             const { rawKey } = hdmock.mockGET(
                 hdClient.options, 'bestObjEver', content.length, mockOptions);
 
