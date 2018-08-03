@@ -11,11 +11,11 @@ const fs = require('fs');
 const stream = require('stream');
 
 const { hdclient, protocol, keyscheme,
-        placement, utils: libUtils } = require('../index');
+        utils: libUtils } = require('../index');
 
 
 /* Override placement policy for determinism in tests */
-placement.select = function deterministicPlacement(policy, nData, nCoding) {
+function deterministicPlacement(policy, nData, nCoding) {
     const len = policy.locations.length;
     let pos = 0;
 
@@ -32,7 +32,9 @@ placement.select = function deterministicPlacement(policy, nData, nCoding) {
     }
 
     return { dataLocations, codingLocations };
-};
+}
+
+keyscheme.updateLocationSelector(deterministicPlacement);
 
 
 /**
@@ -254,7 +256,7 @@ function _mockPutRequest(location, keyContext, startOffset, fragmentId,
     };
 
     const expectedPathPrefix = `${protocol.specs.STORAGE_BASE_URL}/${keyContext.objectKey}`;
-    const mockedPathRegex = new RegExp(`${expectedPathPrefix}-.+-${startOffset}-.+-${fragmentId}`);
+    const mockedPathRegex = new RegExp(`${expectedPathPrefix}-.+-${startOffset}-1-.+-${fragmentId}`);
 
     return nock(`http://${location}`, { reqheaders })
         .put(mockedPathRegex, expectedBody.toString('ascii'))
@@ -283,7 +285,7 @@ function _mockPutRequest(location, keyContext, startOffset, fragmentId,
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
 function mockPUT(clientConfig, keyContext, repliess) {
-    const { dataLocations, codingLocations } = placement.select(
+    const { dataLocations, codingLocations } = deterministicPlacement(
         clientConfig.policy,
         clientConfig.dataParts,
         clientConfig.codingParts
