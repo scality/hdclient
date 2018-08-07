@@ -40,12 +40,6 @@ mocha.describe('Hyperdrive Client GET', function () {
                 (err, reply) => {
                     assert.ok(reply);
 
-                    // Sanity checks before buffering the stream
-                    assert.strictEqual(reply.statusCode,
-                                       mockOptions.statusCode);
-                    assert.strictEqual(reply.headers['content-length'],
-                                       content.length + 12 /* crc */);
-
                     const topic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
                         topic, undefined);
@@ -72,7 +66,6 @@ mocha.describe('Hyperdrive Client GET', function () {
                 'tests/functional/random_payload');
             /* MD5 of file without ending CRCs (size - 12 bytes) */
             const expectedDigest = '2b7a12623e736ee1773fc3efc6c289e8';
-            const dataLength = hdmock.getPayloadLength(content);
             const mockOptions = {
                 statusCode: 200,
                 payload: content,
@@ -87,12 +80,6 @@ mocha.describe('Hyperdrive Client GET', function () {
                 rawKey, undefined /* range */, '1',
                 (err, reply) => {
                     assert.ok(reply);
-
-                    // Sanity checks before buffering the stream
-                    assert.strictEqual(reply.statusCode,
-                                       mockOptions.statusCode);
-                    assert.strictEqual(reply.headers['content-length'],
-                                       dataLength + 12 /* CRCs */);
 
                     const topic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
@@ -128,13 +115,8 @@ mocha.describe('Hyperdrive Client GET', function () {
             hdClient.get(
                 rawKey, range, '1',
                 (err, reply) => {
+                    assert.ifError(err);
                     assert.ok(reply);
-
-                    // Sanity checks before buffering the stream
-                    assert.strictEqual(reply.statusCode,
-                                       mockOptions.statusCode);
-                    assert.strictEqual(reply.headers['content-length'],
-                                       expectedContent.length);
 
                     const topic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
@@ -172,13 +154,8 @@ mocha.describe('Hyperdrive Client GET', function () {
             hdClient.get(
                 rawKey, range, '1',
                 (err, reply) => {
+                    assert.ifError(err);
                     assert.ok(reply);
-
-                    // Sanity checks before buffering the stream
-                    assert.strictEqual(reply.statusCode,
-                                       mockOptions.statusCode);
-                    assert.strictEqual(reply.headers['content-length'],
-                                       expectedContent.length);
 
                     // Buffer the whole stream and perform checks on 'end' event
                     const readBufs = [];
@@ -212,12 +189,6 @@ mocha.describe('Hyperdrive Client GET', function () {
                 rawKey, range, '1',
                 (err, reply) => {
                     assert.ok(reply);
-
-                    // Sanity checks before buffering the stream
-                    assert.strictEqual(reply.statusCode,
-                                       mockOptions.statusCode);
-                    assert.strictEqual(reply.headers['content-length'],
-                                       expectedContent.length);
 
                     const topic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
@@ -255,12 +226,6 @@ mocha.describe('Hyperdrive Client GET', function () {
                 rawKey, range, '1',
                 (err, reply) => {
                     assert.ok(reply);
-
-                    // Sanity checks before buffering the stream
-                    assert.strictEqual(reply.statusCode,
-                                       mockOptions.statusCode);
-                    assert.strictEqual(reply.headers['content-length'],
-                                       expectedContent.length);
 
                     const topic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
@@ -383,12 +348,6 @@ mocha.describe('Hyperdrive Client GET', function () {
                 rawKey, undefined /* range */, '1',
                 (err, reply) => {
                     /* Everything is green when starting to read... */
-
-                    // Sanity checks before buffering the stream
-                    assert.strictEqual(reply.statusCode,
-                                       mockOptions.statusCode);
-                    assert.strictEqual(reply.headers['content-length'],
-                                       content.length + 12 /* crc */);
 
                     /* Nothing to repair yet */
                     const topic = hdmock.getTopic(hdClient, repairTopic);
@@ -620,7 +579,7 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                 /* Force waiting for all fragment ops to be over
                  * Note: the first 200 responds to the client
-                 * but we must hcekc fo rthe cleanup
+                 * but we must wait for the cleanup
                  */
                 function verifyEnd() {
                     if (opCtx.nPending > 0) {
@@ -643,7 +602,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     done();
                 }
 
-                verifyEnd();
+                setTimeout(verifyEnd, 10);
             });
 
             mocha.it('All errors', function (done) {
