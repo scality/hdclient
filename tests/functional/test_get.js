@@ -245,6 +245,21 @@ mocha.describe('Hyperdrive Client GET', function () {
                 });
         });
 
+        mocha.it('Stupid range', function (done) {
+            const hdClient = hdmock.getDefaultClient();
+            const content = 'Je suis une mite en pullover';
+            const { rawKey } = hdmock.mockGET(
+                hdClient.options, 'bestObjEver', content.length, [[{}]]);
+
+            hdClient.get(
+                rawKey, [999999, 9999999999], '1',
+                err => {
+                    assert.ok(err);
+                    assert.ok(err.message.startsWith('Invalid range'));
+                    done();
+                });
+        });
+
         mocha.it('Not found key', function (done) {
             const hdClient = hdmock.getDefaultClient();
             const { rawKey } = hdmock.mockGET(
@@ -791,7 +806,383 @@ mocha.describe('Hyperdrive Client GET', function () {
                 done();
             }
 
-            verifyEnd();
+            setTimeout(verifyEnd, 10);
+        });
+    });
+
+    mocha.describe('Split', function () {
+        mocha.describe('Replication', function () {
+            mocha.it('All success', function (done) {
+                const content = crypto.randomBytes(30000).toString('ascii');
+                const size = hdmock.getPayloadLength(content);
+                const minSplitSize = size / 3;
+                const realSplitSize = hdclient.split.align(
+                    minSplitSize, hdclient.split.DATA_ALIGN);
+                assert.ok(size > realSplitSize);
+                const hdClient = hdmock.getDefaultClient({
+                    minSplitSize,
+                    nLocations: 2,
+                    code: 'CP',
+                    nData: 2,
+                    nCoding: 0,
+                });
+                const mockOptions = [
+                    [{
+                        statusCode: 200,
+                        payload: content.slice(0, realSplitSize),
+                        acceptType: 'data',
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(0, realSplitSize),
+                        acceptType: 'data',
+                    }],
+                    [{
+                        statusCode: 200,
+                        payload: content.slice(realSplitSize, 2 * realSplitSize),
+                        acceptType: 'data',
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(realSplitSize, 2 * realSplitSize),
+                        acceptType: 'data',
+                    }],
+                    [{
+                        statusCode: 200,
+                        payload: content.slice(2 * realSplitSize),
+                        acceptType: 'data',
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(2 * realSplitSize),
+                        acceptType: 'data',
+                    }],
+                ];
+                const { rawKey } = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', content.length, mockOptions);
+
+                hdClient.get(
+                    rawKey, undefined /* range */, '1',
+                    (err, reply) => {
+                        assert.ifError(err);
+
+                        const topic = hdmock.getTopic(hdClient, repairTopic);
+                        hdmock.strictCompareTopicContent(
+                            topic, undefined);
+
+                        // Buffer the whole stream and perform
+                        // checks on 'end' event
+                        const readBufs = [];
+                        reply.on('data', function (chunk) {
+                            readBufs.push(chunk);
+                        });
+                        reply.once('error', err => done(err));
+                        reply.once('end', function () {
+                            const buf = readBufs.join('');
+                            assert.strictEqual(buf.length, content.length);
+                            assert.strictEqual(buf, content);
+                            done();
+                        });
+                    });
+            });
+
+            mocha.it('Recoverable sprinkled errors', function (done) {
+                const content = crypto.randomBytes(30000).toString('ascii');
+                const size = hdmock.getPayloadLength(content);
+                const minSplitSize = size / 3;
+                const realSplitSize = hdclient.split.align(
+                    minSplitSize, hdclient.split.DATA_ALIGN);
+                assert.ok(size > realSplitSize);
+                const hdClient = hdmock.getDefaultClient({
+                    minSplitSize,
+                    nLocations: 2,
+                    code: 'CP',
+                    nData: 2,
+                    nCoding: 0,
+                });
+                const mockOptions = [
+                    [{
+                        statusCode: 200,
+                        payload: content.slice(0, realSplitSize),
+                        acceptType: 'data',
+                    }, {
+                        statusCode: 404,
+                        payload: content.slice(0, realSplitSize),
+                        acceptType: 'data',
+                    }],
+                    [{
+                        statusCode: 200,
+                        payload: content.slice(realSplitSize, 2 * realSplitSize),
+                        acceptType: 'data',
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(realSplitSize, 2 * realSplitSize),
+                        acceptType: 'data',
+                        //timeoutMs: hdClient.options.requestTimeoutMs + 10,
+                    }],
+                    [{
+                        statusCode: 500,
+                        payload: content.slice(2 * realSplitSize),
+                        acceptType: 'data',
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(2 * realSplitSize),
+                        acceptType: 'data',
+                    }],
+                ];
+                const { rawKey } = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', content.length, mockOptions);
+
+                hdClient.get(
+                    rawKey, undefined /* range */, '1',
+                    (err, reply) => {
+                        assert.ifError(err);
+
+                        // Buffer the whole stream and perform
+                        // checks on 'end' event
+                        const readBufs = [];
+                        reply.on('data', function (chunk) {
+                            readBufs.push(chunk);
+                        });
+                        reply.once('error', err => done(err));
+                        reply.once('end', function () {
+                            const buf = readBufs.join('');
+                            assert.strictEqual(buf.length, content.length);
+                            assert.strictEqual(buf, content);
+
+                            const topic = hdmock.getTopic(hdClient, repairTopic);
+                            hdmock.strictCompareTopicContent(
+                                topic, [{
+                                    rawKey,
+                                    fragments: [[0, 1]],
+                                }]);
+                            done();
+                        });
+                    });
+            });
+
+            mocha.it('Corruption in middle chunk', function (done) {
+                const content = crypto.randomBytes(30000).toString('ascii');
+                const size = hdmock.getPayloadLength(content);
+                const minSplitSize = size / 3;
+                const realSplitSize = hdclient.split.align(
+                    minSplitSize, hdclient.split.DATA_ALIGN);
+                assert.ok(size > realSplitSize);
+                const hdClient = hdmock.getDefaultClient({
+                    minSplitSize,
+                    nLocations: 2,
+                    code: 'CP',
+                    nData: 2,
+                    nCoding: 0,
+                });
+                const mockOptions = [
+                    [{
+                        statusCode: 200,
+                        payload: content.slice(0, realSplitSize),
+                        acceptType: 'data',
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(0, realSplitSize),
+                        acceptType: 'data',
+                    }],
+                    [{
+                        statusCode: 404,
+                        payload: content.slice(realSplitSize, 2 * realSplitSize),
+                        acceptType: 'data',
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(realSplitSize, 2 * realSplitSize),
+                        acceptType: 'data',
+                        storedCRC: 0x1234,
+                        actualCRC: 0xdead,
+                    }],
+                    [{
+                        statusCode: 500,
+                        payload: content.slice(2 * realSplitSize),
+                        acceptType: 'data',
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(2 * realSplitSize),
+                        acceptType: 'data',
+                    }],
+                ];
+                const { rawKey } = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', content.length, mockOptions);
+
+                hdClient.get(
+                    rawKey, undefined /* range */, '1',
+                    (err, reply) => {
+                        /* Nothing to repair yet */
+                        const topic = hdmock.getTopic(hdClient, repairTopic);
+                        hdmock.strictCompareTopicContent(
+                            topic, undefined);
+
+                        // Use up the whole stream, expects error before end
+                        reply.on('error', err => {
+                            assert.strictEqual(err.message, 'Corrupted data');
+                            assert.strictEqual(err.infos.status, 422);
+
+                            /* 1 fragment to repair, eventually */
+                            setTimeout(() => {
+                                const topic = hdmock.getTopic(
+                                    hdClient, repairTopic);
+                                hdmock.strictCompareTopicContent(
+                                    topic,
+                                    [{
+                                        rawKey,
+                                        fragments: [[1, 0], [1, 1]],
+                                    }]);
+                                done();
+                            }, 10);
+                        });
+                    });
+            });
+
+            mocha.it('Full range', function (done) {
+                const content = crypto.randomBytes(30000).toString('ascii');
+                const range = [100, 29000];
+                // Slice does not include right boundary, while HTTP ranges are inclusive
+                const expectedContent = content.slice(range[0], range[1] + 1);
+                const size = hdmock.getPayloadLength(content);
+                const minSplitSize = size / 3;
+                const realSplitSize = hdclient.split.align(
+                    minSplitSize, hdclient.split.DATA_ALIGN);
+                assert.ok(size > realSplitSize);
+
+                const hdClient = hdmock.getDefaultClient({
+                    minSplitSize,
+                    nLocations: 2,
+                    code: 'CP',
+                    nData: 2,
+                    nCoding: 0,
+                });
+                const mockOptions = [
+                    [{
+                        statusCode: 200,
+                        payload: content.slice(0, realSplitSize),
+                        acceptType: 'data',
+                        range: [100, realSplitSize - 1],
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(0, realSplitSize),
+                        acceptType: 'data',
+                        range: [100, realSplitSize - 1],
+                    }],
+                    [{
+                        statusCode: 200,
+                        payload: content.slice(realSplitSize, 2 * realSplitSize),
+                        acceptType: 'data',
+                        range: [realSplitSize, 2 * realSplitSize - 1],
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(realSplitSize, 2 * realSplitSize),
+                        acceptType: 'data',
+                        range: [realSplitSize, 2 * realSplitSize - 1],
+                    }],
+                    [{
+                        statusCode: 200,
+                        payload: content.slice(2 * realSplitSize),
+                        acceptType: 'data',
+                        range: [2 * realSplitSize, 29000],
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(2 * realSplitSize),
+                        acceptType: 'data',
+                        range: [2 * realSplitSize, 29000],
+                    }],
+                ];
+                const { rawKey } = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', content.length, mockOptions);
+
+                hdClient.get(
+                    rawKey, range, '1',
+                    (err, reply) => {
+                        assert.ifError(err);
+
+                        const topic = hdmock.getTopic(hdClient, repairTopic);
+                        hdmock.strictCompareTopicContent(
+                            topic, undefined);
+
+                        // Buffer the whole stream and perform
+                        // checks on 'end' event
+                        const readBufs = [];
+                        reply.on('data', function (chunk) {
+                            readBufs.push(chunk);
+                        });
+                        reply.once('error', err => done(err));
+                        reply.once('end', function () {
+                            const buf = readBufs.join('');
+                            assert.strictEqual(buf.length, expectedContent.length);
+                            assert.strictEqual(buf, expectedContent);
+                            done();
+                        });
+                    });
+            });
+
+            mocha.it('Half-range', function (done) {
+                const content = crypto.randomBytes(30000).toString('ascii');
+                const size = hdmock.getPayloadLength(content);
+                const minSplitSize = size / 3;
+                const realSplitSize = hdclient.split.align(
+                    minSplitSize, hdclient.split.DATA_ALIGN);
+                assert.ok(size > realSplitSize);
+                const range = [realSplitSize];
+                const hdClient = hdmock.getDefaultClient({
+                    minSplitSize,
+                    nLocations: 2,
+                    code: 'CP',
+                    nData: 2,
+                    nCoding: 0,
+                });
+                const mockOptions = [
+                    [{}, {}], // Should not be called
+                    [{
+                        statusCode: 200,
+                        payload: content.slice(realSplitSize, 2 * realSplitSize),
+                        acceptType: 'data',
+                        range: [realSplitSize, 2 * realSplitSize - 1],
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(realSplitSize, 2 * realSplitSize),
+                        acceptType: 'data',
+                        range: [realSplitSize, 2 * realSplitSize - 1],
+                    }],
+                    [{
+                        statusCode: 200,
+                        payload: content.slice(2 * realSplitSize),
+                        acceptType: 'data',
+                        range: [2 * realSplitSize, content.length],
+                    }, {
+                        statusCode: 200,
+                        payload: content.slice(2 * realSplitSize),
+                        acceptType: 'data',
+                        range: [2 * realSplitSize, content.length],
+                    }],
+                ];
+                const { rawKey } = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', content.length, mockOptions);
+
+                hdClient.get(
+                    rawKey, range, '1',
+                    (err, reply) => {
+                        assert.ifError(err);
+
+                        const topic = hdmock.getTopic(hdClient, repairTopic);
+                        hdmock.strictCompareTopicContent(
+                            topic, undefined);
+
+                        // Buffer the whole stream and perform
+                        // checks on 'end' event
+                        const readBufs = [];
+                        reply.on('data', function (chunk) {
+                            readBufs.push(chunk);
+                        });
+                        reply.once('error', err => done(err));
+                        reply.once('end', function () {
+                            const buf = readBufs.join('');
+                            assert.strictEqual(buf.length, content.slice(...range).length);
+                            assert.strictEqual(buf, content.slice(...range));
+                            done();
+                        });
+                    });
+            });
         });
     });
 });
