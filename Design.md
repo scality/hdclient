@@ -34,23 +34,22 @@ Since we can specify which key to use on an hyperdrive, we could define a new ke
 
 Proposed key generation scheme:
 ```
-<genkey> := <version>#<topology_version>#<split>#<rep_policy>#<object_key>#<rand>#<location>[#<location>]
+<genkey> := <version>#<placement_policy_version>#<split>#<rep_policy>#<object_key>#<rand>#<location>[#<location>]
 <version> := Natural (so 0 or 1 to start)
-<topology_version> := Natural (so 0 or 1 to start) - if we use indirection instead of storing raw UUIDS we must version the mapping
-<split> := <n_chunk>,<split_size>
-<n_chunk> := number of splitted parts (1 for non-splitted objects)
+<placement_policy_version> := Natural (so 0 or 1 to start) - what placement policy was used
+<split> := <size>,<split_size>
+<size> := total size of the object
 <split_size> := size of each splitted parts, except last one (see hyperdrive keys below)
-<rep_policy> := RS,k,m or CP,n (for n-1 copies)
+<rep_policy> := RS,k,m,stripe_size or CP,n (for n-1 copies) - stripe_size is a positive integer
 <object_key> := parent S3 object key (or a prefix) - can contain anything but ‘#’
-<rand> := 64 bits random number (unicity inside 1 hyperdrive)
+<rand> := 32 bits random number (unicity inside 1 hyperdrive) encoded as hexadecimal string
 <location>:= hyperdrive location (UUID, idx in table?, ip:port, ...)
 ```
 
-The keys actually used to sotre fragments on the hyperdrives can be derived easily with only the generated key, even for split.
+The keys actually used to sotre fragments on the hyperdrives can be derived easily with only the generated key, even for splits.
 ```
-<stored_fragment_key> := <object_key>-<rand>-<start_offset>-<type>-<fragid>
-<object_key> and <rand> are the ones defined above
-<type> := ‘d’ for data, ‘c’ for coding
+<stored_fragment_key> := <object_key>-<rand>-<start_offset>-<placement_policy_version>-<rep_policy>-<fragid>
+<placement_policy_version>, <rep_policy>, <object_key> and <rand> are the ones defined above
 <fragid>:= index in main key fragment list
 <start_offset> := used for splits. All split chunks share the same prefix, storing the offset is used to easily have range queries and avoid storing them all in the main key.
 ```
@@ -60,27 +59,27 @@ Meets all requirements (except perhaps around the last stripe size of an ECN chu
 Note: key generation requires setting aside a single character and forbid the users to it in their object name. We currently settled on '#'. Handling of the maximum key length is still vague (some pending work on the hyperdrive and probably prefixing on hdclient side).
 
 Example key:
-1/ Small key: storing s3://fakebucket/obj1 with RS2+1 onto hd1, hd2 and hd3
-Main key: 1#1#1,0#RS,2,1#obj1#314159#hd1#hd3#hd2
+1/ Small key: storing s3://fakebucket/obj1 of 32KB with RS2+1 (stripe: 4096) onto hd1, hd2 and hd3
+Main key: 1#1#32768,32768#RS,2,1,4096#obj1#314159#hd1#hd3#hd2
 Hyperdrive keys:
-1. obj1-314159-0-d-1
-2. obj1-314159-0-d-2
-3. obj1-314159-0-c-3
+1. obj1-4cb2f-0-1-RS,2,1,4096-1
+2. obj1-4cb2f-0-1-RS,2,1,4096-2
+3. obj1-4cb2f-0-1-RS,2,1,4096-3
 
-2/ Splitted key: storing s3://fakebucket/Large1 with RS2+1 onto hd1, hd2 and hd3
+2/ Splitted key: storing s3://fakebucket/Large1 with RS2+1,4096 onto hd1, hd2 and hd3
 Key size: 64000, split_size: 49000, 2 parts on same hyperdrive (no conflict!)
 
-Main key: 1#1#2,49000#RS,2,1#Large1#42#hd3#hd2#hd3
+Main key: 1#1#64000,49000#RS,2,1,4096#Large1#42#hd3#hd2#hd3
 Hyperdrive keys:
 * On hd1: none
 * On hd2
-  1. Large1-42-0-d-2
-  2. Large1-42-49000-d-2
+  1. Large1-dead-0-1-RS,2,1,4096-2
+  2. Large1-dead-49000-1-RS,2,1,4096-2
 * On hd3
-  1. Large1-42-0-d-1
-  2. Large1-42-0-c-3
-  3. Large1-42-49000-d-1
-  4. Large1-42-49000-c-3
+  1. Large1-dead-0-1-RS,2,1,4096-1
+  2. Large1-dead-0-1-RS,2,1,4096-3
+  3. Large1-dead-49000-1-RS,2,1,4096-1
+  4. Large1-dead-49000-1-RS,2,1,4096-3
 
 ## Error handling
 
