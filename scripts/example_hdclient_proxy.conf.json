@@ -4,5 +4,8 @@
     },
     "dataParts": 2,
     "codingParts": 0,
-    "requestTimeoutMs": 1000
+    "requestTimeoutMs": 1000,
+    "errorAgent": {
+        "kafkaBrokers": 'not used by server"
+    }
 }
