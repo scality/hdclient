@@ -61,6 +61,7 @@ mocha.describe('DELETE', function () {
             const expectedLoggedErrors = [{
                 rawKey,
                 fragments: [[0, 0]],
+                version: 1,
             }];
 
             hdClient.delete(rawKey, '1', err => {
@@ -96,6 +97,7 @@ mocha.describe('DELETE', function () {
             const expectedLoggedErrors = [{
                 rawKey,
                 fragments: [[0, 0]],
+                version: 1,
             }];
 
             hdClient.delete(rawKey, '1', err => {
@@ -173,6 +175,7 @@ mocha.describe('DELETE', function () {
                 const expectedLogged = [{
                     rawKey,
                     fragments: [[0, 2]],
+                    version: 1,
                 }];
 
                 hdClient.delete(rawKey, '1', err => {
@@ -200,6 +203,7 @@ mocha.describe('DELETE', function () {
                 const expectedLogged = [{
                     rawKey,
                     fragments: [[0, 0], [0, 1], [0, 2]],
+                    version: 1,
                 }];
 
                 hdClient.delete(rawKey, '1', err => {
@@ -276,6 +280,7 @@ mocha.describe('DELETE', function () {
                 const expectedLogged = [{
                     rawKey,
                     fragments: [[0, 1]],
+                    version: 1,
                 }];
 
                 hdClient.delete(rawKey, '1', err => {
@@ -303,6 +308,7 @@ mocha.describe('DELETE', function () {
                 const expectedLogged = [{
                     rawKey,
                     fragments: [[0, 0], [0, 1], [0, 2]],
+                    version: 1,
                 }];
 
                 hdClient.delete(rawKey, '1', err => {
@@ -403,6 +409,7 @@ mocha.describe('DELETE', function () {
             const expectedLoggedErrors = [{
                 rawKey,
                 fragments: [[1, 0]],
+                version: 1,
             }];
 
             hdClient.delete(rawKey, '1', err => {
@@ -430,6 +437,7 @@ mocha.describe('DELETE', function () {
             const expectedLoggedErrors = [{
                 rawKey,
                 fragments: [[1, 0]],
+                version: 1,
             }];
 
             hdClient.delete(rawKey, '1', err => {
@@ -460,6 +468,7 @@ mocha.describe('DELETE', function () {
             const expectedLoggedErrors = [{
                 rawKey,
                 fragments: [[1, 1], [2, 0], [2, 2]],
+                version: 1,
             }];
 
             hdClient.delete(rawKey, '1', err => {

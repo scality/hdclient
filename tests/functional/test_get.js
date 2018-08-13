@@ -282,6 +282,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     topic, [{
                         rawKey,
                         fragments: [[0, 0]],
+                        version: 1,
                     }]);
                 done();
             });
@@ -383,6 +384,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                                 [{
                                     rawKey,
                                     fragments: [[0, 0]],
+                                    version: 1,
                                 }]);
                             done();
                         }, 10);
@@ -613,6 +615,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         topic, [{
                             rawKey,
                             fragments: [[0, 1]],
+                            version: 1,
                         }]);
                     done();
                 }
@@ -653,6 +656,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                             topic, [{
                                 rawKey,
                                 fragments: [[0, 0], [0, 1]],
+                                version: 1,
                             }]);
                         done();
                     });
@@ -691,6 +695,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                             topic, [{
                                 rawKey,
                                 fragments: [[0, 0]],
+                                version: 1,
                             }]);
                         done();
                     });
@@ -952,6 +957,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                                 topic, [{
                                     rawKey,
                                     fragments: [[0, 1]],
+                                    version: 1,
                                 }]);
                             done();
                         });
@@ -1028,6 +1034,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                                     [{
                                         rawKey,
                                         fragments: [[1, 0], [1, 1]],
+                                        version: 1,
                                     }]);
                                 done();
                             }, 10);

@@ -150,6 +150,7 @@ mocha.describe('PUT', function () {
                         [{
                             rawKey,
                             fragments: [[0, 0]],
+                            version: 1,
                         }]);
                     const chkTopic = hdmock.getTopic(hdClient, checkTopic);
                     hdmock.strictCompareTopicContent(
@@ -193,6 +194,7 @@ mocha.describe('PUT', function () {
                     const delLoggedErrors = [{
                         rawKey,
                         fragments: [[0, 0]],
+                        version: 1,
                     }];
                     hdmock.strictCompareTopicContent(
                         delTopic, delLoggedErrors);
@@ -319,6 +321,7 @@ mocha.describe('PUT', function () {
                         const delLoggedErrors = [{
                             rawKey,
                             fragments: [[0, 0], [0, 1], [0, 2]],
+                            version: 1,
                         }];
                         hdmock.strictCompareTopicContent(
                             delTopic, delLoggedErrors);
@@ -383,6 +386,7 @@ mocha.describe('PUT', function () {
                         const delLoggedErrors = [{
                             rawKey,
                             fragments: [[0, 0], [0, 1], [0, 2]],
+                            version: 1,
                         }];
                         hdmock.strictCompareTopicContent(
                             delTopic, delLoggedErrors);
@@ -448,6 +452,7 @@ mocha.describe('PUT', function () {
                         const chkLoggedErrors = [{
                             rawKey,
                             fragments: [[0, 1]],
+                            version: 1,
                         }];
                         hdmock.strictCompareTopicContent(
                             chkTopic, chkLoggedErrors);
@@ -521,6 +526,7 @@ mocha.describe('PUT', function () {
                         const delLoggedErrors = [{
                             rawKey,
                             fragments: [[0, 0], [0, 1], [0, 2], [0, 3]],
+                            version: 1,
                         }];
                         hdmock.strictCompareTopicContent(
                             delTopic, delLoggedErrors);
@@ -648,6 +654,7 @@ mocha.describe('PUT', function () {
                         [{
                             rawKey,
                             fragments: [[0, 0]],
+                            version: 1,
                         }]);
                     const chkTopic = hdmock.getTopic(hdClient, checkTopic);
                     hdmock.strictCompareTopicContent(
@@ -834,6 +841,7 @@ mocha.describe('PUT', function () {
                             fragments: [[0, 0], [0, 1], [0, 2],
                                         [1, 0], [1, 1], [1, 2],
                                         [2, 0], [2, 1], [2, 2]],
+                            version: 1,
 
                         }]);
                     const chkTopic = hdmock.getTopic(hdClient, checkTopic);
