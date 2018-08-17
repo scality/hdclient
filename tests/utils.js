@@ -420,7 +420,7 @@ function mockGET(clientConfig, objectKey, objectSize, repliess) {
         clientConfig.policy,
         objectKey,
         objectSize,
-        'CP',
+        clientConfig.code,
         clientConfig.dataParts,
         clientConfig.codingParts
     );
