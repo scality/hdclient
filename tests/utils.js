@@ -91,16 +91,20 @@ function getDefaultClient({ nLocations = 1,
                             nData = 1,
                             nCoding = 0,
                             minSplitSize = 0 } = {}) {
+    const locations = libUtils.range(nLocations).map(
+        idx => `uuid-${idx}`);
+    const uuidmapping = {};
+    locations.forEach(
+        (uuid, idx) => {
+            uuidmapping[uuid] = `fake-hyperdrive-${idx}:8888`;
+        });
     const conf = {
         code,
         dataParts: nData,
         codingParts: nCoding,
         requestTimeoutMs: 10,
-        policy: {
-            minSplitSize,
-            locations: libUtils.range(nLocations).map(
-                idx => `hyperdrive-store-${idx}:8888`),
-        },
+        policy: { minSplitSize, locations },
+        uuidmapping,
         errorAgent: { kafkaBrokers: 'who cares?' },
     };
 
@@ -228,7 +232,8 @@ function getExpectedBody(payload) {
 /**
  * Mock a single PUT call on a given host:port
  *
- * @param {String} location (ip:port) to contact
+ * @param {Map} uuidmapping Map UUIDS to hyperdrive endpoints (ip:port)
+ * @param {String} uuid  to contact
  * @param {Object} keyContext same as given to actual PUT
  * @param {String} startOffset Total offset in object
  * @param {Number} fragmentId Index of fragment
@@ -239,7 +244,7 @@ function getExpectedBody(payload) {
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockPutRequest(location, keyContext, startOffset, fragmentId,
+function _mockPutRequest(uuidmapping, uuid, keyContext, startOffset, fragmentId,
                          { statusCode, payload, contentType, timeoutMs = 0 }) {
     const len = getPayloadLength(payload);
     const expectedBody = getExpectedBody(payload);
@@ -256,8 +261,9 @@ function _mockPutRequest(location, keyContext, startOffset, fragmentId,
 
     const expectedPathPrefix = `${protocol.specs.STORAGE_BASE_URL}/${keyContext.objectKey}`;
     const mockedPathRegex = new RegExp(`${expectedPathPrefix}-.+-${startOffset}-1-.+-${fragmentId}`);
+    const { hostname, port } = libUtils.resolveUUID(uuidmapping, uuid);
 
-    return nock(`http://${location}`, { reqheaders })
+    return nock(`http://${hostname}:${port}`, { reqheaders })
         .put(mockedPathRegex, body =>
             /* Stupid nock forces to matche expected body against
              * a stringified buffer, of which I can't specify the encoding...
@@ -302,11 +308,13 @@ function mockPUT(clientConfig, keyContext, repliess) {
     const mocks = repliess.map(replies => {
         const dataMocks = dataLocations.map(
             (loc, idx) => _mockPutRequest(
+                clientConfig.uuidmapping,
                 loc, keyContext, startOffset, idx,
                 replies[idx]));
 
         const codingMocks = codingLocations.map(
             (loc, idx) => _mockPutRequest(
+                clientConfig.uuidmapping,
                 loc, keyContext, startOffset, dataLocations.length + idx,
                 replies[dataLocations.length + idx]));
 
@@ -321,9 +329,9 @@ function mockPUT(clientConfig, keyContext, repliess) {
 /**
  * Mock a single GET call on a given host:port
  *
+ * @param {Map} uuidmapping Map UUIDS to hyperdrive endpoints (ip:port)
  * @param {Object} location infos
- * @param {String} location.hostname to contact
- * @param {Number} location.port to contact
+ * @param {String} location.uuid to contact
  * @param {String} location.key to retrieve
  * @param {Number} statusCode of the reply
  * @param {fs.ReadStream|String} payload to return
@@ -334,7 +342,8 @@ function mockPUT(clientConfig, keyContext, repliess) {
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockGetRequest(location,
+function _mockGetRequest(uuidmapping,
+                         location,
                          { statusCode, payload, acceptType,
                            timeoutMs = 0, range,
                            storedCRC = 0xdeadbeef,
@@ -348,7 +357,8 @@ function _mockGetRequest(location,
     const trailingCRCs = Buffer.alloc(12);
     trailingCRCs.writeUInt32LE(actualCRC);
 
-    const endpoint = `http://${location.hostname}:${location.port}`;
+    const { hostname, port } = libUtils.resolveUUID(uuidmapping, location.uuid);
+    const endpoint = `http://${hostname}:${port}`;
     let content = payload;
     if (typeof(payload) === 'string' && range) {
         if (range.length === 1) {
@@ -436,7 +446,7 @@ function mockGET(clientConfig, objectKey, objectSize, repliess) {
                 const { use, chunkRange } = libUtils.getChunkRange(parts, chunkId, mockedReply.range);
                 assert.ok(use);
                 mockedReply.range = chunkRange;
-                return _mockGetRequest(part, mockedReply);
+                return _mockGetRequest(clientConfig.uuidmapping, part, mockedReply);
             }
         );
 
@@ -447,7 +457,7 @@ function mockGET(clientConfig, objectKey, objectSize, repliess) {
                 const { use, range } = libUtils.getChunkRange(parts, chunkId, mockedReply.range);
                 assert.ok(use);
                 mockedReply.range = range;
-                return _mockGetRequest(part, mockedReply);
+                return _mockGetRequest(clientConfig.uuidmapping, part, mockedReply);
             }
         );
 
@@ -460,17 +470,18 @@ function mockGET(clientConfig, objectKey, objectSize, repliess) {
 /**
  * Mock a single DELETE call on a given host:port
  *
+ * @param {Map} uuidmapping Map UUIDS to hyperdrive endpoints (ip:port)
  * @param {Object} location infos
- * @param {String} location.hostname to contact
- * @param {Number} location.port to contact
+ * @param {String} location.uuid to contact
  * @param {String} location.key to retrieve
  * @param {Number} statusCode of the reply
  * @param {Number} timeoutMs Delay reply by X ms
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockDeleteRequest(location, { statusCode, timeoutMs = 0 }) {
-    const endpoint = `http://${location.hostname}:${location.port}`;
+function _mockDeleteRequest(uuidmapping, location, { statusCode, timeoutMs = 0 }) {
+    const { hostname, port } = libUtils.resolveUUID(uuidmapping, location.uuid);
+    const endpoint = `http://${hostname}:${port}`;
 
     const reqheaders = {
         ['Accept']: protocol.helpers.makeAccept(),
@@ -533,13 +544,14 @@ function mockDELETE(clientConfig, objectKey, objectSize, repliess) {
         // Setup data mocks
         const dataMocks = chunk.data.map(
             (part, idx) => _mockDeleteRequest(
-                part, repliess[chunkId][idx])
+                clientConfig.uuidmapping, part, repliess[chunkId][idx])
         );
 
         // Setup coding mocks
         const codingMocks = chunk.coding.map(
             (part, idx) => _mockDeleteRequest(
-                part, repliess[chunkId][idx + clientConfig.dataParts])
+                clientConfig.uuidmapping, part,
+                repliess[chunkId][idx + clientConfig.dataParts])
         );
 
         return { dataMocks, codingMocks };
