@@ -8,6 +8,8 @@ const assert = require('assert');
 const nock = require('nock');
 const fs = require('fs');
 const crypto = require('crypto');
+const stream = require('stream');
+const ecstream = require('ecstream');
 
 const hdclient = require('../../index');
 const hdmock = require('../utils');
@@ -695,6 +697,162 @@ mocha.describe('Hyperdrive Client GET', function () {
                             topic, [{
                                 rawKey,
                                 fragments: [[0, 0]],
+                                version: 1,
+                            }]);
+                        done();
+                    });
+            });
+        });
+
+        mocha.describe('Erasure coding', function () {
+            const code = 'RS';
+            [[2, 1], [4, 2], [5, 6], [7, 5]].forEach(args => {
+                const [k, m] = args;
+                hdclient.utils.range(m).forEach(missing => {
+                    [hdclient.split.DATA_ALIGN / 2, // Less than a stripe, requires 0-padding
+                     k * hdclient.split.DATA_ALIGN, // Exactly 1 stripe
+                     k * hdclient.split.DATA_ALIGN + 23, // 1 full stripe, 0-padding the rest
+                    ].forEach(size => {
+                        [false, true].forEach(corrupt => {
+                            const killed = new Map();
+                            while (killed.size < missing) {
+                                killed.set(Math.floor(Math.random() * (k + m)), 1);
+                            }
+
+                            const description = `size=${size}, k=${k}, m=${m}, missing=${missing}, corrupted=${corrupt}`;
+                            mocha.it(`Success (${description})`, function (done) {
+                                const hdClient = hdmock.getDefaultClient({
+                                    nLocations: k + m,
+                                    code,
+                                    nData: k,
+                                    nCoding: m,
+                                });
+                                const content = crypto.randomBytes(size);
+                                const { stripeSize } = hdclient.split.getSplitSize(
+                                    0, content.length, code, k);
+
+                                new Promise(resolve => {
+                                    let todo = k + m;
+                                    const expectedBuffers = hdclient.utils.range(k + m).map(() => []);
+                                    const expectedStreams = hdclient.utils.range(k + m).map(i => {
+                                        const s = new stream.PassThrough();
+                                        s.on('data', c => expectedBuffers[i].push(c));
+                                        s.on('end', () => {
+                                            todo--;
+                                            if (todo === 0) {
+                                                /* For some fucking reason map(Buffer.concat) doesn't work as expected */
+                                                const flattened = expectedBuffers.map(
+                                                    bs => Buffer.concat(bs));
+                                                resolve(flattened);
+                                            }
+                                        });
+                                        return s;
+                                    });
+
+                                    ecstream.encode(
+                                        hdmock.streamString(content),
+                                        hdmock.getPayloadLength(content),
+                                        expectedStreams.slice(0, k),
+                                        expectedStreams.slice(k),
+                                        stripeSize);
+                                }).then(buffers => {
+                                    let corrupted = false;
+                                    const mocks = [buffers.map((b, i) => {
+                                        const shouldKill = killed.has(i);
+                                        const shouldCorrupt = corrupt && !corrupted;
+                                        corrupted |= shouldCorrupt;
+                                        return {
+                                            statusCode: (shouldCorrupt || !shouldKill) ? 200 : 404,
+                                            payload: b,
+                                            acceptType: 'data',
+                                            storedCRC: 0x1234,
+                                            actualCRC: shouldCorrupt ? 0xdead : 0x1234,
+                                        };
+                                    })];
+                                    const { rawKey } = hdmock.mockGET(
+                                        hdClient.options, 'bestObjEver', content.length, mocks);
+
+                                    const topicEndCheck = () => {
+                                        const topic = hdmock.getTopic(hdClient, repairTopic);
+                                        let expectedRepairTopic = undefined;
+                                        if (missing > 0 || corrupt) {
+                                            if (corrupt) {
+                                                killed.set(0, 1); // Add corrupted fragment
+                                            }
+                                            expectedRepairTopic = [{
+                                                rawKey,
+                                                fragments: [...killed.keys()].sort((a, b) => (a - b))
+                                                    .map(f => [0, f]),
+                                                version: 1,
+                                            }];
+                                        }
+                                        hdmock.strictCompareTopicContent(
+                                            topic, expectedRepairTopic);
+                                        done();
+                                    };
+
+                                    hdClient.get(
+                                        rawKey, undefined /* range */, '1',
+                                        (err, reply) => {
+                                            assert.ifError(err);
+                                            assert.ok(reply);
+
+                                            // Buffer the whole stream and perform
+                                            // checks on 'end' event
+                                            const readBufs = [];
+                                            reply.on('data', function (chunk) {
+                                                readBufs.push(chunk);
+                                            });
+                                            reply.once('end', function () {
+                                                const buf = Buffer.concat(readBufs);
+                                                assert.strictEqual(buf.length, content.length);
+                                                assert.strictEqual(0, Buffer.compare(buf, content));
+                                                topicEndCheck();
+                                            });
+                                            reply.once('error', err => {
+                                                if (!corrupt) {
+                                                    done(err);
+                                                    return;
+                                                }
+                                                assert.strictEqual(err.message, 'Corrupted data');
+                                                setImmediate(() => topicEndCheck());
+                                            });
+                                        });
+                                }).catch(err => done(err));
+                            });
+                        });
+                    });
+                });
+            });
+
+            mocha.it('All errors', function (done) {
+                const [k, m] = [4, 2];
+                const hdClient = hdmock.getDefaultClient({
+                    nLocations: k + m,
+                    code: 'RS',
+                    nData: k,
+                    nCoding: m,
+                });
+                const mockOptions = [hdclient.utils.range(k + m).map(() => ({
+                    statusCode: 404,
+                    payload: 'meh',
+                    acceptType: 'data',
+                }))];
+                const { rawKey } = hdmock.mockGET(
+                    hdClient.options, 'bestObjEver', 42, mockOptions);
+
+                hdClient.get(
+                    rawKey, undefined /* range */, '1',
+                    (err, reply) => {
+                        assert.ok(err);
+                        assert.ok(!reply);
+                        assert.strictEqual(err.infos.status, 404);
+
+                        const topic = hdmock.getTopic(hdClient, repairTopic);
+                        hdmock.strictCompareTopicContent(
+                            topic, [{
+                                rawKey,
+                                fragments: hdclient.utils.range(k + m).map(i => [0, i]),
                                 version: 1,
                             }]);
                         done();

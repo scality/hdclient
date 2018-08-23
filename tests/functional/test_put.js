@@ -9,6 +9,7 @@ const fs = require('fs');
 const mocha = require('mocha');
 const nock = require('nock');
 const stream = require('stream');
+const ecstream = require('ecstream');
 
 const hdclient = require('../../index');
 const hdmock = require('../utils');
@@ -95,6 +96,7 @@ mocha.describe('PUT', function () {
                 hdmock.getPayloadLength(content),
                 keyContext, '1',
                 (err, rawKey) => {
+                    assert.ifError(err);
                     /* Check generated key */
                     assert.strictEqual(typeof rawKey, 'string');
                     const parts = hdclient.keyscheme.deserialize(rawKey);
@@ -534,6 +536,172 @@ mocha.describe('PUT', function () {
                     });
             });
         });
+
+        mocha.describe('Erasure coding', function () {
+            mocha.it('All success - Compare with manual-XOR', function (done) {
+                const code = 'RS';
+                const k = 2;
+                const hdClient = hdmock.getDefaultClient({
+                    nLocations: 3,
+                    code,
+                    nData: k,
+                    nCoding: 1,
+                });
+                /* Test expects object size < stripeSize */
+                const content = crypto.randomBytes(10);
+                const { stripeSize } = hdclient.split.getSplitSize(
+                    0, content.length, code, k);
+                const dataPart1 = Buffer.alloc(stripeSize, 0);
+                content.slice(0, stripeSize).copy(dataPart1);
+                const dataPart2 = Buffer.alloc(stripeSize, 0);
+                content.slice(stripeSize).copy(dataPart2);
+                const codingPart = Buffer.allocUnsafe(stripeSize);
+                for (let i = 0; i < stripeSize; ++i) {
+                    codingPart[i] = dataPart1[i] ^ dataPart2[i];
+                }
+
+                const mocks = [[
+                    {
+                        statusCode: 200,
+                        payload: dataPart1,
+                        contentType: 'data',
+                    },
+                    {
+                        statusCode: 200,
+                        payload: dataPart2,
+                        contentType: 'data',
+                    },
+                    {
+                        statusCode: 200,
+                        payload: codingPart,
+                        contentType: 'data',
+                    },
+                ]];
+                const keyContext = {
+                    objectKey: 'bestObjEver',
+                };
+
+                hdmock.mockPUT(hdClient.options, keyContext, mocks);
+
+                hdClient.put(
+                    hdmock.streamString(content),
+                    hdmock.getPayloadLength(content),
+                    keyContext, '1',
+                    (err, rawKey) => {
+                        assert.ifError(err);
+                        /* Check generated key */
+                        assert.strictEqual(typeof rawKey, 'string');
+                        const parts = hdclient.keyscheme.deserialize(rawKey);
+                        assert.strictEqual(parts.nDataParts, k);
+                        assert.strictEqual(parts.nCodingParts, 1);
+                        assert.strictEqual(parts.nChunks, 1);
+
+                        /* Check cleanup mechanism */
+                        const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                        hdmock.strictCompareTopicContent(
+                            delTopic, undefined);
+                        const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                        hdmock.strictCompareTopicContent(
+                            chkTopic, undefined);
+
+                        /* Check for errors */
+                        done(err);
+                    });
+            });
+
+            [[2, 1], [4, 2], [5, 6]].forEach(args => {
+                [64, 7777, 8192].forEach(size => {
+                    const [k, m] = args;
+                    const description = `k=${k}, m=${m}, size=${size}`;
+                    const timeouts = new Map(hdclient.utils.range(m - 1).map(
+                        () => [Math.floor(Math.random() * (k + m)), 1]));
+                    mocha.it(`Success on harder code (${description})- timeouts=${timeouts.size}`, function (done) {
+                        const code = 'RS';
+                        const hdClient = hdmock.getDefaultClient({
+                            nLocations: k + m,
+                            code,
+                            nData: k,
+                            nCoding: m,
+                        });
+                        const content = crypto.randomBytes(size);
+                        const { stripeSize } = hdclient.split.getSplitSize(
+                            0, content.length, code, k);
+
+                        new Promise(resolve => {
+                            let todo = k + m;
+                            const expectedBuffers = hdclient.utils.range(k + m).map(() => []);
+                            const expectedStreams = hdclient.utils.range(k + m).map(i => {
+                                const s = new stream.PassThrough();
+                                s.on('data', c => expectedBuffers[i].push(c));
+                                s.on('end', () => {
+                                    todo--;
+                                    if (todo === 0) {
+                                        /* For some fucking reason map(Buffer.concat) doesn't work as expected */
+                                        const flattened = expectedBuffers.map(
+                                            bs => Buffer.concat(bs));
+                                        resolve(flattened);
+                                    }
+                                });
+                                return s;
+                            });
+                            ecstream.encode(
+                                hdmock.streamString(content),
+                                hdmock.getPayloadLength(content),
+                                expectedStreams.slice(0, k),
+                                expectedStreams.slice(k),
+                                stripeSize);
+                        }).then(buffers => {
+                            const mocks = [buffers.map((b, i) => ({
+                                statusCode: 200,
+                                payload: b,
+                                contentType: 'data',
+                                timeoutMs: timeouts.has(i) ?
+                                    hdClient.options.requestTimeoutMs + 10 : 0,
+                            }))];
+                            const keyContext = {
+                                objectKey: 'bestObjEver',
+                            };
+
+                            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+
+                            hdClient.put(
+                                hdmock.streamString(content),
+                                hdmock.getPayloadLength(content),
+                                keyContext, '1',
+                                (err, rawKey) => {
+                                    assert.ifError(err);
+                                    /* Check generated key */
+                                    assert.strictEqual(typeof rawKey, 'string');
+                                    const parts = hdclient.keyscheme.deserialize(rawKey);
+                                    assert.strictEqual(parts.nDataParts, k);
+                                    assert.strictEqual(parts.nCodingParts, m);
+                                    assert.strictEqual(parts.nChunks, 1);
+
+                                    /* Check cleanup mechanism */
+                                    const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                                    hdmock.strictCompareTopicContent(
+                                        delTopic, undefined);
+                                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                                    let expectedChkTopic = undefined;
+                                    if (timeouts.size > 0) {
+                                        expectedChkTopic = [{
+                                            rawKey,
+                                            fragments: [...timeouts.keys()].sort((a, b) => (a - b))
+                                                .map(k => [0, k]),
+                                            version: 1,
+                                        }];
+                                    }
+                                    hdmock.strictCompareTopicContent(
+                                        chkTopic, expectedChkTopic);
+
+                                    /* Check for errors */
+                                    done(err);
+                                });
+                        }).catch(err => done(err));
+                    });
+                });
+            });
+        });
     });
 
     mocha.describe('Persisting error edge cases', function () {
@@ -670,7 +838,7 @@ mocha.describe('PUT', function () {
 
     mocha.describe('Split', function () {
         mocha.it('Success', function (done) {
-            const content = crypto.randomBytes(30000).toString('ascii');
+            const content = crypto.randomBytes(30000);
             const size = hdmock.getPayloadLength(content);
             const minSplitSize = size / 3;
             const realSplitSize = hdclient.split.align(
@@ -763,7 +931,7 @@ mocha.describe('PUT', function () {
         });
 
         mocha.it('Sprinkled errors', function (done) {
-            const content = crypto.randomBytes(30000).toString('ascii');
+            const content = crypto.randomBytes(30000);
             const size = hdmock.getPayloadLength(content);
             const minSplitSize = size / 3;
             const realSplitSize = hdclient.split.align(

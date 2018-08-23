@@ -219,8 +219,7 @@ function getReturnedBody(payload, range, trailingCRCs) {
  */
 function getExpectedBody(payload) {
     if (payload instanceof fs.ReadStream) {
-        return fs.readFileSync(payload.path,
-                               'hex' /* encoding */);
+        return fs.readFileSync(payload.path);
     }
 
     return payload;
@@ -259,7 +258,12 @@ function _mockPutRequest(location, keyContext, startOffset, fragmentId,
     const mockedPathRegex = new RegExp(`${expectedPathPrefix}-.+-${startOffset}-1-.+-${fragmentId}`);
 
     return nock(`http://${location}`, { reqheaders })
-        .put(mockedPathRegex, expectedBody.toString('ascii'))
+        .put(mockedPathRegex, body =>
+            /* Stupid nock forces to matche expected body against
+             * a stringified buffer, of which I can't specify the encoding...
+             */
+            body === expectedBody.toString('hex') ||
+                body === expectedBody.toString())
         .delay(timeoutMs)
         .reply(statusCode, '', replyheaders);
 }
@@ -291,7 +295,6 @@ function mockPUT(clientConfig, keyContext, repliess) {
         clientConfig.codingParts
     );
 
-    assert.strictEqual(clientConfig.codingParts, 0); // erasure coding not supported
     const nParts = dataLocations.length + codingLocations.length;
     assert.ok(repliess.every(c => c.length === nParts));
 
@@ -381,7 +384,6 @@ function _mockGetRequest(location,
 
     const path = `${protocol.specs.STORAGE_BASE_URL}/${location.key}`;
     const returnedBody = getReturnedBody(content, range, trailingCRCs);
-
     return nock(endpoint, { reqheaders })
         .get(path)
         .delay(timeoutMs)
@@ -418,7 +420,7 @@ function mockGET(clientConfig, objectKey, objectSize, repliess) {
         clientConfig.policy,
         objectKey,
         objectSize,
-        'CP',
+        clientConfig.code,
         clientConfig.dataParts,
         clientConfig.codingParts
     );
