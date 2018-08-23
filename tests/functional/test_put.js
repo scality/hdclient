@@ -1,11 +1,13 @@
 'use strict'; // eslint-disable-line strict
+/* eslint-disable max-len */
 /* eslint-disable prefer-arrow-callback */ // Mocha recommends not using => func
 /* eslint-disable func-names */
 
-const mocha = require('mocha');
 const assert = require('assert');
-const nock = require('nock');
+const crypto = require('crypto');
 const fs = require('fs');
+const mocha = require('mocha');
+const nock = require('nock');
 const stream = require('stream');
 
 const hdclient = require('../../index');
@@ -24,13 +26,14 @@ mocha.describe('PUT', function () {
     mocha.describe('Single hyperdrive', function () {
         mocha.it('Success small key', function (done) {
             const hdClient = hdmock.getDefaultClient();
-            const mocks = [
+            const content = 'Je suis une mite en pullover';
+            const mocks = [[
                 {
                     statusCode: 200,
-                    payload: 'Je suis une mite en pullover',
+                    payload: content,
                     contentType: 'data',
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
@@ -38,8 +41,8 @@ mocha.describe('PUT', function () {
             hdmock.mockPUT(hdClient.options, keyContext, mocks);
 
             hdClient.put(
-                hdmock.streamString(mocks[0].payload),
-                hdmock.getPayloadLength(mocks[0].payload),
+                hdmock.streamString(content),
+                hdmock.getPayloadLength(content),
                 keyContext, '1',
                 (err, rawKey) => {
                     /* Check generated key */
@@ -74,13 +77,13 @@ mocha.describe('PUT', function () {
             /* TODO avoid depending on hardcoded path */
             const content = fs.createReadStream(
                 'tests/functional/random_payload');
-            const mocks = [
+            const mocks = [[
                 {
                     statusCode: 200,
                     payload: content,
                     contentType: 'data',
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
@@ -121,13 +124,14 @@ mocha.describe('PUT', function () {
 
         mocha.it('Server error', function (done) {
             const hdClient = hdmock.getDefaultClient();
-            const mocks = [
+            const content = 'Je suis une mite en pullover';
+            const mocks = [[
                 {
                     statusCode: 500,
-                    payload: 'Je suis une mite en pullover',
+                    payload: content,
                     contentType: 'data',
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
@@ -135,8 +139,8 @@ mocha.describe('PUT', function () {
             hdmock.mockPUT(hdClient.options, keyContext, mocks);
 
             hdClient.put(
-                hdmock.streamString(mocks[0].payload),
-                hdmock.getPayloadLength(mocks[0].payload),
+                hdmock.streamString(content),
+                hdmock.getPayloadLength(content),
                 keyContext, '1',
                 (err, rawKey) => {
                     /* Check cleanup mechanism */
@@ -146,27 +150,30 @@ mocha.describe('PUT', function () {
                         [{
                             rawKey,
                             fragments: [[0, 0]],
+                            version: 1,
                         }]);
                     const chkTopic = hdmock.getTopic(hdClient, checkTopic);
                     hdmock.strictCompareTopicContent(
                         chkTopic, undefined);
 
                     /* Check for errors */
-                    assert.strictEqual(err.infos.status, mocks[0].statusCode);
+                    assert.strictEqual(err.infos.status,
+                                       mocks[0][0].statusCode);
                     done();
                 });
         });
 
         mocha.it('Timeout', function (done) {
             const hdClient = hdmock.getDefaultClient();
-            const mocks = [
+            const content = 'Je suis une mite en pullover';
+            const mocks = [[
                 {
                     statusCode: 200,
-                    payload: 'Je suis une mite en pullover',
+                    payload: content,
                     contentType: 'data',
                     timeoutMs: hdClient.options.requestTimeoutMs + 10,
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
@@ -175,8 +182,8 @@ mocha.describe('PUT', function () {
 
             let called = false;
             hdClient.put(
-                hdmock.streamString(mocks[0].payload),
-                hdmock.getPayloadLength(mocks[0].payload),
+                hdmock.streamString(content),
+                hdmock.getPayloadLength(content),
                 keyContext, '1',
                 (err, rawKey) => {
                     assert.ok(!called);
@@ -187,6 +194,7 @@ mocha.describe('PUT', function () {
                     const delLoggedErrors = [{
                         rawKey,
                         fragments: [[0, 0]],
+                        version: 1,
                     }];
                     hdmock.strictCompareTopicContent(
                         delTopic, delLoggedErrors);
@@ -211,7 +219,7 @@ mocha.describe('PUT', function () {
                     nCoding: 0,
                 });
                 const content = 'Je suis une mite en pullover';
-                const mocks = [
+                const mocks = [[
                     {
                         statusCode: 200,
                         payload: content,
@@ -227,7 +235,7 @@ mocha.describe('PUT', function () {
                         payload: content,
                         contentType: 'data',
                     },
-                ];
+                ]];
                 const keyContext = {
                     objectKey: 'bestObjEver',
                 };
@@ -239,6 +247,7 @@ mocha.describe('PUT', function () {
                     hdmock.getPayloadLength(content),
                     keyContext, '1',
                     (err, rawKey) => {
+                        assert.ifError(err);
                         /* Check generated key */
                         assert.strictEqual(typeof rawKey, 'string');
                         const parts = hdclient.keyscheme.deserialize(rawKey);
@@ -268,7 +277,7 @@ mocha.describe('PUT', function () {
                 });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
-                const mocks = [
+                const mocks = [[
                     {
                         statusCode: 200,
                         payload: content,
@@ -284,7 +293,7 @@ mocha.describe('PUT', function () {
                         payload: content,
                         contentType: 'data',
                     },
-                ];
+                ]];
                 const keyContext = {
                     objectKey: 'bestObjEver',
                 };
@@ -312,6 +321,7 @@ mocha.describe('PUT', function () {
                         const delLoggedErrors = [{
                             rawKey,
                             fragments: [[0, 0], [0, 1], [0, 2]],
+                            version: 1,
                         }];
                         hdmock.strictCompareTopicContent(
                             delTopic, delLoggedErrors);
@@ -332,7 +342,7 @@ mocha.describe('PUT', function () {
                 });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
-                const mocks = [
+                const mocks = [[
                     {
                         statusCode: 403,
                         payload: content,
@@ -348,7 +358,7 @@ mocha.describe('PUT', function () {
                         payload: content,
                         contentType: 'data',
                     },
-                ];
+                ]];
                 const keyContext = {
                     objectKey: 'bestObjEver',
                 };
@@ -376,6 +386,7 @@ mocha.describe('PUT', function () {
                         const delLoggedErrors = [{
                             rawKey,
                             fragments: [[0, 0], [0, 1], [0, 2]],
+                            version: 1,
                         }];
                         hdmock.strictCompareTopicContent(
                             delTopic, delLoggedErrors);
@@ -396,7 +407,7 @@ mocha.describe('PUT', function () {
                 });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
-                const mocks = [
+                const mocks = [[
                     {
                         statusCode: 200,
                         payload: content,
@@ -413,7 +424,7 @@ mocha.describe('PUT', function () {
                         payload: content,
                         contentType: 'data',
                     },
-                ];
+                ]];
                 const keyContext = {
                     objectKey: 'bestObjEver',
                 };
@@ -425,6 +436,7 @@ mocha.describe('PUT', function () {
                     hdmock.getPayloadLength(content),
                     keyContext, '1',
                     (err, rawKey) => {
+                        assert.ifError(err);
                         /* Key should still be valid */
                         assert.strictEqual(typeof rawKey, 'string');
                         const parts = hdclient.keyscheme.deserialize(rawKey);
@@ -440,6 +452,7 @@ mocha.describe('PUT', function () {
                         const chkLoggedErrors = [{
                             rawKey,
                             fragments: [[0, 1]],
+                            version: 1,
                         }];
                         hdmock.strictCompareTopicContent(
                             chkTopic, chkLoggedErrors);
@@ -462,7 +475,7 @@ mocha.describe('PUT', function () {
                 });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
-                const mocks = [
+                const mocks = [[
                     {
                         statusCode: 200,
                         payload: content,
@@ -485,7 +498,7 @@ mocha.describe('PUT', function () {
                         contentType: 'data',
                         timeoutMs: hdClient.options.requestTimeoutMs + 10,
                     },
-                ];
+                ]];
                 const keyContext = {
                     objectKey: 'bestObjEver',
                 };
@@ -513,6 +526,7 @@ mocha.describe('PUT', function () {
                         const delLoggedErrors = [{
                             rawKey,
                             fragments: [[0, 0], [0, 1], [0, 2], [0, 3]],
+                            version: 1,
                         }];
                         hdmock.strictCompareTopicContent(
                             delTopic, delLoggedErrors);
@@ -536,7 +550,7 @@ mocha.describe('PUT', function () {
             });
             const content = fs.createReadStream(
                 'tests/functional/random_payload');
-            const mocks = [
+            const mocks = [[
                 {
                     statusCode: 200,
                     payload: content,
@@ -553,7 +567,7 @@ mocha.describe('PUT', function () {
                     payload: content,
                     contentType: 'data',
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
@@ -610,13 +624,13 @@ mocha.describe('PUT', function () {
                 },
             });
 
-            const mocks = [
+            const mocks = [[
                 {
                     statusCode: 200,
                     payload: content,
                     contentType: 'data',
                 },
-            ];
+            ]];
             const keyContext = {
                 objectKey: 'bestObjEver',
             };
@@ -640,6 +654,7 @@ mocha.describe('PUT', function () {
                         [{
                             rawKey,
                             fragments: [[0, 0]],
+                            version: 1,
                         }]);
                     const chkTopic = hdmock.getTopic(hdClient, checkTopic);
                     hdmock.strictCompareTopicContent(
@@ -648,6 +663,192 @@ mocha.describe('PUT', function () {
                     /* Check for errors */
                     assert.ok(err);
                     assert.strictEqual(err.message, 'My bad...');
+                    done();
+                });
+        });
+    });
+
+    mocha.describe('Split', function () {
+        mocha.it('Success', function (done) {
+            const content = crypto.randomBytes(30000).toString('ascii');
+            const size = hdmock.getPayloadLength(content);
+            const minSplitSize = size / 3;
+            const realSplitSize = hdclient.split.align(
+                minSplitSize, hdclient.split.DATA_ALIGN);
+            assert.ok(size > realSplitSize);
+            const hdClient = hdmock.getDefaultClient({
+                minSplitSize,
+                nLocations: 2,
+                code: 'CP',
+                nData: 2,
+                nCoding: 0,
+            });
+            const mocks = [
+                [{
+                    statusCode: 200,
+                    payload: content.slice(0, realSplitSize),
+                    contentType: 'data',
+                }, {
+                    statusCode: 200,
+                    payload: content.slice(0, realSplitSize),
+                    contentType: 'data',
+                }],
+                [{
+                    statusCode: 200,
+                    payload: content.slice(realSplitSize, 2 * realSplitSize),
+                    contentType: 'data',
+                }, {
+                    statusCode: 200,
+                    payload: content.slice(realSplitSize, 2 * realSplitSize),
+                    contentType: 'data',
+                }],
+                [{
+                    statusCode: 200,
+                    payload: content.slice(2 * realSplitSize),
+                    contentType: 'data',
+                }, {
+                    statusCode: 200,
+                    payload: content.slice(2 * realSplitSize),
+                    contentType: 'data',
+                }],
+            ];
+            const keyContext = {
+                objectKey: 'bestObjEver',
+            };
+
+            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+
+            hdClient.put(
+                hdmock.streamString(content),
+                size,
+                keyContext, '1',
+                (err, rawKey) => {
+                    assert.ifError(err);
+                    /* Check generated key */
+                    assert.strictEqual(typeof rawKey, 'string');
+                    const parts = hdclient.keyscheme.deserialize(rawKey);
+
+                    /* Verify split part */
+                    assert.strictEqual(parts.nDataParts, 2);
+                    assert.strictEqual(parts.nCodingParts, 0);
+                    assert.strictEqual(parts.nChunks, 3);
+                    assert.strictEqual(parts.size, size);
+                    const expectedSplitSize = hdclient.split.align(
+                        minSplitSize, hdclient.split.DATA_ALIGN);
+                    assert.strictEqual(parts.splitSize, expectedSplitSize);
+
+                    /* Verify layout: fragment (i,j) sould be on hyperdrive i for all j */
+                    for (let i = 0; i < 2; ++i) {
+                        const [endpoint, port] =
+                                  hdClient.options.policy.locations[i].split(':');
+                        for (let j = 0; j < 3; ++j) {
+                            const fragment = parts.chunks[j].data[i];
+                            assert.strictEqual(fragment.hostname, endpoint);
+                            assert.strictEqual(fragment.port, Number(port));
+                            assert.ok(fragment.key, keyContext.objectKey);
+                        }
+                    }
+
+                    /* Check cleanup mechanism */
+                    const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                    hdmock.strictCompareTopicContent(
+                        delTopic, undefined);
+                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    hdmock.strictCompareTopicContent(
+                        chkTopic, undefined);
+
+                    /* Check for errors */
+                    done(err);
+                });
+        });
+
+        mocha.it('Sprinkled errors', function (done) {
+            const content = crypto.randomBytes(30000).toString('ascii');
+            const size = hdmock.getPayloadLength(content);
+            const minSplitSize = size / 3;
+            const realSplitSize = hdclient.split.align(
+                minSplitSize, hdclient.split.DATA_ALIGN);
+            assert.ok(size > realSplitSize);
+            const hdClient = hdmock.getDefaultClient({
+                minSplitSize,
+                nLocations: 3,
+                code: 'CP',
+                nData: 3,
+                nCoding: 0,
+            });
+            const mocks = [
+                [{
+                    statusCode: 200,
+                    payload: content.slice(0, realSplitSize),
+                    contentType: 'data',
+                    timeoutMs: hdClient.options.requestTimeoutMs + 10,
+                }, {
+                    statusCode: 200,
+                    payload: content.slice(0, realSplitSize),
+                    contentType: 'data',
+                }, {
+                    statusCode: 200,
+                    payload: content.slice(0, realSplitSize),
+                    contentType: 'data',
+                }],
+                [{
+                    statusCode: 200,
+                    payload: content.slice(realSplitSize, 2 * realSplitSize),
+                    contentType: 'data',
+                }, {
+                    statusCode: 200,
+                    payload: content.slice(realSplitSize, 2 * realSplitSize),
+                    contentType: 'data',
+                }, {
+                    statusCode: 500,
+                    payload: content.slice(0, realSplitSize),
+                    contentType: 'data',
+                }],
+                [{
+                    statusCode: 403,
+                    payload: content.slice(2 * realSplitSize),
+                    contentType: 'data',
+                }, {
+                    statusCode: 200,
+                    payload: content.slice(2 * realSplitSize),
+                    contentType: 'data',
+                }, {
+                    statusCode: 200,
+                    payload: content.slice(0, realSplitSize),
+                    contentType: 'data',
+                }],
+            ];
+            const keyContext = {
+                objectKey: 'bestObjEver',
+            };
+
+            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+
+            hdClient.put(
+                hdmock.streamString(content),
+                size,
+                keyContext, '1',
+                (err, rawKey) => {
+                    assert.ok(err);
+                    assert.strictEqual(err.infos.status, 500);
+
+                    /* Check cleanup mechanism - everything to be deleted (safe side) */
+                    const delTopic = hdmock.getTopic(hdClient, deleteTopic);
+                    hdmock.strictCompareTopicContent(
+                        delTopic,
+                        [{
+                            rawKey,
+                            fragments: [[0, 0], [0, 1], [0, 2],
+                                        [1, 0], [1, 1], [1, 2],
+                                        [2, 0], [2, 1], [2, 2]],
+                            version: 1,
+
+                        }]);
+                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    hdmock.strictCompareTopicContent(
+                        chkTopic, undefined);
+
+                    /* Check for errors */
                     done();
                 });
         });

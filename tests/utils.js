@@ -11,11 +11,11 @@ const fs = require('fs');
 const stream = require('stream');
 
 const { hdclient, protocol, keyscheme,
-        placement, utils: libUtils } = require('../index');
+        utils: libUtils } = require('../index');
 
 
 /* Override placement policy for determinism in tests */
-placement.select = function deterministicPlacement(policy, nData, nCoding) {
+function deterministicPlacement(policy, nData, nCoding) {
     const len = policy.locations.length;
     let pos = 0;
 
@@ -32,7 +32,9 @@ placement.select = function deterministicPlacement(policy, nData, nCoding) {
     }
 
     return { dataLocations, codingLocations };
-};
+}
+
+keyscheme.updateLocationSelector(deterministicPlacement);
 
 
 /**
@@ -87,13 +89,15 @@ function strictCompareTopicContent(realContent, expectedContent) {
 function getDefaultClient({ nLocations = 1,
                             code = 'CP',
                             nData = 1,
-                            nCoding = 0 } = {}) {
+                            nCoding = 0,
+                            minSplitSize = 0 } = {}) {
     const conf = {
         code,
         dataParts: nData,
         codingParts: nCoding,
         requestTimeoutMs: 10,
         policy: {
+            minSplitSize,
             locations: libUtils.range(nLocations).map(
                 idx => `hyperdrive-store-${idx}:8888`),
         },
@@ -143,6 +147,7 @@ function streamString(buffer) {
     streamed.push(null);
     return streamed;
 }
+
 
 /**
  * Retrieve payload length
@@ -226,16 +231,16 @@ function getExpectedBody(payload) {
  *
  * @param {String} location (ip:port) to contact
  * @param {Object} keyContext same as given to actual PUT
- * @param {String} type - 'data' or 'coding'
- * @param {Number} offset - Position in the data or coding parts
+ * @param {String} startOffset Total offset in object
+ * @param {Number} fragmentId Index of fragment
  * @param {Number} statusCode of the reply
  * @param {fs.ReadStream|String} payload to return
- * @param {String} contentType (only 'data' supported as of now)
+ * @param {String} contentTybpe (only 'data' supported as of now)
  * @param {Number} timeoutMs Delay reply by X ms
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockPutRequest(location, keyContext, type, offset,
+function _mockPutRequest(location, keyContext, startOffset, fragmentId,
                          { statusCode, payload, contentType, timeoutMs = 0 }) {
     const len = getPayloadLength(payload);
     const expectedBody = getExpectedBody(payload);
@@ -250,19 +255,11 @@ function _mockPutRequest(location, keyContext, type, offset,
         `${protocol.specs.HYPERDRIVE_APPLICATION}; ${contentType}=${len}; $crc.${contentType}=0xdeadbeef`,
     };
 
-    const keyPrefix = keyContext.objectKey.slice(0, 8);
-    const expectedPathPrefix =
-              `${protocol.specs.STORAGE_BASE_URL}/${keyPrefix}`;
+    const expectedPathPrefix = `${protocol.specs.STORAGE_BASE_URL}/${keyContext.objectKey}`;
+    const mockedPathRegex = new RegExp(`${expectedPathPrefix}-.+-${startOffset}-1-.+-${fragmentId}`);
 
-    // TODO find a better filtering solution...
     return nock(`http://${location}`, { reqheaders })
-        .filteringPath(path => {
-            if (path.startsWith(expectedPathPrefix)) {
-                return `${protocol.specs.STORAGE_BASE_URL}/${type}-${offset}`;
-            }
-            return path;
-        })
-        .put(`${protocol.specs.STORAGE_BASE_URL}/${type}-${offset}`, expectedBody)
+        .put(mockedPathRegex, expectedBody.toString('ascii'))
         .delay(timeoutMs)
         .reply(statusCode, '', replyheaders);
 }
@@ -277,35 +274,45 @@ function _mockPutRequest(location, keyContext, type, offset,
  *
  * @param {Object} clientConfig Hyperdrive client configuration
  * @param {String} keyContext same as given to actual PUT
- * @param {[Reply]} replies description
- * @comment each entry of replies must be an Array with:
+ * @param {[[Reply]]} repliess description
+ * @comment each entry of replies must be an Object with:
  *          - statusCode => {Number} HTTP status code to return
  *          - payload {fs.ReadStream | String } body to match (only match size for now)
  *          - contentType ('data', 'usermd', etc) - only data for now
  *          [- timeoutMs] => {Number} timeout ms
- * @return {Object} with dataMocks and codingMocks keys
+ * @comment replies.length must be equal to nChunks * nPparts
+ * @return {Object} with rawKey and mocks
+ * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockPUT(clientConfig, keyContext, replies) {
-    const { dataLocations, codingLocations } = placement.select(
+function mockPUT(clientConfig, keyContext, repliess) {
+    const { dataLocations, codingLocations } = deterministicPlacement(
         clientConfig.policy,
         clientConfig.dataParts,
         clientConfig.codingParts
     );
 
-    assert.strictEqual(replies.length,
-                       dataLocations.length + codingLocations.length);
+    assert.strictEqual(clientConfig.codingParts, 0); // erasure coding not supported
+    const nParts = dataLocations.length + codingLocations.length;
+    assert.ok(repliess.every(c => c.length === nParts));
 
-    const dataMocks = dataLocations.map(
-        (loc, idx) => _mockPutRequest(loc, keyContext, 'data', idx,
-                                      replies[idx])
-    );
+    let startOffset = 0;
+    const mocks = repliess.map(replies => {
+        const dataMocks = dataLocations.map(
+            (loc, idx) => _mockPutRequest(
+                loc, keyContext, startOffset, idx,
+                replies[idx]));
 
-    const codingMocks = codingLocations.map(
-        (loc, idx) => _mockPutRequest(loc, keyContext, 'coding', idx,
-                                      replies[dataLocations.length + idx])
-    );
+        const codingMocks = codingLocations.map(
+            (loc, idx) => _mockPutRequest(
+                loc, keyContext, startOffset, dataLocations.length + idx,
+                replies[dataLocations.length + idx]));
 
-    return { dataMocks, codingMocks };
+        startOffset += getPayloadLength(replies[0].payload);
+
+        return { dataMocks, codingMocks };
+    });
+
+    return { mocks };
 }
 
 /**
@@ -330,6 +337,9 @@ function _mockGetRequest(location,
                            storedCRC = 0xdeadbeef,
                            actualCRC = 0xdeadbeef,
                          }) {
+    if (statusCode === undefined) {
+        return null;
+    }
     const storedCRCstr = storedCRC.toString(16);
     /* Hyperdrive returns CRC as Little-Endian byte array... */
     const trailingCRCs = Buffer.alloc(12);
@@ -351,6 +361,7 @@ function _mockGetRequest(location,
         ['Accept']: protocol.helpers.makeAccept(
             [acceptType, range], ['crc']),
     };
+
     protocol.specs.GET_QUERY_MANDATORY_HEADERS.forEach(
         header => assert.ok(reqheaders[header] !== undefined)
     );
@@ -387,7 +398,7 @@ function _mockGetRequest(location,
  * @param {Object} clientConfig Hyperdrive client configuration
  * @param {String} objectKey The object identifier
  * @param {Number} objectSize Total object size
- * @param {[Object]} replies description
+ * @param {[[Reply]]} repliess description
  * @comment each entry of replies must be an Object with:
  *          - statusCode => {Number} HTTP status code to return
  *          - payload => {String|fs.ReadStream} payload (file system stream or string)
@@ -396,10 +407,11 @@ function _mockGetRequest(location,
  *          [- timeoutMs] => {Number} timeout ms
  *          [- storedCRC => {Number} CRC retrieved from the index]
  *          [- actualCRC => {Number} CRC computed by 'reading' the data
- * @comment replies.length must be equal to number of parts
- * @return {Object} with rawKey, dataMocks and codingMocks keys
+ * @comment replies.length must be equal to nChunks * nPparts
+ * @return {Object} with rawKey and mocks
+ * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockGET(clientConfig, objectKey, objectSize, replies) {
+function mockGET(clientConfig, objectKey, objectSize, repliess) {
     const nParts = clientConfig.dataParts +
           clientConfig.codingParts;
     const parts = keyscheme.keygen(
@@ -411,21 +423,36 @@ function mockGET(clientConfig, objectKey, objectSize, replies) {
         clientConfig.codingParts
     );
 
-    assert.strictEqual(parts.nChunks, 1); // split not supported
-    assert.strictEqual(clientConfig.codingParts, 0); // erasure coding not supported
-    assert.strictEqual(nParts, replies.length);
+    assert.strictEqual(parts.nChunks, repliess.length);
+    assert.ok(repliess.every(c => c.length === nParts));
 
-    // Setup data mocks
-    const dataMocks = parts.chunks[0].data.map(
-        (part, idx) => _mockGetRequest(part, replies[idx])
-    );
+    const mocks = parts.chunks.map((chunk, chunkId) => {
+        // Setup data mocks
+        const dataMocks = chunk.data.map(
+            (part, idx) => {
+                const mockedReply = repliess[chunkId][idx];
+                const { use, chunkRange } = libUtils.getChunkRange(parts, chunkId, mockedReply.range);
+                assert.ok(use);
+                mockedReply.range = chunkRange;
+                return _mockGetRequest(part, mockedReply);
+            }
+        );
 
-    // Setup coding mocks
-    const codingMocks = parts.chunks[0].coding.map(
-        (part, idx) => _mockGetRequest(part, replies[idx])
-    );
+        // Setup coding mocks
+        const codingMocks = chunk.coding.map(
+            (part, idx) => {
+                const mockedReply = repliess[chunkId][clientConfig.dataParts + idx];
+                const { use, range } = libUtils.getChunkRange(parts, chunkId, mockedReply.range);
+                assert.ok(use);
+                mockedReply.range = range;
+                return _mockGetRequest(part, mockedReply);
+            }
+        );
 
-    return { rawKey: keyscheme.serialize(parts), dataMocks, codingMocks };
+        return { dataMocks, codingMocks };
+    });
+
+    return { rawKey: keyscheme.serialize(parts), mocks };
 }
 
 /**
@@ -475,39 +502,48 @@ function _mockDeleteRequest(location, { statusCode, timeoutMs = 0 }) {
  *
  * @param {Object} clientConfig Hyperdrive client configuration
  * @param {String} objectKey The object identifier
- * @param {[Reply]} replies description
+ * @param {Number} objectSize Total object size
+ * @param {[[Reply]]} repliess description
+ * @comment replies are organized:  [replies] per chunk
  * @comment each entry of replies must be an Object with:
  *          - statusCode => {Number} HTTP status code to return
  *          [- timeoutMS] => {Number} timeout ms
- * @comment replies.length must be equal to number of parts
- * @return {Object} with rawKey, dataMocks and codingMocks keys
+ * @comment replies.length must be equal to nChunks * nPparts
+ * @return {Object} with rawKey and mocks
+ * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockDELETE(clientConfig, objectKey, replies) {
+function mockDELETE(clientConfig, objectKey, objectSize, repliess) {
     const nParts = clientConfig.dataParts +
           clientConfig.codingParts;
     const parts = keyscheme.keygen(
         clientConfig.policy,
         objectKey,
-        1024,
+        objectSize,
         clientConfig.code,
         clientConfig.dataParts,
         clientConfig.codingParts
     );
 
-    assert.strictEqual(parts.nChunks, 1); // split not supported
-    assert.strictEqual(nParts, replies.length);
+    assert.strictEqual(parts.nChunks, repliess.length);
+    assert.ok(repliess.every(c => c.length === nParts));
 
-    // Setup data mocks
-    const dataMocks = parts.chunks[0].data.map(
-        (part, idx) => _mockDeleteRequest(part, replies[idx])
-    );
+    const mocks = parts.chunks.map((chunk, chunkId) => {
+        // Setup data mocks
+        const dataMocks = chunk.data.map(
+            (part, idx) => _mockDeleteRequest(
+                part, repliess[chunkId][idx])
+        );
 
-    // Setup coding mocks
-    const codingMocks = parts.chunks[0].coding.map(
-        (part, idx) => _mockDeleteRequest(part, replies[idx + clientConfig.dataParts])
-    );
+        // Setup coding mocks
+        const codingMocks = chunk.coding.map(
+            (part, idx) => _mockDeleteRequest(
+                part, repliess[chunkId][idx + clientConfig.dataParts])
+        );
 
-    return { rawKey: keyscheme.serialize(parts), dataMocks, codingMocks };
+        return { dataMocks, codingMocks };
+    });
+
+    return { rawKey: keyscheme.serialize(parts), mocks };
 }
 
 module.exports = {
