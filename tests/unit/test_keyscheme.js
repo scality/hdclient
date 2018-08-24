@@ -11,16 +11,16 @@ const { keyscheme, placement, utils: libUtils, split } = require('../../index');
 function getPlacementPolicy(minSplitSize = 0) {
     return {
         minSplitSize,
-        locations: libUtils.range(10).map(
-            idx => `hyperdrive${idx}):${idx}${idx}${idx}`),
+        locations: libUtils.range(10).map(idx => `fakeUUID-${idx}`),
     };
 }
 
 mocha.describe('Keyscheme', function () {
     mocha.describe('Keygen', function () {
         mocha.it('Basic', function (done) {
+            const policy = getPlacementPolicy();
             const fragments = keyscheme.keygen(
-                getPlacementPolicy(), 'testObj', split.DATA_ALIGN, 'RS', 2, 1, 314159
+                policy, 'testObj', split.DATA_ALIGN, 'RS', 2, 1, 314159
             );
 
             /* Verify globals */
@@ -39,16 +39,14 @@ mocha.describe('Keyscheme', function () {
             assert.strictEqual(fragments.chunks[0].data.length, 2);
             assert.strictEqual(fragments.chunks[0].coding.length, 1);
             fragments.chunks[0].data.forEach((f, i) => {
-                assert.strictEqual(typeof f.port, 'number');
-                assert.strictEqual(typeof f.hostname, 'string');
+                assert.strictEqual(typeof f.uuid, 'string');
                 assert.strictEqual(f.fragmentId, i);
                 assert.strictEqual(
                     f.key, `testObj-4cb2f-0-1-RS,2,1,4096-${i}`);
             });
 
             fragments.chunks[0].coding.forEach((f, i) => {
-                assert.strictEqual(typeof f.port, 'number');
-                assert.strictEqual(typeof f.hostname, 'string');
+                assert.strictEqual(typeof f.uuid, 'string');
                 assert.strictEqual(f.fragmentId, 2 + i);
                 assert.strictEqual(
                     f.key, `testObj-4cb2f-0-1-RS,2,1,4096-${2 + i}`);
@@ -105,8 +103,10 @@ mocha.describe('Keyscheme', function () {
         });
 
         mocha.it('Split', function (done) {
+            // final splitSize should be aligned
+            const policy = getPlacementPolicy(split.DATA_ALIGN * 4 - 1);
             const fragments = keyscheme.keygen(
-                getPlacementPolicy(split.DATA_ALIGN * 4 - 1), // final splitSize should be aligned
+                policy,
                 'testObj',
                 split.DATA_ALIGN * 8 + 1, // Tough luck, worst possible overhead
                 'CP', 3, 0, 314159
@@ -130,8 +130,7 @@ mocha.describe('Keyscheme', function () {
                 assert.strictEqual(chunk.data.length, 3);
                 assert.strictEqual(chunk.coding.length, 0);
                 chunk.data.forEach((f, i) => {
-                    assert.strictEqual(typeof f.port, 'number');
-                    assert.strictEqual(typeof f.hostname, 'string');
+                    assert.strictEqual(typeof f.uuid, 'string');
                     assert.strictEqual(f.fragmentId, i);
                     assert.strictEqual(
                         f.key, `testObj-4cb2f-${startOffset}-1-CP,3-${i}`);
@@ -151,9 +150,9 @@ mocha.describe('Keyscheme', function () {
                             continue;
                         }
                         mocha.it(`Invariant ${code}${nData}${nCoding}`, function (done) {
-                            getPlacementPolicy(splitSize);
+                            const policy = getPlacementPolicy(splitSize);
                             const fragments = keyscheme.keygen(
-                                getPlacementPolicy(splitSize), 'fake', 10000, code, nData, nCoding);
+                                policy, 'fake', 10000, code, nData, nCoding);
                             const serialized = keyscheme.serialize(fragments);
                             const parsed = keyscheme.deserialize(serialized);
 
