@@ -1,11 +1,19 @@
 {
     "policy": {
-        "locations": ["localhost:4244", "localhost:4243", "localhost:4242"]
+        "minSplitSize": 512000,
+        "locations": ["hd1", "hd2", "hd3", "hd4"]
     },
+    "uuidmapping": {
+        "hd1": "127.0.0.1:4244",
+        "hd2": "127.0.0.1:4245",
+        "hd3": "127.0.0.1:4246",
+        "hd4": "127.0.0.1:4247"
+    },
+    "code": "RS",
     "dataParts": 2,
-    "codingParts": 0,
+    "codingParts": 1,
     "requestTimeoutMs": 1000,
     "errorAgent": {
-        "kafkaBrokers": 'not used by server"
+        "kafkaBrokers": "not used by server"
     }
 }
