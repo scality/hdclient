@@ -39,11 +39,10 @@ function getFsErrorAgent() {
             delete: fs.createWriteStream('delete.topic.log'),
             repair: fs.createWriteStream('repair.topic.log'),
         },
-        send(payloads, cb) {
-            payloads.forEach(payload => {
-                this.topics[payload.topic].write(
-                    payload.messages.join('\n')); // 1 JSON per line
-                cb(null);
+        produce(topic, partition, message) {
+            return new Promise(resolve => {
+                this.topics[topic].write(message);
+                resolve();
             });
         },
         close() {
@@ -83,12 +82,24 @@ function serverCallback(client, objectMap, request, response) {
         case 'GET':
             {
                 const rawKey = objectMap.get(request.url);
-                if (rawKey === null) {
+                if (!rawKey) {
                     response.writeHead(404);
                     response.end();
                 } else {
+                    const fragments = hdclient.keyscheme.deserialize(rawKey);
+                    const requestedRange = request.headers.range;
+                    let returnSize = fragments.size;
+                    let range = null;
+                    if (requestedRange) {
+                        range = requestedRange.split('-').map(n => ~~n);
+                        if (range.length === 1) {
+                            returnSize = range[0];
+                        } else {
+                            returnSize = range[1] - range[0];
+                        }
+                    }
                     client.get(
-                        rawKey, null /* range */, '1',
+                        rawKey, range, '1',
                         (err, reply) => {
                             if (err) {
                                 response.writeHead(
@@ -97,11 +108,8 @@ function serverCallback(client, objectMap, request, response) {
                                 return;
                             }
 
-                            const ctypes = hdclient.protocol.helpers.
-                                      parseReturnedContentType(
-                                          reply.headers['content-type']);
-                            const len = ctypes.get('data');
-                            response.writeHead(200, { 'Content-Length': len });
+                            response.writeHead(
+                                200, { 'Content-Length': returnSize });
                             /* Forward output and chain errors */
                             reply.on('error',
                                      err => response.emit('error', err));
@@ -120,9 +128,10 @@ function serverCallback(client, objectMap, request, response) {
         case 'PUT':
             {
                 const size = request.headers['content-length'];
-                const [, bucketName, objectKey] = request.url.split('/');
+                const [, bucketName, objectKey, version] =
+                          request.url.split('/');
                 client.put(
-                    request, size, { bucketName, objectKey }, '1',
+                    request, size, { bucketName, objectKey, version }, '1',
                     (err, genkey) => {
                         if (err) {
                             response.writeHead(

@@ -112,7 +112,8 @@ curl -v http://localhost:8888/mybucket/testobj
 * Connection #0 to host localhost left intact
 <payload...>
 
-curl -XDELETE -v http://localhost:8888/mybucket/testobj
+# <url>/<bucket>/<object>/<version>
+curl -XDELETE -v http://localhost:8888/mybucket/testobj/64
 *   Trying 127.0.0.1...
 * Connected to localhost (127.0.0.1) port 8888 (#0)
 > DELETE /mybucket/testobj HTTP/1.1
