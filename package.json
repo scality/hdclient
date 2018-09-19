@@ -1,7 +1,7 @@
 {
   "name": "hdclient",
   "engines": {
-    "node": ">=6.9.5"
+    "node": ">=8"
   },
   "version": "0.1.0",
   "description": "Hyperdrive appliance client library",
@@ -9,7 +9,7 @@
   "scripts": {
     "lint": "eslint $(git ls-files '*.js')",
     "test": "mocha --use_strict --check-leaks --no-exit ",
-    "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text mocha --use_strict --check-leaks --no-exit ",
+    "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text mocha --use_strict --check-leaks ",
     "gengraphs": "./graphs/generate_graphs.sh",
     "jsdoc": "jsdoc lib/ tests/ -d docs/jsdoc"
   },
