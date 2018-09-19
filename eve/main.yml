@@ -30,6 +30,9 @@ stages:
           command: cd node_modules/node-rdkafka/ && ./configure && node-gyp rebuild
           haltOnFailure: True
       - ShellCommand:
+          name: audit installed packages
+          command: npm audit
+      - ShellCommand:
           name: ESLint
           command: npm run lint
       - ShellCommand:
