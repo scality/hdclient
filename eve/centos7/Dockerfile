@@ -14,6 +14,7 @@ RUN yum clean all && yum install -y \
     gcc-c++ \
     git \
     openssh-client \
+    openssl-devel \
     python \
     python-devel \
     python-pip \
@@ -24,7 +25,7 @@ RUN yum clean all && yum install -y \
 
 # Install nodejs v8, node-gyp and npm
 RUN curl -sL https://rpm.nodesource.com/setup_8.x | bash -
-RUN yum install -y nodejs node-gyp
+RUN yum install -y nodejs
 
 RUN pip install --upgrade pip
 RUN git config --global credential.helper store
