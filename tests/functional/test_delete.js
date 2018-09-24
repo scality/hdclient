@@ -1,4 +1,5 @@
 'use strict'; // eslint-disable-line strict
+/* eslint-disable max-len */
 /* eslint-disable prefer-arrow-callback */ // Mocha recommends not using => func
 /* eslint-disable func-names */
 
@@ -8,8 +9,6 @@ const nock = require('nock');
 
 const hdclient = require('../../index');
 const hdmock = require('../utils');
-
-const BadKeyError = hdclient.keyscheme.KeySchemeDeserializeError;
 
 mocha.describe('DELETE', function () {
     // Clean all HTTP mocks before starting the test
@@ -65,7 +64,7 @@ mocha.describe('DELETE', function () {
             }];
 
             hdClient.delete(rawKey, '1', err => {
-                assert.strictEqual(err.infos.status, mocks[0][0].statusCode);
+                assert.strictEqual(err.code, mocks[0][0].statusCode);
                 assert.strictEqual(err.infos.method, 'DELETE');
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
                 hdmock.strictCompareTopicContent(
@@ -77,9 +76,11 @@ mocha.describe('DELETE', function () {
         mocha.it('Bad key', function (done) {
             const hdClient = hdmock.getDefaultClient();
             hdClient.delete('---', '1', err => {
-                if (!(err instanceof BadKeyError)) {
+                if (!(err instanceof Error)) {
                     throw err;
                 }
+                assert.strictEqual(err.message, 'ParseError');
+                assert.strictEqual(err.code, 400);
                 done();
             });
         });
@@ -102,8 +103,7 @@ mocha.describe('DELETE', function () {
 
             hdClient.delete(rawKey, '1', err => {
                 assert.ok(err);
-                assert.strictEqual(err.infos.status, 500);
-                assert.strictEqual(err.infos.method, 'DELETE');
+                assert.strictEqual(err.code, 504);
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
                 hdmock.strictCompareTopicContent(
                     topic, expectedLoggedErrors);
@@ -208,7 +208,7 @@ mocha.describe('DELETE', function () {
 
                 hdClient.delete(rawKey, '1', err => {
                     assert.ok(err);
-                    assert.strictEqual(err.infos.status, 503);
+                    assert.strictEqual(err.code, 503);
                     assert.strictEqual(err.infos.method, 'DELETE');
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
@@ -313,7 +313,7 @@ mocha.describe('DELETE', function () {
 
                 hdClient.delete(rawKey, '1', err => {
                     assert.ok(err);
-                    assert.strictEqual(err.infos.status, 500);
+                    assert.strictEqual(err.code, 500);
                     assert.strictEqual(err.infos.method, 'DELETE');
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
@@ -342,12 +342,15 @@ mocha.describe('DELETE', function () {
             ]];
             const { rawKey } = hdmock.mockDELETE(
                 hdClient.options, 'bestObjEver', 1024, mocks);
-            hdClient.errorAgent.nextError = new Error('Failed to queue');
+            hdClient.errorAgent.nextError = new Error('Broken by Design');
 
             hdClient.delete(rawKey, '1', err => {
                 assert.ok(err);
-                assert.strictEqual(err.infos.status, 500);
-                assert.strictEqual(err.message, 'Failed to queue');
+                assert.strictEqual(err.message, 'InternalError');
+                assert.strictEqual(err.code, 500);
+                assert.strictEqual(
+                    err.description,
+                    'Failed to persist orphaned fragments: Broken by Design');
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
                 hdmock.strictCompareTopicContent(
                     topic, undefined);
