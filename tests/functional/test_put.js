@@ -156,7 +156,7 @@ mocha.describe('PUT', function () {
                         chkTopic, undefined);
 
                     /* Check for errors */
-                    assert.strictEqual(err.infos.status,
+                    assert.strictEqual(err.code,
                                        mocks[0][0].statusCode);
                     done();
                 });
@@ -202,7 +202,8 @@ mocha.describe('PUT', function () {
                         chkTopic, undefined);
 
                     /* Check for errors */
-                    assert.strictEqual(err.infos.status, 500);
+                    assert.strictEqual(err.code, 504);
+                    assert.strictEqual(err.message, 'TimeoutError');
                     done();
                 });
         });
@@ -306,7 +307,7 @@ mocha.describe('PUT', function () {
                     (err, rawKey) => {
                         /* Check for errors */
                         assert.ok(err);
-                        assert.strictEqual(err.infos.status, 500);
+                        assert.strictEqual(err.code, 500);
 
                         /* Key should still be valid */
                         assert.strictEqual(typeof rawKey, 'string');
@@ -371,7 +372,7 @@ mocha.describe('PUT', function () {
                     (err, rawKey) => {
                         /* Check for errors */
                         assert.ok(err);
-                        assert.strictEqual(err.infos.status, 500);
+                        assert.strictEqual(err.code, 500);
 
                         /* Key should still be valid */
                         assert.strictEqual(typeof rawKey, 'string');
@@ -511,7 +512,8 @@ mocha.describe('PUT', function () {
                     (err, rawKey) => {
                         /* Check for errors */
                         assert.ok(err);
-                        assert.strictEqual(err.infos.status, 500);
+                        assert.strictEqual(err.code, 504);
+                        assert.strictEqual(err.message, 'TimeoutError');
 
                         /* Key should still be valid */
                         assert.strictEqual(typeof rawKey, 'string');
@@ -738,7 +740,7 @@ mocha.describe('PUT', function () {
             };
 
             hdmock.mockPUT(hdClient.options, keyContext, mocks);
-            hdClient.errorAgent.nextError = new Error('Failed to queue');
+            hdClient.errorAgent.nextError = new Error('Broken by Design');
 
             hdClient.put(
                 content,
@@ -747,9 +749,12 @@ mocha.describe('PUT', function () {
                 (err, rawKey) => {
                     /* Check for errors */
                     assert.ok(err);
-                    assert.strictEqual(err.infos.status, 500);
-                    assert.strictEqual(err.message, 'Failed to queue');
-
+                    assert.strictEqual(err.code, 500);
+                    assert.strictEqual(err.message, 'InternalError');
+                    assert.strictEqual(
+                        err.description,
+                        'Failed to persist bad fragments: Broken by Design'
+                    );
                     /* Key should still be valid */
                     assert.strictEqual(typeof rawKey, 'string');
                     const parts = hdclient.keyscheme.deserialize(rawKey);
@@ -827,7 +832,9 @@ mocha.describe('PUT', function () {
 
                     /* Check for errors */
                     assert.ok(err);
-                    assert.strictEqual(err.message, 'My bad...');
+                    assert.strictEqual(err.code, 500);
+                    assert.strictEqual(err.message, 'PUTError');
+                    assert.strictEqual(err.description, 'My bad...');
                     done();
                 });
         });
@@ -993,7 +1000,7 @@ mocha.describe('PUT', function () {
                 keyContext, '1',
                 (err, rawKey) => {
                     assert.ok(err);
-                    assert.strictEqual(err.infos.status, 500);
+                    assert.strictEqual(err.code, 500);
 
                     /* Check cleanup mechanism - everything to be deleted (safe side) */
                     const delTopic = hdmock.getTopic(hdClient, deleteTopic);
