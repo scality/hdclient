@@ -14,8 +14,6 @@ const ecstream = require('ecstream');
 const hdclient = require('../../index');
 const hdmock = require('../utils');
 
-const BadKeyError = hdclient.keyscheme.KeySchemeDeserializeError;
-
 mocha.describe('Hyperdrive Client GET', function () {
     // Clean all HTTP mocks before starting the test
     mocha.beforeEach(nock.cleanAll);
@@ -277,7 +275,7 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             hdClient.get(rawKey, null /* range */, '1', err => {
                 assert.ok(err);
-                assert.strictEqual(err.infos.status, 404);
+                assert.strictEqual(err.code, 404);
 
                 const topic = hdmock.getTopic(hdClient, repairTopic);
                 hdmock.strictCompareTopicContent(
@@ -305,7 +303,7 @@ mocha.describe('Hyperdrive Client GET', function () {
 
             hdClient.get(rawKey, null /* range */, '1', err => {
                 assert.ok(err);
-                assert.strictEqual(err.infos.status, 500);
+                assert.strictEqual(err.code, 500);
                 const topic = hdmock.getTopic(hdClient, repairTopic);
                 hdmock.strictCompareTopicContent(
                         topic, undefined);
@@ -316,9 +314,11 @@ mocha.describe('Hyperdrive Client GET', function () {
         mocha.it('Bad key', function (done) {
             const hdClient = hdmock.getDefaultClient();
             hdClient.delete('---', '1', err => {
-                if (!(err instanceof BadKeyError)) {
+                if (!(err instanceof Error)) {
                     throw err;
                 }
+                assert.strictEqual(err.message, 'ParseError');
+                assert.strictEqual(err.code, 400);
                 done();
             });
         });
@@ -374,8 +374,12 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                     // Use up the whole stream, expects error before end
                     reply.on('error', err => {
-                        assert.strictEqual(err.message, 'Corrupted data');
-                        assert.strictEqual(err.infos.status, 422);
+                        assert.strictEqual(err.message, 'CorruptedData');
+                        assert.strictEqual(err.code, 422);
+                        assert.strictEqual(err.description, 'Bad CRC');
+                        assert.strictEqual(err.infos.method, 'GET');
+                        assert.strictEqual(err.infos.actualCRC, mockOptions.actualCRC);
+                        assert.strictEqual(err.infos.expectedCRC, mockOptions.storedCRC);
 
                         /* 1 fragment to repair, eventually */
                         setTimeout(() => {
@@ -535,7 +539,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         assert.strictEqual(
                             500,
                             opCtx.status[0].statuses[0]
-                                .error.infos.status, 500);
+                                .error.code, 500);
 
                         const topic = hdmock.getTopic(hdClient, repairTopic);
                         hdmock.strictCompareTopicContent(
@@ -611,7 +615,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     assert.strictEqual(opCtx.status[0].nTimeout, 0);
                     assert.ok(!opCtx.status[0].statuses[0].error);
                     assert.strictEqual(
-                        opCtx.status[0].statuses[1].error.infos.status, 404);
+                        opCtx.status[0].statuses[1].error.code, 404);
                     const topic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
                         topic, [{
@@ -651,7 +655,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     (err, reply) => {
                         assert.ok(err);
                         assert.ok(!reply);
-                        assert.strictEqual(err.infos.status, 404);
+                        assert.strictEqual(err.code, 404);
 
                         const topic = hdmock.getTopic(hdClient, repairTopic);
                         hdmock.strictCompareTopicContent(
@@ -690,7 +694,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     (err, reply) => {
                         assert.ok(err);
                         assert.ok(!reply);
-                        assert.strictEqual(err.infos.status, 500);
+                        assert.strictEqual(err.code, 500);
 
                         const topic = hdmock.getTopic(hdClient, repairTopic);
                         hdmock.strictCompareTopicContent(
@@ -814,7 +818,8 @@ mocha.describe('Hyperdrive Client GET', function () {
                                                     done(err);
                                                     return;
                                                 }
-                                                assert.strictEqual(err.message, 'Corrupted data');
+                                                assert.strictEqual(err.message, 'CorruptedData');
+                                                assert.strictEqual(err.code, 422);
                                                 setImmediate(() => topicEndCheck());
                                             });
                                         });
@@ -846,7 +851,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     (err, reply) => {
                         assert.ok(err);
                         assert.ok(!reply);
-                        assert.strictEqual(err.infos.status, 404);
+                        assert.strictEqual(err.code, 404);
 
                         const topic = hdmock.getTopic(hdClient, repairTopic);
                         hdmock.strictCompareTopicContent(
@@ -890,8 +895,11 @@ mocha.describe('Hyperdrive Client GET', function () {
                 (err, reply) => {
                     /* Check failure to persist to-repair fragments */
                     assert.ok(!reply);
-                    assert.strictEqual(err.infos.status, 500);
-                    assert.strictEqual(err.message, 'Demo effect!');
+                    assert.strictEqual(err.code, 500);
+                    assert.strictEqual(err.message, 'InternalError');
+                    assert.strictEqual(
+                        err.description,
+                        'Failed to persist fragments to repair: Demo effect!');
                     const topic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
                         topic, undefined);
@@ -961,7 +969,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 assert.strictEqual(opCtx.status[0].nTimeout, 0);
                 assert.ok(!opCtx.status[0].statuses[0].error);
                 assert.strictEqual(
-                    opCtx.status[0].statuses[1].error.infos.status, 404);
+                    opCtx.status[0].statuses[1].error.code, 404);
                 const topic = hdmock.getTopic(hdClient, repairTopic);
                 hdmock.strictCompareTopicContent(
                     topic, undefined);
@@ -1180,8 +1188,12 @@ mocha.describe('Hyperdrive Client GET', function () {
 
                         // Use up the whole stream, expects error before end
                         reply.on('error', err => {
-                            assert.strictEqual(err.message, 'Corrupted data');
-                            assert.strictEqual(err.infos.status, 422);
+                            assert.strictEqual(err.message, 'CorruptedData');
+                            assert.strictEqual(err.code, 422);
+                            assert.strictEqual(err.infos.chunkId, 1);
+                            assert.strictEqual(err.infos.fragmentId, 1);
+                            assert.strictEqual(err.infos.actualCRC, mockOptions[1][1].actualCRC);
+                            assert.strictEqual(err.infos.expectedCRC, mockOptions[1][1].storedCRC);
 
                             /* 1 fragment to repair, eventually */
                             setTimeout(() => {

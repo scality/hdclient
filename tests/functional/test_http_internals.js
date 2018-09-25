@@ -1,4 +1,5 @@
 'use strict'; // eslint-disable-line strict
+/* eslint-disable max-len */
 /* eslint-disable prefer-arrow-callback */ // Mocha recommends not using => func
 /* eslint-disable func-names */
 
@@ -26,11 +27,11 @@ mocha.describe('HTTP internals', function () {
         opts.method = 'GET';
         opts.path = '/jesuisunemiteenpullover';
         const noLog = { error() {} };
-        const expectedErrorMessage = 'something awful happened';
+        const expectedErrorDescription = 'something awful happened';
 
         nock(`http://${hdClient.options.policy.locations[0]}`)
             .get(opts.path)
-            .replyWithError(expectedErrorMessage);
+            .replyWithError(expectedErrorDescription);
 
         const opContext = hdclient.httpUtils.makeOperationContext(
             { nDataParts: 1, nCodingParts: 0, nChunks: 1 });
@@ -46,8 +47,10 @@ mocha.describe('HTTP internals', function () {
                 assert.ok(reqCtx.opContext.status[0].statuses[0].error);
                 const returnedError = reqCtx.opContext.status[0].
                           statuses[0].error;
-                assert.strictEqual(expectedErrorMessage,
-                                   returnedError.message);
+                assert.strictEqual(returnedError.message, 'GETError');
+                assert.strictEqual(returnedError.code, 500);
+                assert.strictEqual(expectedErrorDescription,
+                                   returnedError.description);
                 done();
             }).end();
     });
@@ -60,7 +63,6 @@ mocha.describe('HTTP internals', function () {
         opts.method = 'GET';
         opts.path = '/jesuisunemiteenpullover';
         const noLog = { error() {} };
-        const expectedErrorMessage = 'Timeout';
 
         nock(`http://${hdClient.options.policy.locations[0]}`)
             .get(opts.path)
@@ -83,8 +85,11 @@ mocha.describe('HTTP internals', function () {
                 assert.ok(reqCtx.opContext.status[0].statuses[0].error);
                 const returnedError = reqCtx.opContext.status[0]
                           .statuses[0].error;
-                assert.strictEqual(expectedErrorMessage,
-                                   returnedError.message);
+                assert.strictEqual(returnedError.message, 'TimeoutError');
+                assert.strictEqual(returnedError.code, 504);
+                assert.strictEqual(
+                    returnedError.description,
+                    `No reply received in ${hdClient.options.requestTimeoutMs}ms`);
                 done();
             }).end();
     });
@@ -119,6 +124,11 @@ mocha.describe('HTTP internals', function () {
                 assert.strictEqual(reqCtx.opContext.status[0].nError, 1);
                 assert.strictEqual(reqCtx.opContext.status[0].nOk, 0);
                 assert.ok(reqCtx.opContext.status[0].statuses[0].error);
+                const returnedError = reqCtx.opContext.status[0].
+                          statuses[0].error;
+                assert.strictEqual(returnedError.message, 'GETError');
+                assert.strictEqual(returnedError.code, 500);
+                assert.strictEqual(returnedError.description, 'socket hang up');
                 done();
             });
 
