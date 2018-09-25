@@ -14,7 +14,7 @@
   "repository": "scality/hdclient",
   "author": "Maxime Lubin",
   "dependencies": {
-    "ecstream": "scality/ecstream#development/1.0",
+    "ecstream": "scality/ecstream#a5ee4edb",
     "node-rdkafka": "2.2.0",
     "werelogs": "scality/werelogs#GA7.2.0.5"
   },
