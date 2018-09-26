@@ -107,7 +107,7 @@ mocha.describe('Hyperdrive Client', function () {
                          };
             const expectedError = new config.InvalidConfigError(
                 'type', 'FAKE',
-                'Unknown code type (pattern 0)');
+                'Unknown code type (code 0)');
             assert.throws(() => create(args),
                           function (thrown) {
                               return thrownErrorValidation(thrown, expectedError);
@@ -121,7 +121,7 @@ mocha.describe('Hyperdrive Client', function () {
                          };
             const expectedError = new config.InvalidConfigError(
                 'dataParts', undefined,
-                'Expected integer strictly larger than 0 (pattern 0)');
+                'Expected integer strictly larger than 0 (code 0)');
             assert.throws(() => create(args),
                           function (thrown) {
                               return thrownErrorValidation(thrown, expectedError);
@@ -135,7 +135,7 @@ mocha.describe('Hyperdrive Client', function () {
                          };
             const expectedError = new config.InvalidConfigError(
                 'dataParts', 'whatever',
-                'Expected integer strictly larger than 0 (pattern 0)');
+                'Expected integer strictly larger than 0 (code 0)');
             assert.throws(() => create(args),
                           function (thrown) {
                               return thrownErrorValidation(thrown, expectedError);
@@ -149,7 +149,7 @@ mocha.describe('Hyperdrive Client', function () {
                          };
             const expectedError = new config.InvalidConfigError(
                 'dataParts', 0,
-                'Expected integer strictly larger than 0 (pattern 0)');
+                'Expected integer strictly larger than 0 (code 0)');
             assert.throws(() => create(args),
                           function (thrown) {
                               return thrownErrorValidation(thrown, expectedError);
@@ -163,7 +163,7 @@ mocha.describe('Hyperdrive Client', function () {
                          };
             const expectedError = new config.InvalidConfigError(
                 'codingParts', undefined,
-                'Expected integer larger than 0 (pattern 0)');
+                'Expected integer larger than 0 (code 0)');
             assert.throws(() => create(args),
                           function (thrown) {
                               return thrownErrorValidation(thrown, expectedError);
@@ -180,7 +180,7 @@ mocha.describe('Hyperdrive Client', function () {
                          };
             const expectedError = new config.InvalidConfigError(
                 'codingParts', [],
-                'Expected integer larger than 0 (pattern 0)');
+                'Expected integer larger than 0 (code 0)');
             assert.throws(() => create(args),
                           function (thrown) {
                               return thrownErrorValidation(thrown, expectedError);
@@ -197,7 +197,7 @@ mocha.describe('Hyperdrive Client', function () {
                          };
             const expectedError = new config.InvalidConfigError(
                 'codingParts', -1,
-                'Expected integer larger than 0 (pattern 0)');
+                'Expected integer larger than 0 (code 0)');
             assert.throws(() => create(args),
                           function (thrown) {
                               return thrownErrorValidation(thrown, expectedError);
@@ -207,12 +207,12 @@ mocha.describe('Hyperdrive Client', function () {
 
         mocha.it('Not enough endpoints', function (done) {
             const args = { policy: { locations: ['localhost:8080'] },
-                           codes: [{ type: 'CP', dataParts: 1, codingParts: 0 },
+                           codes: [{ type: 'CP', dataParts: 1, codingParts: 0, pattern: '.+' },
                                    { type: 'RS', dataParts: 1, codingParts: 1 }],
                          };
             const expectedError = new config.InvalidConfigError(
                 'totalParts', 2,
-                'Expected less parts than data locations (pattern 1)');
+                'Expected less parts than data locations (code 1)');
             assert.throws(() => create(args),
                           function (thrown) {
                               return thrownErrorValidation(thrown, expectedError);
@@ -226,7 +226,21 @@ mocha.describe('Hyperdrive Client', function () {
                          };
             const expectedError = new config.InvalidConfigError(
                 'codingParts', 1,
-                'Code type CP expects 0 coding parts (pattern 0)');
+                'Code type CP expects 0 coding parts (code 0)');
+            assert.throws(() => create(args),
+                          function (thrown) {
+                              return thrownErrorValidation(thrown, expectedError);
+                          });
+            done();
+        });
+
+        mocha.it('Invalid code pattern', function (done) {
+            const args = { policy: { locations: ['s1', 's2', 's3'] },
+                           codes: [{ type: 'RS', dataParts: 1, codingParts: 1 }],
+                         };
+            const expectedError = new config.InvalidConfigError(
+                'pattern', undefined,
+                'Expected a bucket/object regex pattern (code 0)');
             assert.throws(() => create(args),
                           function (thrown) {
                               return thrownErrorValidation(thrown, expectedError);
@@ -236,7 +250,7 @@ mocha.describe('Hyperdrive Client', function () {
 
         mocha.it('Invalid request timeout', function (done) {
             const args = { policy: { locations: ['localhost:8080'] },
-                           codes: [{ type: 'CP', dataParts: 1, codingParts: 0 }],
+                           codes: [{ type: 'CP', dataParts: 1, codingParts: 0, pattern: '.*' }],
                            requestTimeoutMs: -1,
                          };
             const expectedError = new config.InvalidConfigError(
@@ -251,7 +265,7 @@ mocha.describe('Hyperdrive Client', function () {
 
         mocha.it('Invalid error agent options', function (done) {
             const args = { policy: { locations: ['server1', 'server2', 'server3'] },
-                           codes: [{ type: 'RS', dataParts: 2, codingParts: 1 }],
+                           codes: [{ type: 'RS', dataParts: 2, codingParts: 1, pattern: '\\*[a-z]*' }],
                            requestTimeoutMs: 0,
                          };
             const expectedError = new config.InvalidConfigError(
@@ -266,7 +280,7 @@ mocha.describe('Hyperdrive Client', function () {
 
         mocha.it('Valid configuration', function (done) {
             const args = { policy: { locations: ['server1', 'server2', 'server3'] },
-                           codes: [{ type: 'RS', dataParts: 2, codingParts: 1 }],
+                           codes: [{ type: 'RS', dataParts: 2, codingParts: 1, pattern: '.*' }],
                            requestTimeoutMs: 0,
                            errorAgent: { kafkaBrokers: 'fake-1:7777,fake-2:1234' },
                          };

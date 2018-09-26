@@ -100,7 +100,7 @@ function getDefaultClient({ nLocations = 1,
         });
     const conf = {
         codes: [{
-            pattern: '*',
+            pattern: '.*', // Match all
             type: code,
             dataParts: nData,
             codingParts: nCoding,

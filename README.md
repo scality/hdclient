@@ -165,11 +165,17 @@ cat <<EOF > hdclient_locationConfig.json
                     "uuidmapping": {
                         "hd-uuid-124586": "${hyperdrive_ipport}"
                     },
-                    "codes": {
-                        "type": CP,
-                        "dataParts": 1,
+                    "codes": [{
+                        "pattern": "mybucket/test1/*"
+                        "type": "CP",
+                        "dataParts": 3,
                         "codingParts": 0
-                    },
+                    }, {
+                        "pattern": ".*"
+                        "type": "RS",
+                        "dataParts": 2,
+                        "codingParts": 1
+                    }],
                     "requestTimeoutMs": 30000
                 }
             }
