@@ -9,9 +9,11 @@
         "hd3": "127.0.0.1:4246",
         "hd4": "127.0.0.1:4247"
     },
-    "code": "RS",
-    "dataParts": 2,
-    "codingParts": 1,
+    "codes": {
+        "type": "RS",
+        "dataParts": 2,
+        "codingParts": 1
+    },
     "requestTimeoutMs": 1000,
     "errorAgent": {
         "kafkaBrokers": "not used by server"

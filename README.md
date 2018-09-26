@@ -162,8 +162,14 @@ cat <<EOF > hdclient_locationConfig.json
                     "policy": {
                         "locations": ["${hyperdrive_ipport}"]
                     },
-                    "dataParts": 1,
-                    "codingParts": 0,
+                    "uuidmapping": {
+                        "hd-uuid-124586": "${hyperdrive_ipport}"
+                    },
+                    "codes": {
+                        "type": CP,
+                        "dataParts": 1,
+                        "codingParts": 0
+                    },
                     "requestTimeoutMs": 30000
                 }
             }
