@@ -26,7 +26,7 @@ mocha.describe('DELETE', function () {
                 [{ statusCode: 200 }],
             ];
             const { rawKey } = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', 1024, mocks);
+                hdClient, 'bestObjEver', 1024, mocks);
             hdClient.delete(rawKey, '1', err => {
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
                 hdmock.strictCompareTopicContent(
@@ -41,7 +41,7 @@ mocha.describe('DELETE', function () {
                 [{ statusCode: 404 }],
             ];
             const { rawKey } = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', 1024, mocks);
+                hdClient, 'bestObjEver', 1024, mocks);
             hdClient.delete(rawKey, '1', err => {
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
                 hdmock.strictCompareTopicContent(
@@ -56,7 +56,7 @@ mocha.describe('DELETE', function () {
                 [{ statusCode: 500 }],
             ];
             const { rawKey } = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', 1024, mocks);
+                hdClient, 'bestObjEver', 1024, mocks);
             const expectedLoggedErrors = [{
                 rawKey,
                 fragments: [[0, 0]],
@@ -94,7 +94,7 @@ mocha.describe('DELETE', function () {
                 }],
             ];
             const { rawKey } = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', 1024, mocks);
+                hdClient, 'bestObjEver', 1024, mocks);
             const expectedLoggedErrors = [{
                 rawKey,
                 fragments: [[0, 0]],
@@ -115,19 +115,15 @@ mocha.describe('DELETE', function () {
     mocha.describe('Multiple hyperdrives', function () {
         mocha.describe('Replication', function () {
             mocha.it('All success', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'CP',
-                    nData: 3,
-                    nCoding: 0,
-                });
+                const codes = [{ type: 'CP', dataParts: 3, codingParts: 0, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const mocks = [[
                     { statusCode: 200 },
                     { statusCode: 200 },
                     { statusCode: 200 },
                 ]];
                 const { rawKey } = hdmock.mockDELETE(
-                    hdClient.options, 'bestObjEver', 1024, mocks);
+                    hdClient, 'bestObjEver', 1024, mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
@@ -137,19 +133,15 @@ mocha.describe('DELETE', function () {
             });
 
             mocha.it('404 on 1 part', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'CP',
-                    nData: 3,
-                    nCoding: 0,
-                });
+                const codes = [{ type: 'CP', dataParts: 3, codingParts: 0, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const mocks = [[
                     { statusCode: 200 },
                     { statusCode: 404 },
                     { statusCode: 200 },
                 ]];
                 const { rawKey } = hdmock.mockDELETE(
-                    hdClient.options, 'bestObjEver', 1024, mocks);
+                    hdClient, 'bestObjEver', 1024, mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
@@ -159,19 +151,15 @@ mocha.describe('DELETE', function () {
             });
 
             mocha.it('Error on 1 part', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'CP',
-                    nData: 3,
-                    nCoding: 0,
-                });
+                const codes = [{ type: 'CP', dataParts: 3, codingParts: 0, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const mocks = [[
                     { statusCode: 200 },
                     { statusCode: 200 },
                     { statusCode: 500 },
                 ]];
                 const { rawKey } = hdmock.mockDELETE(
-                    hdClient.options, 'bestObjEver', 1024, mocks);
+                    hdClient, 'bestObjEver', 1024, mocks);
                 const expectedLogged = [{
                     rawKey,
                     fragments: [[0, 2]],
@@ -187,19 +175,15 @@ mocha.describe('DELETE', function () {
             });
 
             mocha.it('Errors on all parts', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'CP',
-                    nData: 3,
-                    nCoding: 0,
-                });
+                const codes = [{ type: 'CP', dataParts: 3, codingParts: 0, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const mocks = [[
                     { statusCode: 503 },
                     { statusCode: 403 },
                     { statusCode: 500 },
                 ]];
                 const { rawKey } = hdmock.mockDELETE(
-                    hdClient.options, 'bestObjEver', 1024, mocks);
+                    hdClient, 'bestObjEver', 1024, mocks);
                 const expectedLogged = [{
                     rawKey,
                     fragments: [[0, 0], [0, 1], [0, 2]],
@@ -220,19 +204,15 @@ mocha.describe('DELETE', function () {
 
         mocha.describe('Erasure coding', function () {
             mocha.it('All success', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'RS',
-                    nData: 2,
-                    nCoding: 1,
-                });
+                const codes = [{ type: 'RS', dataParts: 2, codingParts: 1, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const mocks = [[
                     { statusCode: 200 },
                     { statusCode: 200 },
                     { statusCode: 200 },
                 ]];
                 const { rawKey } = hdmock.mockDELETE(
-                    hdClient.options, 'bestObjEver', 1024, mocks);
+                    hdClient, 'bestObjEver', 1024, mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
@@ -242,19 +222,15 @@ mocha.describe('DELETE', function () {
             });
 
             mocha.it('404 on 1 part', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'RS',
-                    nData: 2,
-                    nCoding: 1,
-                });
+                const codes = [{ type: 'RS', dataParts: 2, codingParts: 1, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const mocks = [[
                     { statusCode: 404 },
                     { statusCode: 200 },
                     { statusCode: 200 },
                 ]];
                 const { rawKey } = hdmock.mockDELETE(
-                    hdClient.options, 'bestObjEver', 1024, mocks);
+                    hdClient, 'bestObjEver', 1024, mocks);
                 hdClient.delete(rawKey, '1', err => {
                     const topic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
@@ -264,19 +240,15 @@ mocha.describe('DELETE', function () {
             });
 
             mocha.it('Error on 1 part', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'RS',
-                    nData: 2,
-                    nCoding: 1,
-                });
+                const codes = [{ type: 'RS', dataParts: 2, codingParts: 1, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const mocks = [[
                     { statusCode: 200 },
                     { statusCode: 500 },
                     { statusCode: 404 },
                 ]];
                 const { rawKey } = hdmock.mockDELETE(
-                    hdClient.options, 'bestObjEver', 1024, mocks);
+                    hdClient, 'bestObjEver', 1024, mocks);
                 const expectedLogged = [{
                     rawKey,
                     fragments: [[0, 1]],
@@ -292,19 +264,15 @@ mocha.describe('DELETE', function () {
             });
 
             mocha.it('Errors on all parts', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'RS',
-                    nData: 2,
-                    nCoding: 1,
-                });
+                const codes = [{ type: 'RS', dataParts: 2, codingParts: 1, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const mocks = [[
                     { statusCode: 500 },
                     { statusCode: 400 },
                     { statusCode: 500 },
                 ]];
                 const { rawKey } = hdmock.mockDELETE(
-                    hdClient.options, 'bestObjEver', 1024, mocks);
+                    hdClient, 'bestObjEver', 1024, mocks);
                 const expectedLogged = [{
                     rawKey,
                     fragments: [[0, 0], [0, 1], [0, 2]],
@@ -329,19 +297,15 @@ mocha.describe('DELETE', function () {
             /* Same exact scenario as Erasure Coding 'Error on 1 part'
              * but we failed to persist orphans, expecting resulting error
              */
-            const hdClient = hdmock.getDefaultClient({
-                nLocations: 3,
-                code: 'RS',
-                nData: 2,
-                nCoding: 1,
-            });
+            const codes = [{ type: 'RS', dataParts: 2, codingParts: 1, pattern: '.*' }];
+            const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
             const mocks = [[
                 { statusCode: 200 },
                 { statusCode: 500 },
                 { statusCode: 404 },
             ]];
             const { rawKey } = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', 1024, mocks);
+                hdClient, 'bestObjEver', 1024, mocks);
             hdClient.errorAgent.nextError = new Error('Broken by Design');
 
             hdClient.delete(rawKey, '1', err => {
@@ -371,7 +335,7 @@ mocha.describe('DELETE', function () {
                 [{ statusCode: 200 }],
             ];
             const { rawKey } = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', 4 * size, mocks);
+                hdClient, 'bestObjEver', 4 * size, mocks);
             hdClient.delete(rawKey, '1', err => {
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
                 hdmock.strictCompareTopicContent(
@@ -389,7 +353,7 @@ mocha.describe('DELETE', function () {
                 [{ statusCode: 200 }],
             ];
             const { rawKey } = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', 2 * size, mocks);
+                hdClient, 'bestObjEver', 2 * size, mocks);
             hdClient.delete(rawKey, '1', err => {
                 const topic = hdmock.getTopic(hdClient, deleteTopic);
                 hdmock.strictCompareTopicContent(
@@ -408,7 +372,7 @@ mocha.describe('DELETE', function () {
                 [{ statusCode: 404 }],
             ];
             const { rawKey } = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', 3 * size, mocks);
+                hdClient, 'bestObjEver', 3 * size, mocks);
             const expectedLoggedErrors = [{
                 rawKey,
                 fragments: [[1, 0]],
@@ -436,7 +400,7 @@ mocha.describe('DELETE', function () {
                 }],
             ];
             const { rawKey } = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', 6000, mocks);
+                hdClient, 'bestObjEver', 6000, mocks);
             const expectedLoggedErrors = [{
                 rawKey,
                 fragments: [[1, 0]],
@@ -455,11 +419,10 @@ mocha.describe('DELETE', function () {
     mocha.describe('Split + erasure coding', function () {
         mocha.it('All in one', function (done) {
             const size = 15000;
+            const codes = [{ type: 'RS', dataParts: 2, codingParts: 1, pattern: '.*' }];
             const hdClient = hdmock.getDefaultClient({
                 nLocations: 3,
-                code: 'RS',
-                nData: 2,
-                nCoding: 1,
+                codes,
                 minSplitSize: size });
             const mocks = [
                 [{ statusCode: 200 }, { statusCode: 200 }, { statusCode: 404 }],
@@ -467,7 +430,7 @@ mocha.describe('DELETE', function () {
                 [{ statusCode: 500 }, { statusCode: 200 }, { statusCode: 503 }],
             ];
             const { rawKey } = hdmock.mockDELETE(
-                hdClient.options, 'bestObjEver', 3 * size, mocks);
+                hdClient, 'bestObjEver', 3 * size, mocks);
             const expectedLoggedErrors = [{
                 rawKey,
                 fragments: [[1, 1], [2, 0], [2, 2]],
