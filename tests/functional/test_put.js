@@ -695,6 +695,80 @@ mocha.describe('PUT', function () {
                 });
             });
         });
+
+        mocha.describe('Code selection', function () {
+            mocha.it('Success', function (done) {
+                const codes = [
+                    { type: 'CP', dataParts: 1, codingParts: 0, pattern: 'superspecific/bestObjEver' },
+                    { type: 'CP', dataParts: 3, codingParts: 0, pattern: 'testbuc.*/best.*' },
+                    { type: 'RS', dataParts: 2, codingParts: 1, pattern: '.*' },
+                ];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
+                const content = 'Je suis une mite en pullover';
+                const mocks = [[
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        contentType: 'data',
+                    },
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        contentType: 'data',
+                    },
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        contentType: 'data',
+                    },
+                ]];
+                const keyContext = {
+                    bucketName: 'testbucket',
+                    objectKey: 'bestObjEver',
+                    version: 1,
+                };
+
+                hdmock.mockPUT(hdClient, keyContext, mocks);
+
+                hdClient.put(
+                    hdmock.streamString(content),
+                    hdmock.getPayloadLength(content),
+                    keyContext, '1',
+                    err => done(err));
+            });
+
+            mocha.it('No match found', function (done) {
+                const codes = [{ type: 'CP', dataParts: 1, codingParts: 0, pattern: 'superspecific/bestObjEver' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 1, codes });
+                const content = 'Je suis une mite en pullover';
+                const mocks = [[
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        contentType: 'data',
+                    },
+                ]];
+                const keyContext = {
+                    bucketName: 'testbucket',
+                    objectKey: 'bestObjEver',
+                    version: 1,
+                };
+
+                hdmock.mockPUT(hdClient, keyContext, mocks);
+
+                hdClient.put(
+                    hdmock.streamString(content),
+                    hdmock.getPayloadLength(content),
+                    keyContext, '1',
+                    err => {
+                        assert.ok(err);
+                        assert.strictEqual(err.message, 'ConfigError');
+                        assert.strictEqual(err.code, 412);
+                        assert.strictEqual(err.description, 'No matching code pattern found');
+                        done();
+                    });
+            });
+        });
     });
 
     mocha.describe('Persisting error edge cases', function () {
