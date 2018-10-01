@@ -14,7 +14,7 @@ function main() {
     if (process.argv.length < 6) {
         const scriptName = process.argv[1].split('/').slice(-1)[0];
         console.error(
-            `${scriptName} <hdc conf> <RS,k,m or CP,n> <object key> <size> [<rand>]`
+            `${scriptName} <hdc conf> <RS,k,m or CP,n> <bucket/object/version> <size> [<rand>]`
         );
         process.exit(1);
     }
@@ -29,10 +29,17 @@ function main() {
     assert.ok(nData > 0);
     assert.ok(nCoding >= 0);
 
+    const keyContextArray = process.argv[4].split('/');
+    const keyContext = {
+        bucketName: keyContextArray[0],
+        objectKey: keyContextArray[1],
+        version: keyContextArray.length === 3 ? keyContextArray[2] : '1',
+    };
+
     const parts = keyscheme.keygen(
         hdconf.serviceId,
         hdconf.policy,
-        process.argv[4],
+        keyContext,
         process.argv[5],
         code, nData, nCoding,
         process.argv[6]);
