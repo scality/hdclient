@@ -23,6 +23,12 @@ mocha.describe('PUT', function () {
 
     const deleteTopic = hdclient.httpUtils.topics.delete;
     const checkTopic = hdclient.httpUtils.topics.check;
+    const keyContext = {
+        bucketName: 'testbucket',
+        objectKey: 'best / :Obj~Ever!',
+        version: 1,
+    };
+
 
     mocha.describe('Single hyperdrive', function () {
         mocha.it('Success small key', function (done) {
@@ -35,11 +41,6 @@ mocha.describe('PUT', function () {
                     contentType: 'data',
                 },
             ]];
-            const keyContext = {
-                bucketName: 'testbucket',
-                objectKey: 'bestObjEver',
-                version: 1,
-            };
 
             hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -48,6 +49,7 @@ mocha.describe('PUT', function () {
                 hdmock.getPayloadLength(content),
                 keyContext, '1',
                 (err, rawKey) => {
+                    assert.ifError(err);
                     /* Check generated key */
                     assert.strictEqual(typeof rawKey, 'string');
                     const parts = hdclient.keyscheme.deserialize(rawKey);
@@ -59,7 +61,6 @@ mocha.describe('PUT', function () {
                     assert.strictEqual(parts.nChunks, 1);
                     const fragment = parts.chunks[0].data[0];
                     assert.strictEqual(fragment.uuid, uuid);
-                    assert.ok(fragment.key, keyContext.objectKey);
 
                     /* Check cleanup mechanism */
                     const delTopic = hdmock.getTopic(hdClient, deleteTopic);
@@ -68,9 +69,7 @@ mocha.describe('PUT', function () {
                     const chkTopic = hdmock.getTopic(hdClient, checkTopic);
                     hdmock.strictCompareTopicContent(
                         chkTopic, undefined);
-
-                    /* Check for errors */
-                    done(err);
+                    done();
                 });
         });
 
@@ -86,11 +85,6 @@ mocha.describe('PUT', function () {
                     contentType: 'data',
                 },
             ]];
-            const keyContext = {
-                bucketName: 'testbucket',
-                objectKey: 'bestObjEver',
-                version: 1,
-            };
 
             hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -119,9 +113,7 @@ mocha.describe('PUT', function () {
                     const chkTopic = hdmock.getTopic(hdClient, checkTopic);
                     hdmock.strictCompareTopicContent(
                         chkTopic, undefined);
-
-                    /* Check for errors */
-                    done(err);
+                    done();
                 });
         });
 
@@ -135,11 +127,6 @@ mocha.describe('PUT', function () {
                     contentType: 'data',
                 },
             ]];
-            const keyContext = {
-                bucketName: 'testbucket',
-                objectKey: 'bestObjEver',
-                version: 1,
-            };
 
             hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -179,11 +166,6 @@ mocha.describe('PUT', function () {
                     timeoutMs: hdClient.options.requestTimeoutMs + 10,
                 },
             ]];
-            const keyContext = {
-                bucketName: 'testbucket',
-                objectKey: 'bestObjEver',
-                version: 1,
-            };
 
             hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -240,11 +222,6 @@ mocha.describe('PUT', function () {
                         contentType: 'data',
                     },
                 ]];
-                const keyContext = {
-                    bucketName: 'testbucket',
-                    objectKey: 'bestObjEver',
-                    version: 1,
-                };
 
                 hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -296,11 +273,6 @@ mocha.describe('PUT', function () {
                         contentType: 'data',
                     },
                 ]];
-                const keyContext = {
-                    bucketName: 'testbucket',
-                    objectKey: 'bestObjEver',
-                    version: 1,
-                };
 
                 hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -359,11 +331,6 @@ mocha.describe('PUT', function () {
                         contentType: 'data',
                     },
                 ]];
-                const keyContext = {
-                    bucketName: 'testbucket',
-                    objectKey: 'bestObjEver',
-                    version: 1,
-                };
 
                 hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -423,11 +390,6 @@ mocha.describe('PUT', function () {
                         contentType: 'data',
                     },
                 ]];
-                const keyContext = {
-                    bucketName: 'testbucket',
-                    objectKey: 'bestObjEver',
-                    version: 1,
-                };
 
                 hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -495,11 +457,6 @@ mocha.describe('PUT', function () {
                         timeoutMs: hdClient.options.requestTimeoutMs + 10,
                     },
                 ]];
-                const keyContext = {
-                    bucketName: 'testbucket',
-                    objectKey: 'bestObjEver',
-                    version: 1,
-                };
 
                 hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -570,11 +527,6 @@ mocha.describe('PUT', function () {
                         contentType: 'data',
                     },
                 ]];
-                const keyContext = {
-                    bucketName: 'testbucket',
-                    objectKey: 'bestObjEver',
-                    version: 1,
-                };
 
                 hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -649,11 +601,6 @@ mocha.describe('PUT', function () {
                                 timeoutMs: timeouts.has(i) ?
                                     hdClient.options.requestTimeoutMs + 10 : 0,
                             }))];
-                            const keyContext = {
-                                bucketName: 'testbucket',
-                                objectKey: 'bestObjEver',
-                                version: 1,
-                            };
 
                             hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -722,11 +669,6 @@ mocha.describe('PUT', function () {
                         contentType: 'data',
                     },
                 ]];
-                const keyContext = {
-                    bucketName: 'testbucket',
-                    objectKey: 'bestObjEver',
-                    version: 1,
-                };
 
                 hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -748,11 +690,6 @@ mocha.describe('PUT', function () {
                         contentType: 'data',
                     },
                 ]];
-                const keyContext = {
-                    bucketName: 'testbucket',
-                    objectKey: 'bestObjEver',
-                    version: 1,
-                };
 
                 hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -799,11 +736,6 @@ mocha.describe('PUT', function () {
                     contentType: 'data',
                 },
             ]];
-            const keyContext = {
-                bucketName: 'testbucket',
-                objectKey: 'bestObjEver',
-                version: 1,
-            };
 
             hdmock.mockPUT(hdClient, keyContext, mocks);
             hdClient.errorAgent.nextError = new Error('Broken by Design');
@@ -867,11 +799,6 @@ mocha.describe('PUT', function () {
                     contentType: 'data',
                 },
             ]];
-            const keyContext = {
-                bucketName: 'testbucket',
-                objectKey: 'bestObjEver',
-                version: 1,
-            };
 
             hdmock.mockPUT(hdClient, keyContext, mocks);
             content.pipe(errorStream);
@@ -947,11 +874,6 @@ mocha.describe('PUT', function () {
                     contentType: 'data',
                 }],
             ];
-            const keyContext = {
-                bucketName: 'testbucket',
-                objectKey: 'bestObjEver',
-                version: 1,
-            };
 
             hdmock.mockPUT(hdClient, keyContext, mocks);
 
@@ -1048,11 +970,6 @@ mocha.describe('PUT', function () {
                     contentType: 'data',
                 }],
             ];
-            const keyContext = {
-                bucketName: 'testbucket',
-                objectKey: 'bestObjEver',
-                version: 1,
-            };
 
             hdmock.mockPUT(hdClient, keyContext, mocks);
 
