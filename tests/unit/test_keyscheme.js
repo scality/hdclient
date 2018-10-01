@@ -6,7 +6,7 @@
 const mocha = require('mocha');
 const assert = require('assert');
 
-const { keyscheme, placement, utils: libUtils, split } = require('../../index');
+const { keyscheme, utils: libUtils, split } = require('../../index');
 
 function getPlacementPolicy(minSplitSize = 0) {
     return {
@@ -20,7 +20,7 @@ mocha.describe('Keyscheme', function () {
         mocha.it('Basic', function (done) {
             const policy = getPlacementPolicy();
             const fragments = keyscheme.keygen(
-                policy, 'testObj', split.DATA_ALIGN, 'RS', 2, 1, 314159
+                1, policy, 'testObj', split.DATA_ALIGN, 'RS', 2, 1, 314159
             );
 
             /* Verify globals */
@@ -42,14 +42,14 @@ mocha.describe('Keyscheme', function () {
                 assert.strictEqual(typeof f.uuid, 'string');
                 assert.strictEqual(f.fragmentId, i);
                 assert.strictEqual(
-                    f.key, `testObj-4cb2f-0-1-RS,2,1,4096-${i}`);
+                    f.key, `1-testObj-4cb2f-0-${i}`);
             });
 
             fragments.chunks[0].coding.forEach((f, i) => {
                 assert.strictEqual(typeof f.uuid, 'string');
                 assert.strictEqual(f.fragmentId, 2 + i);
                 assert.strictEqual(
-                    f.key, `testObj-4cb2f-0-1-RS,2,1,4096-${2 + i}`);
+                    f.key, `1-testObj-4cb2f-0-${2 + i}`);
             });
 
             done();
@@ -58,16 +58,17 @@ mocha.describe('Keyscheme', function () {
         mocha.it('Random part', function (done) {
             const policy = getPlacementPolicy();
             const fragments1 = keyscheme.keygen(
-                policy, 'testObj', 123456, 'CP', 2, 0
+                1, policy, 'testObj', 123456, 'CP', 2, 0
             );
             const fragments2 = keyscheme.keygen(
-                policy, 'testObj', 123456, 'CP', 2, 0
+                1, policy, 'testObj', 123456, 'CP', 2, 0
             );
 
             /* Rand part should be different */
             assert.ok(fragments1.rand !== fragments2.rand);
 
             /* Everything else must be equal */
+            assert.strictEqual(fragments1.serviceId, fragments2.serviceId);
             assert.strictEqual(fragments1.objectKey, fragments2.objectKey);
             assert.strictEqual(fragments1.code, fragments2.code);
             assert.strictEqual(fragments1.nDataParts, fragments2.nDataParts);
@@ -104,8 +105,10 @@ mocha.describe('Keyscheme', function () {
 
         mocha.it('Split', function (done) {
             // final splitSize should be aligned
+            const serviceId = 42;
             const policy = getPlacementPolicy(split.DATA_ALIGN * 4 - 1);
             const fragments = keyscheme.keygen(
+                serviceId,
                 policy,
                 'testObj',
                 split.DATA_ALIGN * 8 + 1, // Tough luck, worst possible overhead
@@ -113,6 +116,7 @@ mocha.describe('Keyscheme', function () {
             );
 
             /* Verify globals */
+            assert.strictEqual(fragments.serviceId, 42);
             assert.strictEqual(fragments.objectKey, 'testObj');
             assert.strictEqual(fragments.code, 'CP');
             assert.strictEqual(fragments.nDataParts, 3);
@@ -133,7 +137,7 @@ mocha.describe('Keyscheme', function () {
                     assert.strictEqual(typeof f.uuid, 'string');
                     assert.strictEqual(f.fragmentId, i);
                     assert.strictEqual(
-                        f.key, `testObj-4cb2f-${startOffset}-1-CP,3-${i}`);
+                        f.key, `${serviceId}-testObj-4cb2f-${startOffset}-${i}`);
                 });
             });
 
@@ -152,17 +156,17 @@ mocha.describe('Keyscheme', function () {
                         mocha.it(`Invariant ${code}${nData}${nCoding}`, function (done) {
                             const policy = getPlacementPolicy(splitSize);
                             const fragments = keyscheme.keygen(
-                                policy, 'fake', 10000, code, nData, nCoding);
+                                42, policy, 'fake', 10000, code, nData, nCoding);
                             const serialized = keyscheme.serialize(fragments);
                             const parsed = keyscheme.deserialize(serialized);
 
                             const sections = serialized.split(keyscheme.SECTION_SEPARATOR);
                             assert.strictEqual(sections.length, 6 + nData + nCoding);
                             assert.strictEqual(sections[0], String(keyscheme.KEYSCHEME_VERSION));
-                            assert.strictEqual(sections[1], String(placement.PLACEMENT_POLICY_VERSION));
+                            assert.strictEqual(sections[1], String(42));
 
                             /* Check fragments === parsed */
-                            assert.deepStrictEqual(fragments, parsed);
+                            assert.deepStrictEqual(parsed, fragments);
                             done();
                         });
                     }
@@ -182,6 +186,7 @@ mocha.describe('Keyscheme', function () {
                 done();
             }
         });
+
         mocha.it('Negative scheme version', function (done) {
             try {
                 keyscheme.deserialize('-1#1#1,0#RS,2,1#genobj#123456#hd2#hd1#hd1');
@@ -192,6 +197,7 @@ mocha.describe('Keyscheme', function () {
                 done();
             }
         });
+
         mocha.it('Future scheme version', function (done) {
             try {
                 keyscheme.deserialize('2#1#1,0#RS,2,1#genobj#123456#hd2#hd1#hd1');
@@ -203,33 +209,24 @@ mocha.describe('Keyscheme', function () {
             }
         });
 
-        mocha.it('Bad scheme topology version', function (done) {
+        mocha.it('Bad serviceId', function (done) {
             try {
                 keyscheme.deserialize('1#gné#1,0#RS,2,1#genobj#123456#hd2#hd1#hd1');
                 done(new Error('Shoud never have been reached'));
             } catch (err) {
                 assert.ok(err instanceof keyscheme.KeySchemeDeserializeError);
-                assert.strictEqual(err.message, 'Unknown topology version gné');
+                assert.strictEqual(err.message, 'Unknown serviceId gné');
                 done();
             }
         });
-        mocha.it('Negative scheme topology version', function (done) {
+
+        mocha.it('Negative serviceId', function (done) {
             try {
                 keyscheme.deserialize('1#-1#1,0#RS,2,1#genobj#123456#hd2#hd1#hd1');
                 done(new Error('Shoud never have been reached'));
             } catch (err) {
                 assert.ok(err instanceof keyscheme.KeySchemeDeserializeError);
-                assert.strictEqual(err.message, 'Unknown topology version -1');
-                done();
-            }
-        });
-        mocha.it('Future scheme topolgy version', function (done) {
-            try {
-                keyscheme.deserialize('1#2#1,0#RS,2,1#genobj#123456#hd2#hd1#hd1');
-                done(new Error('Shoud never have been reached'));
-            } catch (err) {
-                assert.ok(err instanceof keyscheme.KeySchemeDeserializeError);
-                assert.strictEqual(err.message, 'Unknown topology version 2');
+                assert.strictEqual(err.message, 'Unknown serviceId -1');
                 done();
             }
         });

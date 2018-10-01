@@ -34,9 +34,9 @@ Since we can specify which key to use on an hyperdrive, we could define a new ke
 
 Proposed key generation scheme:
 ```
-<genkey> := <version>#<placement_policy_version>#<split>#<rep_policy>#<object_key>#<rand>#<location>[#<location>]
+<genkey> := <version>#<serviceId>#<split>#<rep_policy>#<object_key>#<rand>#<location>[#<location>]
 <version> := Natural (so 0 or 1 to start)
-<placement_policy_version> := Natural (so 0 or 1 to start) - what placement policy was used
+<serviceId> := Natural > 1 - serviceId, can be used for namespacing
 <split> := <size>,<split_size>
 <size> := total size of the object
 <split_size> := size of each splitted parts, except last one (see hyperdrive keys below)
@@ -48,8 +48,8 @@ Proposed key generation scheme:
 
 The keys actually used to sotre fragments on the hyperdrives can be derived easily with only the generated key, even for splits.
 ```
-<stored_fragment_key> := <object_key>-<rand>-<start_offset>-<placement_policy_version>-<rep_policy>-<fragid>
-<placement_policy_version>, <rep_policy>, <object_key> and <rand> are the ones defined above
+<stored_fragment_key> := <serviceId>-<object_key>-<rand>-<start_offset>-<fragid>
+<serviceId>, <object_key> and <rand> are the ones defined above
 <fragid>:= index in main key fragment list
 <start_offset> := used for splits. All split chunks share the same prefix, storing the offset is used to easily have range queries and avoid storing them all in the main key.
 ```

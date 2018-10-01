@@ -230,6 +230,7 @@ function getExpectedBody(payload) {
 /**
  * Mock a single PUT call on a given host:port
  *
+ * @param {Number} serviceId ServiceId of key creator
  * @param {Map} uuidmapping Map UUIDS to hyperdrive endpoints (ip:port)
  * @param {String} uuid  to contact
  * @param {Object} keyContext same as given to actual PUT
@@ -242,7 +243,7 @@ function getExpectedBody(payload) {
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockPutRequest(uuidmapping, uuid, keyContext, startOffset, fragmentId,
+function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, startOffset, fragmentId,
                          { statusCode, payload, contentType, timeoutMs = 0 }) {
     const len = getPayloadLength(payload);
     const expectedBody = getExpectedBody(payload);
@@ -257,8 +258,11 @@ function _mockPutRequest(uuidmapping, uuid, keyContext, startOffset, fragmentId,
         `${protocol.specs.HYPERDRIVE_APPLICATION}; ${contentType}=${len}; $crc.${contentType}=0xdeadbeef`,
     };
 
-    const expectedPathPrefix = `${protocol.specs.STORAGE_BASE_URL}/${keyContext.objectKey}`;
-    const mockedPathRegex = new RegExp(`${expectedPathPrefix}-.+-${startOffset}-1-.+-${fragmentId}`);
+    const expectedKeyPattern = [
+        serviceId, keyContext.objectKey, '.+',
+        startOffset, fragmentId,
+    ].join(keyscheme.PART_KEY_SEPARATOR);
+    const mockedPathRegex = new RegExp(`${protocol.specs.STORAGE_BASE_URL}/${expectedKeyPattern}`);
     const { hostname, port } = libUtils.resolveUUID(uuidmapping, uuid);
 
     return nock(`http://${hostname}:${port}`, { reqheaders })
@@ -308,12 +312,14 @@ function mockPUT(client, keyContext, repliess) {
     const mocks = repliess.map(replies => {
         const dataMocks = dataLocations.map(
             (loc, idx) => _mockPutRequest(
+                clientConfig.serviceId,
                 clientConfig.uuidmapping,
                 loc, keyContext, startOffset, idx,
                 replies[idx]));
 
         const codingMocks = codingLocations.map(
             (loc, idx) => _mockPutRequest(
+                clientConfig.serviceId,
                 clientConfig.uuidmapping,
                 loc, keyContext, startOffset, dataLocations.length + idx,
                 replies[dataLocations.length + idx]));
@@ -428,6 +434,7 @@ function mockGET(client, objectKey, objectSize, repliess) {
     const nDataParts = clientConfig.codes[0].dataParts;
     const nCodingParts = clientConfig.codes[0].codingParts;
     const parts = keyscheme.keygen(
+        clientConfig.serviceId,
         clientConfig.policy,
         objectKey,
         objectSize,
@@ -531,6 +538,7 @@ function mockDELETE(client, objectKey, objectSize, repliess) {
     const nDataParts = clientConfig.codes[0].dataParts;
     const nCodingParts = clientConfig.codes[0].codingParts;
     const parts = keyscheme.keygen(
+        clientConfig.serviceId,
         clientConfig.policy,
         objectKey,
         objectSize,

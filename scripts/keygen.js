@@ -29,11 +29,13 @@ function main() {
     assert.ok(nData > 0);
     assert.ok(nCoding >= 0);
 
-    const parts = keyscheme.keygen(hdconf.policy,
-                                   process.argv[4],
-                                   process.argv[5],
-                                   code, nData, nCoding,
-                                   process.argv[6]);
+    const parts = keyscheme.keygen(
+        hdconf.serviceId,
+        hdconf.policy,
+        process.argv[4],
+        process.argv[5],
+        code, nData, nCoding,
+        process.argv[6]);
 
     const genkey = keyscheme.serialize(parts);
     const output = {
