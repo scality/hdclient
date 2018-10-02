@@ -48,10 +48,10 @@ Proposed key generation scheme:
 
 The keys actually used to sotre fragments on the hyperdrives can be derived easily with only the generated key, even for splits.
 ```
-<stored_fragment_key> := <serviceId>-<ctime>-<hash>-<start_offset>-<fragid>
+<stored_fragment_key> := <serviceId>-<ctime>-<hash>-<end_offset>-<fragid>
 <serviceId>, <ctime> and <hash> are the ones defined above
 <fragid>:= index in main key fragment list
-<start_offset> := used for splits. All split chunks share the same prefix, storing the offset is used to easily have range queries and avoid storing them all in the main key.
+<end_offset> := used for splits. All split chunks share the same prefix, storing the offset is used to easily have range queries and avoid storing them all in the main key. End of chunk offset is used to be able to infer object real size from last chunk keys alone (only way to do it for erasure coded last chunk parts).
 ```
 
 Meets all requirements (except perhaps around the last stripe size of an ECN chunk). Split is required to contact the same hyperdrives for the object: all chunks of an object generates the same number of fragments, and fragments X of chunks Y is always stored onto selected hyperdrive X. This has several benefits: only selecting once, object located on only a handful of hyperdrives => less machines to contact = less opportunities to fail or hit a straggler. The way split is handled also enables us not to have a manifest, worries about its size, location or freshness.
@@ -62,9 +62,9 @@ Example key:
 1/ Small key: storing s3://fakebucket/obj1/11 of 32KB with RS2+1 (stripe: 4096) onto hd1, hd2 and hd3
 Main key: 1#42#32768,32768#RS,2,1,4096#123456789#deadbeef#hd1#hd3#hd2
 Hyperdrive keys:
-1. 42-123456789-deadbeef-0-0
-2. 42-123456789-deadbeef-0-1
-3. 42-123456789-deadbeef-0-2
+1. 42-123456789-deadbeef-320000-0
+2. 42-123456789-deadbeef-320000-1
+3. 42-123456789-deadbeef-320000-2
 
 2/ Splitted key: storing s3://fakebucket/Large1/13 with RS2+1,4096 onto hd1, hd2 and hd3
 Key size: 64000, split_size: 49000, 2 parts on same hyperdrive (no conflict!)
@@ -73,13 +73,13 @@ Main key: 1#42#64000,49000#RS,2,1,4096#123456456#cafebabe#hd3#hd2#hd3
 Hyperdrive keys:
 * On hd1: none
 * On hd2
-  1. 42-123456456-cafebabe-0-2
-  2. 42-123456456-cafebabe-49000-2
+  1. 42-123456456-cafebabe-49000-2
+  2. 42-123456456-cafebabe-64000-2
 * On hd3
-  1. 42-123456456-cafebabe-0-1
-  2. 42-123456456-cafebabe-0-3
-  3. 42-123456456-cafebabe-49000-1
-  4. 42-123456456-cafebabe-49000-3
+  1. 42-123456456-cafebabe-49000-1
+  2. 42-123456456-cafebabe-49000-3
+  3. 42-123456456-cafebabe-64000-1
+  4. 42-123456456-cafebabe-64000-3
 
 ## Error handling
 

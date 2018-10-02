@@ -10,7 +10,7 @@ const nock = require('nock'); // HTTP API mocking
 const fs = require('fs');
 const stream = require('stream');
 
-const { hdclient, protocol, keyscheme,
+const { hdclient, protocol, keyscheme, split,
         utils: libUtils } = require('../index');
 
 
@@ -234,7 +234,7 @@ function getExpectedBody(payload) {
  * @param {Map} uuidmapping Map UUIDS to hyperdrive endpoints (ip:port)
  * @param {String} uuid  to contact
  * @param {Object} keyContext same as given to actual PUT
- * @param {String} startOffset Total offset in object
+ * @param {String} endOffset Total end offset of this chunk in object
  * @param {Number} fragmentId Index of fragment
  * @param {Number} statusCode of the reply
  * @param {fs.ReadStream|String} payload to return
@@ -243,7 +243,7 @@ function getExpectedBody(payload) {
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, startOffset, fragmentId,
+function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, endOffset, fragmentId,
                          { statusCode, payload, contentType, timeoutMs = 0 }) {
     const len = getPayloadLength(payload);
     const expectedBody = getExpectedBody(payload);
@@ -261,7 +261,7 @@ function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, startOffset, 
     const hash = keyscheme.keyhash(keyContext);
     const expectedKeyPattern = [
         serviceId, '[0-9]+', hash,
-        startOffset, fragmentId,
+        endOffset, fragmentId,
     ].join(keyscheme.PART_KEY_SEPARATOR);
     const mockedPathRegex = new RegExp(`${protocol.specs.STORAGE_BASE_URL}/${expectedKeyPattern}`);
     const { hostname, port } = libUtils.resolveUUID(uuidmapping, uuid);
@@ -287,6 +287,7 @@ function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, startOffset, 
  *
  * @param {HyperdriveClient} client Hyperdrive client instance
  * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, version }
+ * @param {Number} size Total payload size
  * @param {[[Reply]]} repliess description
  * @comment each entry of replies must be an Object with:
  *          - statusCode => {Number} HTTP status code to return
@@ -297,35 +298,35 @@ function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, startOffset, 
  * @return {Object} with rawKey and mocks
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockPUT(client, keyContext, repliess) {
+function mockPUT(client, keyContext, size, repliess) {
     const clientConfig = client.options;
     const code = client.selectCode(keyContext.bucketName, keyContext.objectKey);
     if (code === null) {
         return {};
     }
 
+    const { splitSize } = split.getSplitSize(
+        clientConfig.policy.minSplitSize, size, code.type, code.dataParts);
     const { dataLocations, codingLocations } = deterministicPlacement(
         clientConfig.policy, code.dataParts, code.codingParts);
     const nParts = dataLocations.length + codingLocations.length;
     assert.ok(repliess.every(c => c.length === nParts));
 
-    let startOffset = 0;
-    const mocks = repliess.map(replies => {
+    const mocks = repliess.map((replies, chunkId) => {
+        const endOffset = Math.min(size, splitSize * (chunkId + 1));
         const dataMocks = dataLocations.map(
             (loc, idx) => _mockPutRequest(
                 clientConfig.serviceId,
                 clientConfig.uuidmapping,
-                loc, keyContext, startOffset, idx,
+                loc, keyContext, endOffset, idx,
                 replies[idx]));
 
         const codingMocks = codingLocations.map(
             (loc, idx) => _mockPutRequest(
                 clientConfig.serviceId,
                 clientConfig.uuidmapping,
-                loc, keyContext, startOffset, dataLocations.length + idx,
+                loc, keyContext, endOffset, dataLocations.length + idx,
                 replies[dataLocations.length + idx]));
-
-        startOffset += getPayloadLength(replies[0].payload);
 
         return { dataMocks, codingMocks };
     });

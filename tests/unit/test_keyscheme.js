@@ -42,14 +42,14 @@ mocha.describe('Keyscheme', function () {
                 assert.strictEqual(typeof f.uuid, 'string');
                 assert.strictEqual(f.fragmentId, i);
                 assert.strictEqual(
-                    f.key, `1-${fragments.ctime}-${fragments.hash}-0-${i}`);
+                    f.key, `1-${fragments.ctime}-${fragments.hash}-${fragments.size}-${i}`);
             });
 
             fragments.chunks[0].coding.forEach((f, i) => {
                 assert.strictEqual(typeof f.uuid, 'string');
                 assert.strictEqual(f.fragmentId, 2 + i);
                 assert.strictEqual(
-                    f.key, `1-${fragments.ctime}-${fragments.hash}-0-${2 + i}`);
+                    f.key, `1-${fragments.ctime}-${fragments.hash}-${fragments.size}-${2 + i}`);
             });
 
             done();
@@ -83,14 +83,14 @@ mocha.describe('Keyscheme', function () {
             /* Verify each fragment */
             assert.strictEqual(fragments.chunks.length, 3);
             fragments.chunks.forEach((chunk, chunkId) => {
-                const startOffset = fragments.splitSize * chunkId;
+                const endOffset = Math.min(fragments.size, fragments.splitSize * (chunkId + 1));
                 assert.strictEqual(chunk.data.length, 3);
                 assert.strictEqual(chunk.coding.length, 0);
                 chunk.data.forEach((f, i) => {
                     assert.strictEqual(typeof f.uuid, 'string');
                     assert.strictEqual(f.fragmentId, i);
                     assert.strictEqual(
-                        f.key, `${serviceId}-${fragments.ctime}-${fragments.hash}-${startOffset}-${i}`);
+                        f.key, `${serviceId}-${fragments.ctime}-${fragments.hash}-${endOffset}-${i}`);
                 });
             });
 

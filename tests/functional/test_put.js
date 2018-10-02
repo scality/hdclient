@@ -42,7 +42,10 @@ mocha.describe('PUT', function () {
                 },
             ]];
 
-            hdmock.mockPUT(hdClient, keyContext, mocks);
+            hdmock.mockPUT(
+                hdClient, keyContext,
+                hdmock.getPayloadLength(content),
+                mocks);
 
             hdClient.put(
                 hdmock.streamString(content),
@@ -86,7 +89,10 @@ mocha.describe('PUT', function () {
                 },
             ]];
 
-            hdmock.mockPUT(hdClient, keyContext, mocks);
+            hdmock.mockPUT(
+                hdClient, keyContext,
+                hdmock.getPayloadLength(content),
+                mocks);
 
             hdClient.put(
                 content,
@@ -128,7 +134,10 @@ mocha.describe('PUT', function () {
                 },
             ]];
 
-            hdmock.mockPUT(hdClient, keyContext, mocks);
+            hdmock.mockPUT(
+                hdClient, keyContext,
+                hdmock.getPayloadLength(content),
+                mocks);
 
             hdClient.put(
                 hdmock.streamString(content),
@@ -167,7 +176,10 @@ mocha.describe('PUT', function () {
                 },
             ]];
 
-            hdmock.mockPUT(hdClient, keyContext, mocks);
+            hdmock.mockPUT(
+                hdClient, keyContext,
+                hdmock.getPayloadLength(content),
+                mocks);
 
             let called = false;
             hdClient.put(
@@ -223,7 +235,10 @@ mocha.describe('PUT', function () {
                     },
                 ]];
 
-                hdmock.mockPUT(hdClient, keyContext, mocks);
+                hdmock.mockPUT(
+                    hdClient, keyContext,
+                    hdmock.getPayloadLength(content),
+                    mocks);
 
                 hdClient.put(
                     hdmock.streamString(content),
@@ -274,7 +289,10 @@ mocha.describe('PUT', function () {
                     },
                 ]];
 
-                hdmock.mockPUT(hdClient, keyContext, mocks);
+                hdmock.mockPUT(
+                    hdClient, keyContext,
+                    hdmock.getPayloadLength(content),
+                    mocks);
 
                 hdClient.put(
                     content,
@@ -332,7 +350,10 @@ mocha.describe('PUT', function () {
                     },
                 ]];
 
-                hdmock.mockPUT(hdClient, keyContext, mocks);
+                hdmock.mockPUT(
+                    hdClient, keyContext,
+                    hdmock.getPayloadLength(content),
+                    mocks);
 
                 hdClient.put(
                     content,
@@ -391,7 +412,10 @@ mocha.describe('PUT', function () {
                     },
                 ]];
 
-                hdmock.mockPUT(hdClient, keyContext, mocks);
+                hdmock.mockPUT(
+                    hdClient, keyContext,
+                    hdmock.getPayloadLength(content),
+                    mocks);
 
                 hdClient.put(
                     content,
@@ -458,7 +482,10 @@ mocha.describe('PUT', function () {
                     },
                 ]];
 
-                hdmock.mockPUT(hdClient, keyContext, mocks);
+                hdmock.mockPUT(
+                    hdClient, keyContext,
+                    hdmock.getPayloadLength(content),
+                    mocks);
 
                 hdClient.put(
                     content,
@@ -528,7 +555,10 @@ mocha.describe('PUT', function () {
                     },
                 ]];
 
-                hdmock.mockPUT(hdClient, keyContext, mocks);
+                hdmock.mockPUT(
+                    hdClient, keyContext,
+                    hdmock.getPayloadLength(content),
+                    mocks);
 
                 hdClient.put(
                     hdmock.streamString(content),
@@ -602,7 +632,10 @@ mocha.describe('PUT', function () {
                                     hdClient.options.requestTimeoutMs + 10 : 0,
                             }))];
 
-                            hdmock.mockPUT(hdClient, keyContext, mocks);
+                            hdmock.mockPUT(
+                                hdClient, keyContext,
+                                size,
+                                mocks);
 
                             hdClient.put(
                                 hdmock.streamString(content),
@@ -670,7 +703,10 @@ mocha.describe('PUT', function () {
                     },
                 ]];
 
-                hdmock.mockPUT(hdClient, keyContext, mocks);
+                hdmock.mockPUT(
+                    hdClient, keyContext,
+                    hdmock.getPayloadLength(content),
+                    mocks);
 
                 hdClient.put(
                     hdmock.streamString(content),
@@ -691,7 +727,10 @@ mocha.describe('PUT', function () {
                     },
                 ]];
 
-                hdmock.mockPUT(hdClient, keyContext, mocks);
+                hdmock.mockPUT(
+                    hdClient, keyContext,
+                    hdmock.getPayloadLength(content),
+                    mocks);
 
                 hdClient.put(
                     hdmock.streamString(content),
@@ -737,7 +776,10 @@ mocha.describe('PUT', function () {
                 },
             ]];
 
-            hdmock.mockPUT(hdClient, keyContext, mocks);
+            hdmock.mockPUT(
+                hdClient, keyContext,
+                hdmock.getPayloadLength(content),
+                mocks);
             hdClient.errorAgent.nextError = new Error('Broken by Design');
 
             hdClient.put(
@@ -800,7 +842,10 @@ mocha.describe('PUT', function () {
                 },
             ]];
 
-            hdmock.mockPUT(hdClient, keyContext, mocks);
+            hdmock.mockPUT(
+                hdClient, keyContext,
+                hdmock.getPayloadLength(content),
+                mocks);
             content.pipe(errorStream);
 
             hdClient.put(
@@ -875,7 +920,7 @@ mocha.describe('PUT', function () {
                 }],
             ];
 
-            hdmock.mockPUT(hdClient, keyContext, mocks);
+            hdmock.mockPUT(hdClient, keyContext, size, mocks);
 
             hdClient.put(
                 hdmock.streamString(content),
@@ -971,7 +1016,7 @@ mocha.describe('PUT', function () {
                 }],
             ];
 
-            hdmock.mockPUT(hdClient, keyContext, mocks);
+            hdmock.mockPUT(hdClient, keyContext, size, mocks);
 
             hdClient.put(
                 hdmock.streamString(content),
