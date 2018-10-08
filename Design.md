@@ -51,7 +51,7 @@ The keys actually used to sotre fragments on the hyperdrives can be derived easi
 <stored_fragment_key> := <serviceId>-<ctime>-<hash>-<end_offset>-<fragid>
 <serviceId>, <ctime> and <hash> are the ones defined above
 <fragid>:= index in main key fragment list
-<end_offset> := used for splits. All split chunks share the same prefix, storing the offset is used to easily have range queries and avoid storing them all in the main key. End of chunk offset is used to be able to infer object real size from last chunk keys alone (only way to do it for erasure coded last chunk parts).
+<end_offset> := used for splits, exclusive. All split chunks share the same prefix, storing the offset is used to easily have range queries and avoid storing them all in the main key. End of chunk offset is used to be able to infer object real size from last chunk keys alone (only way to do it for erasure coded last chunk parts).
 ```
 
 Meets all requirements (except perhaps around the last stripe size of an ECN chunk). Split is required to contact the same hyperdrives for the object: all chunks of an object generates the same number of fragments, and fragments X of chunks Y is always stored onto selected hyperdrive X. This has several benefits: only selecting once, object located on only a handful of hyperdrives => less machines to contact = less opportunities to fail or hit a straggler. The way split is handled also enables us not to have a manifest, worries about its size, location or freshness.
