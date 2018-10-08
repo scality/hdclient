@@ -16,7 +16,8 @@
   "dependencies": {
     "ecstream": "scality/ecstream#development/1.0",
     "node-rdkafka": "2.2.0",
-    "werelogs": "scality/werelogs#GA7.2.0.5"
+    "werelogs": "scality/werelogs#GA7.2.0.5",
+    "xxhash": "0.2.4"
   },
   "devDependencies": {
     "eslint": "2.13.1",

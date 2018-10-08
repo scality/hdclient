@@ -34,24 +34,24 @@ Since we can specify which key to use on an hyperdrive, we could define a new ke
 
 Proposed key generation scheme:
 ```
-<genkey> := <version>#<placement_policy_version>#<split>#<rep_policy>#<object_key>#<rand>#<location>[#<location>]
+<genkey> := <version>#<serviceId>#<split>#<rep_policy>#<ctime>#<hash>#<location>[#<location>]
 <version> := Natural (so 0 or 1 to start)
-<placement_policy_version> := Natural (so 0 or 1 to start) - what placement policy was used
+<serviceId> := Natural > 1 - serviceId, can be used for namespacing
 <split> := <size>,<split_size>
 <size> := total size of the object
 <split_size> := size of each splitted parts, except last one (see hyperdrive keys below)
 <rep_policy> := RS,k,m,stripe_size or CP,n (for n-1 copies) - stripe_size is a positive integer
-<object_key> := parent S3 object key (or a prefix) - can contain anything but ‘#’
-<rand> := 32 bits random number (unicity inside 1 hyperdrive) encoded as hexadecimal string
+<ctime> := creation timestamp of the key
+<hash> := 64 bit hash of bucketName/objectKey/version, in hexadecimal
 <location>:= hyperdrive location (UUID, idx in table?, ip:port, ...)
 ```
 
 The keys actually used to sotre fragments on the hyperdrives can be derived easily with only the generated key, even for splits.
 ```
-<stored_fragment_key> := <object_key>-<rand>-<start_offset>-<placement_policy_version>-<rep_policy>-<fragid>
-<placement_policy_version>, <rep_policy>, <object_key> and <rand> are the ones defined above
+<stored_fragment_key> := <serviceId>-<ctime>-<hash>-<end_offset>-<fragid>
+<serviceId>, <ctime> and <hash> are the ones defined above
 <fragid>:= index in main key fragment list
-<start_offset> := used for splits. All split chunks share the same prefix, storing the offset is used to easily have range queries and avoid storing them all in the main key.
+<end_offset> := used for splits, exclusive. All split chunks share the same prefix, storing the offset is used to easily have range queries and avoid storing them all in the main key. End of chunk offset is used to be able to infer object real size from last chunk keys alone (only way to do it for erasure coded last chunk parts).
 ```
 
 Meets all requirements (except perhaps around the last stripe size of an ECN chunk). Split is required to contact the same hyperdrives for the object: all chunks of an object generates the same number of fragments, and fragments X of chunks Y is always stored onto selected hyperdrive X. This has several benefits: only selecting once, object located on only a handful of hyperdrives => less machines to contact = less opportunities to fail or hit a straggler. The way split is handled also enables us not to have a manifest, worries about its size, location or freshness.
@@ -59,27 +59,27 @@ Meets all requirements (except perhaps around the last stripe size of an ECN chu
 Note: key generation requires setting aside a single character and forbid the users to it in their object name. We currently settled on '#'. Handling of the maximum key length is still vague (some pending work on the hyperdrive and probably prefixing on hdclient side).
 
 Example key:
-1/ Small key: storing s3://fakebucket/obj1 of 32KB with RS2+1 (stripe: 4096) onto hd1, hd2 and hd3
-Main key: 1#1#32768,32768#RS,2,1,4096#obj1#314159#hd1#hd3#hd2
+1/ Small key: storing s3://fakebucket/obj1/11 of 32KB with RS2+1 (stripe: 4096) onto hd1, hd2 and hd3
+Main key: 1#42#32768,32768#RS,2,1,4096#123456789#deadbeef#hd1#hd3#hd2
 Hyperdrive keys:
-1. obj1-4cb2f-0-1-RS,2,1,4096-1
-2. obj1-4cb2f-0-1-RS,2,1,4096-2
-3. obj1-4cb2f-0-1-RS,2,1,4096-3
+1. 42-123456789-deadbeef-320000-0
+2. 42-123456789-deadbeef-320000-1
+3. 42-123456789-deadbeef-320000-2
 
-2/ Splitted key: storing s3://fakebucket/Large1 with RS2+1,4096 onto hd1, hd2 and hd3
+2/ Splitted key: storing s3://fakebucket/Large1/13 with RS2+1,4096 onto hd1, hd2 and hd3
 Key size: 64000, split_size: 49000, 2 parts on same hyperdrive (no conflict!)
 
-Main key: 1#1#64000,49000#RS,2,1,4096#Large1#42#hd3#hd2#hd3
+Main key: 1#42#64000,49000#RS,2,1,4096#123456456#cafebabe#hd3#hd2#hd3
 Hyperdrive keys:
 * On hd1: none
 * On hd2
-  1. Large1-dead-0-1-RS,2,1,4096-2
-  2. Large1-dead-49000-1-RS,2,1,4096-2
+  1. 42-123456456-cafebabe-49000-2
+  2. 42-123456456-cafebabe-64000-2
 * On hd3
-  1. Large1-dead-0-1-RS,2,1,4096-1
-  2. Large1-dead-0-1-RS,2,1,4096-3
-  3. Large1-dead-49000-1-RS,2,1,4096-1
-  4. Large1-dead-49000-1-RS,2,1,4096-3
+  1. 42-123456456-cafebabe-49000-1
+  2. 42-123456456-cafebabe-49000-3
+  3. 42-123456456-cafebabe-64000-1
+  4. 42-123456456-cafebabe-64000-3
 
 ## Error handling
 

@@ -10,7 +10,7 @@ const nock = require('nock'); // HTTP API mocking
 const fs = require('fs');
 const stream = require('stream');
 
-const { hdclient, protocol, keyscheme,
+const { hdclient, protocol, keyscheme, split,
         utils: libUtils } = require('../index');
 
 
@@ -230,10 +230,11 @@ function getExpectedBody(payload) {
 /**
  * Mock a single PUT call on a given host:port
  *
+ * @param {Number} serviceId ServiceId of key creator
  * @param {Map} uuidmapping Map UUIDS to hyperdrive endpoints (ip:port)
  * @param {String} uuid  to contact
  * @param {Object} keyContext same as given to actual PUT
- * @param {String} startOffset Total offset in object
+ * @param {String} endOffset Total end offset of this chunk in object
  * @param {Number} fragmentId Index of fragment
  * @param {Number} statusCode of the reply
  * @param {fs.ReadStream|String} payload to return
@@ -242,7 +243,7 @@ function getExpectedBody(payload) {
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockPutRequest(uuidmapping, uuid, keyContext, startOffset, fragmentId,
+function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, endOffset, fragmentId,
                          { statusCode, payload, contentType, timeoutMs = 0 }) {
     const len = getPayloadLength(payload);
     const expectedBody = getExpectedBody(payload);
@@ -257,13 +258,17 @@ function _mockPutRequest(uuidmapping, uuid, keyContext, startOffset, fragmentId,
         `${protocol.specs.HYPERDRIVE_APPLICATION}; ${contentType}=${len}; $crc.${contentType}=0xdeadbeef`,
     };
 
-    const expectedPathPrefix = `${protocol.specs.STORAGE_BASE_URL}/${keyContext.objectKey}`;
-    const mockedPathRegex = new RegExp(`${expectedPathPrefix}-.+-${startOffset}-1-.+-${fragmentId}`);
+    const hash = keyscheme.keyhash(keyContext);
+    const expectedKeyPattern = [
+        serviceId, '[0-9]+', hash,
+        endOffset, fragmentId,
+    ].join(keyscheme.PART_KEY_SEPARATOR);
+    const mockedPathRegex = new RegExp(`${protocol.specs.STORAGE_BASE_URL}/${expectedKeyPattern}`);
     const { hostname, port } = libUtils.resolveUUID(uuidmapping, uuid);
 
     return nock(`http://${hostname}:${port}`, { reqheaders })
         .put(mockedPathRegex, body =>
-            /* Stupid nock forces to matche expected body against
+            /* Stupid nock forces to match expected body against
              * a stringified buffer, of which I can't specify the encoding...
              */
             body === expectedBody.toString('hex') ||
@@ -281,7 +286,8 @@ function _mockPutRequest(uuidmapping, uuid, keyContext, startOffset, fragmentId,
  * that enables you to know which are going to be contacted
  *
  * @param {HyperdriveClient} client Hyperdrive client instance
- * @param {String} keyContext same as given to actual PUT
+ * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, version }
+ * @param {Number} size Total payload size
  * @param {[[Reply]]} repliess description
  * @comment each entry of replies must be an Object with:
  *          - statusCode => {Number} HTTP status code to return
@@ -292,33 +298,35 @@ function _mockPutRequest(uuidmapping, uuid, keyContext, startOffset, fragmentId,
  * @return {Object} with rawKey and mocks
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockPUT(client, keyContext, repliess) {
+function mockPUT(client, keyContext, size, repliess) {
     const clientConfig = client.options;
     const code = client.selectCode(keyContext.bucketName, keyContext.objectKey);
     if (code === null) {
         return {};
     }
 
+    const { splitSize } = split.getSplitSize(
+        clientConfig.policy.minSplitSize, size, code.type, code.dataParts);
     const { dataLocations, codingLocations } = deterministicPlacement(
         clientConfig.policy, code.dataParts, code.codingParts);
     const nParts = dataLocations.length + codingLocations.length;
     assert.ok(repliess.every(c => c.length === nParts));
 
-    let startOffset = 0;
-    const mocks = repliess.map(replies => {
+    const mocks = repliess.map((replies, chunkId) => {
+        const endOffset = Math.min(size, splitSize * (chunkId + 1));
         const dataMocks = dataLocations.map(
             (loc, idx) => _mockPutRequest(
+                clientConfig.serviceId,
                 clientConfig.uuidmapping,
-                loc, keyContext, startOffset, idx,
+                loc, keyContext, endOffset, idx,
                 replies[idx]));
 
         const codingMocks = codingLocations.map(
             (loc, idx) => _mockPutRequest(
+                clientConfig.serviceId,
                 clientConfig.uuidmapping,
-                loc, keyContext, startOffset, dataLocations.length + idx,
+                loc, keyContext, endOffset, dataLocations.length + idx,
                 replies[dataLocations.length + idx]));
-
-        startOffset += getPayloadLength(replies[0].payload);
 
         return { dataMocks, codingMocks };
     });
@@ -408,7 +416,7 @@ function _mockGetRequest(uuidmapping,
  * It generates a rawKey (as if there was a PUT before).
  *
  * @param {HyperdriveClient} client Hyperdrive client instance
- * @param {String} objectKey The object identifier
+ * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, version }
  * @param {Number} objectSize Total object size
  * @param {[[Reply]]} repliess description
  * @comment each entry of replies must be an Object with:
@@ -423,13 +431,14 @@ function _mockGetRequest(uuidmapping,
  * @return {Object} with rawKey and mocks
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockGET(client, objectKey, objectSize, repliess) {
+function mockGET(client, keyContext, objectSize, repliess) {
     const clientConfig = client.options;
     const nDataParts = clientConfig.codes[0].dataParts;
     const nCodingParts = clientConfig.codes[0].codingParts;
     const parts = keyscheme.keygen(
+        clientConfig.serviceId,
         clientConfig.policy,
-        objectKey,
+        keyContext,
         objectSize,
         clientConfig.codes[0].type,
         nDataParts,
@@ -515,7 +524,7 @@ function _mockDeleteRequest(uuidmapping, location, { statusCode, timeoutMs = 0 }
  * It generates a rawKey (as if there was a PUT before).
  *
  * @param {HyperdriveClient} client Hyperdrive client instance
- * @param {String} objectKey The object identifier
+ * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, version }
  * @param {Number} objectSize Total object size
  * @param {[[Reply]]} repliess description
  * @comment replies are organized:  [replies] per chunk
@@ -526,13 +535,14 @@ function _mockDeleteRequest(uuidmapping, location, { statusCode, timeoutMs = 0 }
  * @return {Object} with rawKey and mocks
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockDELETE(client, objectKey, objectSize, repliess) {
+function mockDELETE(client, keyContext, objectSize, repliess) {
     const clientConfig = client.options;
     const nDataParts = clientConfig.codes[0].dataParts;
     const nCodingParts = clientConfig.codes[0].codingParts;
     const parts = keyscheme.keygen(
+        clientConfig.serviceId,
         clientConfig.policy,
-        objectKey,
+        keyContext,
         objectSize,
         clientConfig.codes[0].type,
         nDataParts,

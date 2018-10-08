@@ -229,11 +229,12 @@ You can find several utilities located under ./scripts/.
 
 ```shell
 # Generate PUT key with RS2+1
-node scripts/keygen.js scripts/example_hdclient_proxy.conf.json "RS,2,1" genobj 123456 | jq
+node scripts/keygen.js scripts/example_hdclient_proxy.conf.json "RS,2,1" "bucket/genobj/11" 123456 | jq
 {
   "parts": {
-    "objectKey": "genobj",
-    "rand": 123456,
+    "serviceId": 1,
+    "ctime": 1121231354,
+    "hash": "deadbeef",
     "code": "RS",
     "nDataParts": 2,
     "nCodingParts": 1,
@@ -241,33 +242,30 @@ node scripts/keygen.js scripts/example_hdclient_proxy.conf.json "RS,2,1" genobj 
     "data": [
       {
         "location": "localhost:7777",
-        "type": "d",
         "fragmentId": 0,
         "hostname": "localhost",
         "port": 7777,
-        "key": "genobj-123456-0-d-0"
+        "key": "1-1121231354-deadbeef-0-0"
       },
       {
         "location": "localhost:7777",
-        "type": "d",
         "fragmentId": 1,
         "hostname": "localhost",
         "port": 7777,
-        "key": "genobj-123456-0-d-1"
+        "key": "1-1121231354-deadbeef-0-1"
       }
     ],
     "coding": [
       {
         "location": "localhost:7777",
-        "type": "c",
         "fragmentId": 2,
         "hostname": "localhost",
         "port": 7777,
-        "key": "genobj-123456-0-c-2"
+        "key": "1-1121231354-deadbeef-0-2"
       }
     ]
   },
-  "genkey": "1#1#1,0#RS,2,1#genobj#123456#localhost:7777#localhost:7777#localhost:7777"
+  "genkey": "1#1#1,0#RS,2,1#1121231354#deadbeef#localhost:7777#localhost:7777#localhost:7777"
 }
 
 ```

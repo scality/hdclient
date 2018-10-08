@@ -22,6 +22,11 @@ mocha.describe('Hyperdrive Client GET', function () {
     mocha.afterEach(function () { assert.ok(nock.isDone); });
 
     const repairTopic = hdclient.httpUtils.topics.repair;
+    const keyContext = {
+        bucketName: 'test bucket',
+        objectKey: 'best / Obj~Ever!',
+        version: 1,
+    };
 
     mocha.describe('Single hyperdrive', function () {
         mocha.it('Existing small key', function (done) {
@@ -33,7 +38,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 acceptType: 'data',
             };
             const { rawKey } = hdmock.mockGET(
-                hdClient, 'bestObjEver', content.length, [[mockOptions]]);
+                hdClient, keyContext, content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, undefined /* range */, '1',
@@ -72,7 +77,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 acceptType: 'data',
             };
             const { rawKey } = hdmock.mockGET(
-                hdClient, 'bestObjEver',
+                hdClient, keyContext,
                 hdmock.getPayloadLength(content),
                 [[mockOptions]]);
 
@@ -110,7 +115,7 @@ mocha.describe('Hyperdrive Client GET', function () {
             };
             const expectedContent = content.slice(...range);
             const { rawKey } = hdmock.mockGET(
-                hdClient, 'bestObjEver', content.length, [[mockOptions]]);
+                hdClient, keyContext, content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, range, '1',
@@ -149,7 +154,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 range,
             };
             const { rawKey } = hdmock.mockGET(
-                hdClient, 'bestObjEver', content.length, [[mockOptions]]);
+                hdClient, keyContext, content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, range, '1',
@@ -183,7 +188,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 range,
             };
             const { rawKey } = hdmock.mockGET(
-                hdClient, 'bestObjEver', content.length, [[mockOptions]]);
+                hdClient, keyContext, content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, range, '1',
@@ -220,7 +225,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 range,
             };
             const { rawKey } = hdmock.mockGET(
-                hdClient, 'bestObjEver', content.length, [[mockOptions]]);
+                hdClient, keyContext, content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, range, '1',
@@ -249,7 +254,7 @@ mocha.describe('Hyperdrive Client GET', function () {
             const hdClient = hdmock.getDefaultClient();
             const content = 'Je suis une mite en pullover';
             const { rawKey } = hdmock.mockGET(
-                hdClient, 'bestObjEver', content.length, [[{}]]);
+                hdClient, keyContext, content.length, [[{}]]);
 
             hdClient.get(
                 rawKey, [999999, 9999999999], '1',
@@ -264,7 +269,7 @@ mocha.describe('Hyperdrive Client GET', function () {
             const hdClient = hdmock.getDefaultClient();
             const { rawKey } = hdmock.mockGET(
                 hdClient,
-                'bestObjEver',
+                keyContext,
                 1024,
                 [[{
                     statusCode: 404,
@@ -292,7 +297,7 @@ mocha.describe('Hyperdrive Client GET', function () {
             const hdClient = hdmock.getDefaultClient();
             const { rawKey } = hdmock.mockGET(
                 hdClient,
-                'bestObjEver',
+                keyContext,
                 1024,
                 [[{
                     statusCode: 500,
@@ -328,7 +333,7 @@ mocha.describe('Hyperdrive Client GET', function () {
             const mockDelay = hdClient.options.requestTimeoutMs + 10;
             const { rawKey } = hdmock.mockGET(
                 hdClient,
-                'bestObjEver',
+                keyContext,
                 314159,
                 [[{
                     statusCode: 200,
@@ -360,7 +365,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                 actualCRC: 0xdead,
             };
             const { rawKey } = hdmock.mockGET(
-                hdClient, 'bestObjEver', content.length, [[mockOptions]]);
+                hdClient, keyContext, content.length, [[mockOptions]]);
 
             hdClient.get(
                 rawKey, undefined /* range */, '1',
@@ -417,7 +422,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         acceptType: 'data',
                     }]];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', content.length, mockOptions);
+                    hdClient, keyContext, content.length, mockOptions);
 
                 hdClient.get(
                     rawKey, undefined /* range */, '1',
@@ -460,7 +465,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         timeoutMs: hdClient.options.requestTimeoutMs - 1,
                     }]];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', content.length, mockOptions);
+                    hdClient, keyContext, content.length, mockOptions);
 
                 const opCtx = hdClient.get(
                     rawKey, undefined /* range */, '1',
@@ -516,7 +521,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         acceptType: 'data',
                     }]];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', content.length, mockOptions);
+                    hdClient, keyContext, content.length, mockOptions);
 
                 const opCtx = hdClient.get(
                     rawKey, undefined /* range */, '1',
@@ -567,7 +572,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         acceptType: 'data',
                     }]];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', content.length, mockOptions);
+                    hdClient, keyContext, content.length, mockOptions);
 
                 const opCtx = hdClient.get(
                     rawKey, undefined /* range */, '1',
@@ -633,7 +638,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         acceptType: 'data',
                     }]];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', content.length, mockOptions);
+                    hdClient, keyContext, content.length, mockOptions);
 
                 hdClient.get(
                     rawKey, undefined /* range */, '1',
@@ -669,7 +674,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                         acceptType: 'data',
                     }]];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', content.length, mockOptions);
+                    hdClient, keyContext, content.length, mockOptions);
 
                 hdClient.get(
                     rawKey, undefined /* range */, '1',
@@ -757,7 +762,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                                         };
                                     })];
                                     const { rawKey } = hdmock.mockGET(
-                                        hdClient, 'bestObjEver', content.length, mocks);
+                                        hdClient, keyContext, content.length, mocks);
 
                                     const topicEndCheck = () => {
                                         const topic = hdmock.getTopic(hdClient, repairTopic);
@@ -823,7 +828,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     acceptType: 'data',
                 }))];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', 42, mockOptions);
+                    hdClient, keyContext, 42, mockOptions);
 
                 hdClient.get(
                     rawKey, undefined /* range */, '1',
@@ -862,7 +867,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     acceptType: 'data',
                 }]];
             const { rawKey } = hdmock.mockGET(
-                hdClient, 'bestObjEver', content.length, mockOptions);
+                hdClient, keyContext, content.length, mockOptions);
 
             hdClient.errorAgent.nextError = new Error('Demo effect!');
 
@@ -904,7 +909,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     acceptType: 'data',
                 }]];
             const { rawKey } = hdmock.mockGET(
-                hdClient, 'bestObjEver', content.length, mockOptions);
+                hdClient, keyContext, content.length, mockOptions);
 
             hdClient.errorAgent.nextError = new Error('Demo effect!');
 
@@ -995,7 +1000,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     }],
                 ];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', content.length, mockOptions);
+                    hdClient, keyContext, content.length, mockOptions);
 
                 hdClient.get(
                     rawKey, undefined /* range */, '1',
@@ -1062,7 +1067,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     }],
                 ];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', content.length, mockOptions);
+                    hdClient, keyContext, content.length, mockOptions);
 
                 hdClient.get(
                     rawKey, undefined /* range */, '1',
@@ -1134,7 +1139,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     }],
                 ];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', content.length, mockOptions);
+                    hdClient, keyContext, content.length, mockOptions);
 
                 hdClient.get(
                     rawKey, undefined /* range */, '1',
@@ -1219,7 +1224,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     }],
                 ];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', content.length, mockOptions);
+                    hdClient, keyContext, content.length, mockOptions);
 
                 hdClient.get(
                     rawKey, range, '1',
@@ -1282,7 +1287,7 @@ mocha.describe('Hyperdrive Client GET', function () {
                     }],
                 ];
                 const { rawKey } = hdmock.mockGET(
-                    hdClient, 'bestObjEver', content.length, mockOptions);
+                    hdClient, keyContext, content.length, mockOptions);
 
                 hdClient.get(
                     rawKey, range, '1',
