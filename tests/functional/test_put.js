@@ -763,7 +763,7 @@ mocha.describe('PUT', function () {
                     err => {
                         assert.ok(err);
                         assert.strictEqual(err.message, 'ConfigError');
-                        assert.strictEqual(err.code, 412);
+                        assert.strictEqual(err.code, 422);
                         assert.strictEqual(err.description, 'No matching code pattern found');
                         done();
                     });
