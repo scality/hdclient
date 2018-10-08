@@ -81,16 +81,16 @@ function strictCompareTopicContent(realContent, expectedContent) {
  * Helper to create a HyperdriveClient
  *
  * @param {Number} nLocations - how many hyperdrive availables
- * @param {String} code - Erasure coding or replication
+ * @param {Array|null} codes - Code config section (default:null => CP,1)
  * @param {Number} nData - Number of data fragments
  * @param {Number} nCoding - Number of coding fragments
  * @return {HyperdriveClient} created client
  */
 function getDefaultClient({ nLocations = 1,
-                            code = 'CP',
-                            nData = 1,
-                            nCoding = 0,
+                            codes = null,
                             minSplitSize = 0 } = {}) {
+    const defaultCodes = [{ type: 'CP', dataParts: nLocations, codingParts: 0, pattern: '.*' }];
+    const codesToUse = codes || defaultCodes;
     const locations = libUtils.range(nLocations).map(
         idx => `uuid-${idx}`);
     const uuidmapping = {};
@@ -99,9 +99,7 @@ function getDefaultClient({ nLocations = 1,
             uuidmapping[uuid] = `fake-hyperdrive-${idx}:8888`;
         });
     const conf = {
-        code,
-        dataParts: nData,
-        codingParts: nCoding,
+        codes: codesToUse,
         requestTimeoutMs: 10,
         policy: { minSplitSize, locations },
         uuidmapping,
@@ -282,7 +280,7 @@ function _mockPutRequest(uuidmapping, uuid, keyContext, startOffset, fragmentId,
  * /!\ ALL ENDPOINTS ARE MOCKED, you must have a setup
  * that enables you to know which are going to be contacted
  *
- * @param {Object} clientConfig Hyperdrive client configuration
+ * @param {HyperdriveClient} client Hyperdrive client instance
  * @param {String} keyContext same as given to actual PUT
  * @param {[[Reply]]} repliess description
  * @comment each entry of replies must be an Object with:
@@ -294,13 +292,15 @@ function _mockPutRequest(uuidmapping, uuid, keyContext, startOffset, fragmentId,
  * @return {Object} with rawKey and mocks
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockPUT(clientConfig, keyContext, repliess) {
-    const { dataLocations, codingLocations } = deterministicPlacement(
-        clientConfig.policy,
-        clientConfig.dataParts,
-        clientConfig.codingParts
-    );
+function mockPUT(client, keyContext, repliess) {
+    const clientConfig = client.options;
+    const code = client.selectCode(keyContext.bucketName, keyContext.objectKey);
+    if (code === null) {
+        return {};
+    }
 
+    const { dataLocations, codingLocations } = deterministicPlacement(
+        clientConfig.policy, code.dataParts, code.codingParts);
     const nParts = dataLocations.length + codingLocations.length;
     assert.ok(repliess.every(c => c.length === nParts));
 
@@ -407,7 +407,7 @@ function _mockGetRequest(uuidmapping,
  * and return specific codes for each.
  * It generates a rawKey (as if there was a PUT before).
  *
- * @param {Object} clientConfig Hyperdrive client configuration
+ * @param {HyperdriveClient} client Hyperdrive client instance
  * @param {String} objectKey The object identifier
  * @param {Number} objectSize Total object size
  * @param {[[Reply]]} repliess description
@@ -423,20 +423,21 @@ function _mockGetRequest(uuidmapping,
  * @return {Object} with rawKey and mocks
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockGET(clientConfig, objectKey, objectSize, repliess) {
-    const nParts = clientConfig.dataParts +
-          clientConfig.codingParts;
+function mockGET(client, objectKey, objectSize, repliess) {
+    const clientConfig = client.options;
+    const nDataParts = clientConfig.codes[0].dataParts;
+    const nCodingParts = clientConfig.codes[0].codingParts;
     const parts = keyscheme.keygen(
         clientConfig.policy,
         objectKey,
         objectSize,
-        clientConfig.code,
-        clientConfig.dataParts,
-        clientConfig.codingParts
+        clientConfig.codes[0].type,
+        nDataParts,
+        nCodingParts
     );
 
     assert.strictEqual(parts.nChunks, repliess.length);
-    assert.ok(repliess.every(c => c.length === nParts));
+    assert.ok(repliess.every(c => c.length === nDataParts + nCodingParts));
 
     const mocks = parts.chunks.map((chunk, chunkId) => {
         // Setup data mocks
@@ -453,7 +454,7 @@ function mockGET(clientConfig, objectKey, objectSize, repliess) {
         // Setup coding mocks
         const codingMocks = chunk.coding.map(
             (part, idx) => {
-                const mockedReply = repliess[chunkId][clientConfig.dataParts + idx];
+                const mockedReply = repliess[chunkId][nDataParts + idx];
                 const { use, range } = libUtils.getChunkRange(parts, chunkId, mockedReply.range);
                 assert.ok(use);
                 mockedReply.range = range;
@@ -513,7 +514,7 @@ function _mockDeleteRequest(uuidmapping, location, { statusCode, timeoutMs = 0 }
  * and return specific codes for each.
  * It generates a rawKey (as if there was a PUT before).
  *
- * @param {Object} clientConfig Hyperdrive client configuration
+ * @param {HyperdriveClient} client Hyperdrive client instance
  * @param {String} objectKey The object identifier
  * @param {Number} objectSize Total object size
  * @param {[[Reply]]} repliess description
@@ -525,20 +526,21 @@ function _mockDeleteRequest(uuidmapping, location, { statusCode, timeoutMs = 0 }
  * @return {Object} with rawKey and mocks
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
-function mockDELETE(clientConfig, objectKey, objectSize, repliess) {
-    const nParts = clientConfig.dataParts +
-          clientConfig.codingParts;
+function mockDELETE(client, objectKey, objectSize, repliess) {
+    const clientConfig = client.options;
+    const nDataParts = clientConfig.codes[0].dataParts;
+    const nCodingParts = clientConfig.codes[0].codingParts;
     const parts = keyscheme.keygen(
         clientConfig.policy,
         objectKey,
         objectSize,
-        clientConfig.code,
-        clientConfig.dataParts,
-        clientConfig.codingParts
+        clientConfig.codes[0].type,
+        nDataParts,
+        nCodingParts
     );
 
     assert.strictEqual(parts.nChunks, repliess.length);
-    assert.ok(repliess.every(c => c.length === nParts));
+    assert.ok(repliess.every(c => c.length === nDataParts + nCodingParts));
 
     const mocks = parts.chunks.map((chunk, chunkId) => {
         // Setup data mocks
@@ -551,7 +553,7 @@ function mockDELETE(clientConfig, objectKey, objectSize, repliess) {
         const codingMocks = chunk.coding.map(
             (part, idx) => _mockDeleteRequest(
                 clientConfig.uuidmapping, part,
-                repliess[chunkId][idx + clientConfig.dataParts])
+                repliess[chunkId][idx + nDataParts])
         );
 
         return { dataMocks, codingMocks };

@@ -36,10 +36,12 @@ mocha.describe('PUT', function () {
                 },
             ]];
             const keyContext = {
+                bucketName: 'testbucket',
                 objectKey: 'bestObjEver',
+                version: 1,
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+            hdmock.mockPUT(hdClient, keyContext, mocks);
 
             hdClient.put(
                 hdmock.streamString(content),
@@ -85,10 +87,12 @@ mocha.describe('PUT', function () {
                 },
             ]];
             const keyContext = {
+                bucketName: 'testbucket',
                 objectKey: 'bestObjEver',
+                version: 1,
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+            hdmock.mockPUT(hdClient, keyContext, mocks);
 
             hdClient.put(
                 content,
@@ -132,10 +136,12 @@ mocha.describe('PUT', function () {
                 },
             ]];
             const keyContext = {
+                bucketName: 'testbucket',
                 objectKey: 'bestObjEver',
+                version: 1,
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+            hdmock.mockPUT(hdClient, keyContext, mocks);
 
             hdClient.put(
                 hdmock.streamString(content),
@@ -174,10 +180,12 @@ mocha.describe('PUT', function () {
                 },
             ]];
             const keyContext = {
+                bucketName: 'testbucket',
                 objectKey: 'bestObjEver',
+                version: 1,
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+            hdmock.mockPUT(hdClient, keyContext, mocks);
 
             let called = false;
             hdClient.put(
@@ -212,12 +220,8 @@ mocha.describe('PUT', function () {
     mocha.describe('Multiple hyperdrives', function () {
         mocha.describe('Replication', function () {
             mocha.it('All Success', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'CP',
-                    nData: 3,
-                    nCoding: 0,
-                });
+                const codes = [{ type: 'CP', dataParts: 3, codingParts: 0, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const content = 'Je suis une mite en pullover';
                 const mocks = [[
                     {
@@ -237,10 +241,12 @@ mocha.describe('PUT', function () {
                     },
                 ]];
                 const keyContext = {
+                    bucketName: 'testbucket',
                     objectKey: 'bestObjEver',
+                    version: 1,
                 };
 
-                hdmock.mockPUT(hdClient.options, keyContext, mocks);
+                hdmock.mockPUT(hdClient, keyContext, mocks);
 
                 hdClient.put(
                     hdmock.streamString(content),
@@ -269,12 +275,8 @@ mocha.describe('PUT', function () {
             });
 
             mocha.it('Single failure', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'CP',
-                    nData: 3,
-                    nCoding: 0,
-                });
+                const codes = [{ type: 'CP', dataParts: 3, codingParts: 0, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
                 const mocks = [[
@@ -295,10 +297,12 @@ mocha.describe('PUT', function () {
                     },
                 ]];
                 const keyContext = {
+                    bucketName: 'testbucket',
                     objectKey: 'bestObjEver',
+                    version: 1,
                 };
 
-                hdmock.mockPUT(hdClient.options, keyContext, mocks);
+                hdmock.mockPUT(hdClient, keyContext, mocks);
 
                 hdClient.put(
                     content,
@@ -334,12 +338,8 @@ mocha.describe('PUT', function () {
             });
 
             mocha.it('Double failure', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'CP',
-                    nData: 3,
-                    nCoding: 0,
-                });
+                const codes = [{ type: 'CP', dataParts: 3, codingParts: 0, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
                 const mocks = [[
@@ -360,10 +360,12 @@ mocha.describe('PUT', function () {
                     },
                 ]];
                 const keyContext = {
+                    bucketName: 'testbucket',
                     objectKey: 'bestObjEver',
+                    version: 1,
                 };
 
-                hdmock.mockPUT(hdClient.options, keyContext, mocks);
+                hdmock.mockPUT(hdClient, keyContext, mocks);
 
                 hdClient.put(
                     content,
@@ -399,12 +401,8 @@ mocha.describe('PUT', function () {
             });
 
             mocha.it('Timeout < 50%', function (done) {
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code: 'CP',
-                    nData: 3,
-                    nCoding: 0,
-                });
+                const codes = [{ type: 'CP', dataParts: 3, codingParts: 0, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
                 const mocks = [[
@@ -426,10 +424,12 @@ mocha.describe('PUT', function () {
                     },
                 ]];
                 const keyContext = {
+                    bucketName: 'testbucket',
                     objectKey: 'bestObjEver',
+                    version: 1,
                 };
 
-                hdmock.mockPUT(hdClient.options, keyContext, mocks);
+                hdmock.mockPUT(hdClient, keyContext, mocks);
 
                 hdClient.put(
                     content,
@@ -467,12 +467,8 @@ mocha.describe('PUT', function () {
                  * Should result in global failure and
                  * request all fragments to be cleaned up
                  */
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 4,
-                    code: 'CP',
-                    nData: 4,
-                    nCoding: 0,
-                });
+                const codes = [{ type: 'CP', dataParts: 4, codingParts: 0, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 4, codes });
                 const content = fs.createReadStream(
                     'tests/functional/random_payload');
                 const mocks = [[
@@ -500,10 +496,12 @@ mocha.describe('PUT', function () {
                     },
                 ]];
                 const keyContext = {
+                    bucketName: 'testbucket',
                     objectKey: 'bestObjEver',
+                    version: 1,
                 };
 
-                hdmock.mockPUT(hdClient.options, keyContext, mocks);
+                hdmock.mockPUT(hdClient, keyContext, mocks);
 
                 hdClient.put(
                     content,
@@ -540,12 +538,8 @@ mocha.describe('PUT', function () {
             mocha.it('All success - Compare with manual-XOR', function (done) {
                 const code = 'RS';
                 const k = 2;
-                const hdClient = hdmock.getDefaultClient({
-                    nLocations: 3,
-                    code,
-                    nData: k,
-                    nCoding: 1,
-                });
+                const codes = [{ type: code, dataParts: k, codingParts: 1, pattern: '.*' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: k + 1, codes });
                 /* Test expects object size < stripeSize */
                 const content = crypto.randomBytes(10);
                 const { stripeSize } = hdclient.split.getSplitSize(
@@ -577,10 +571,12 @@ mocha.describe('PUT', function () {
                     },
                 ]];
                 const keyContext = {
+                    bucketName: 'testbucket',
                     objectKey: 'bestObjEver',
+                    version: 1,
                 };
 
-                hdmock.mockPUT(hdClient.options, keyContext, mocks);
+                hdmock.mockPUT(hdClient, keyContext, mocks);
 
                 hdClient.put(
                     hdmock.streamString(content),
@@ -616,12 +612,8 @@ mocha.describe('PUT', function () {
                         () => [Math.floor(Math.random() * (k + m)), 1]));
                     mocha.it(`Success on harder code (${description})- timeouts=${timeouts.size}`, function (done) {
                         const code = 'RS';
-                        const hdClient = hdmock.getDefaultClient({
-                            nLocations: k + m,
-                            code,
-                            nData: k,
-                            nCoding: m,
-                        });
+                        const codes = [{ type: code, dataParts: k, codingParts: m, pattern: '.*' }];
+                        const hdClient = hdmock.getDefaultClient({ nLocations: k + m, codes });
                         const content = crypto.randomBytes(size);
                         const { stripeSize } = hdclient.split.getSplitSize(
                             0, content.length, code, k);
@@ -658,10 +650,12 @@ mocha.describe('PUT', function () {
                                     hdClient.options.requestTimeoutMs + 10 : 0,
                             }))];
                             const keyContext = {
+                                bucketName: 'testbucket',
                                 objectKey: 'bestObjEver',
+                                version: 1,
                             };
 
-                            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+                            hdmock.mockPUT(hdClient, keyContext, mocks);
 
                             hdClient.put(
                                 hdmock.streamString(content),
@@ -701,6 +695,80 @@ mocha.describe('PUT', function () {
                 });
             });
         });
+
+        mocha.describe('Code selection', function () {
+            mocha.it('Success', function (done) {
+                const codes = [
+                    { type: 'CP', dataParts: 1, codingParts: 0, pattern: 'superspecific/bestObjEver' },
+                    { type: 'CP', dataParts: 3, codingParts: 0, pattern: 'testbuc.*/best.*' },
+                    { type: 'RS', dataParts: 2, codingParts: 1, pattern: '.*' },
+                ];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
+                const content = 'Je suis une mite en pullover';
+                const mocks = [[
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        contentType: 'data',
+                    },
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        contentType: 'data',
+                    },
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        contentType: 'data',
+                    },
+                ]];
+                const keyContext = {
+                    bucketName: 'testbucket',
+                    objectKey: 'bestObjEver',
+                    version: 1,
+                };
+
+                hdmock.mockPUT(hdClient, keyContext, mocks);
+
+                hdClient.put(
+                    hdmock.streamString(content),
+                    hdmock.getPayloadLength(content),
+                    keyContext, '1',
+                    err => done(err));
+            });
+
+            mocha.it('No match found', function (done) {
+                const codes = [{ type: 'CP', dataParts: 1, codingParts: 0, pattern: 'superspecific/bestObjEver' }];
+                const hdClient = hdmock.getDefaultClient({ nLocations: 1, codes });
+                const content = 'Je suis une mite en pullover';
+                const mocks = [[
+                    {
+                        statusCode: 200,
+                        payload: content,
+                        contentType: 'data',
+                    },
+                ]];
+                const keyContext = {
+                    bucketName: 'testbucket',
+                    objectKey: 'bestObjEver',
+                    version: 1,
+                };
+
+                hdmock.mockPUT(hdClient, keyContext, mocks);
+
+                hdClient.put(
+                    hdmock.streamString(content),
+                    hdmock.getPayloadLength(content),
+                    keyContext, '1',
+                    err => {
+                        assert.ok(err);
+                        assert.strictEqual(err.message, 'ConfigError');
+                        assert.strictEqual(err.code, 422);
+                        assert.strictEqual(err.description, 'No matching code pattern found');
+                        done();
+                    });
+            });
+        });
     });
 
     mocha.describe('Persisting error edge cases', function () {
@@ -709,12 +777,8 @@ mocha.describe('PUT', function () {
              * but we failed to persist errors/warnings,
              * expecting resulting error
              */
-            const hdClient = hdmock.getDefaultClient({
-                nLocations: 3,
-                code: 'CP',
-                nData: 3,
-                nCoding: 0,
-            });
+            const codes = [{ type: 'CP', dataParts: 3, codingParts: 0, pattern: '.*' }];
+            const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes });
             const content = fs.createReadStream(
                 'tests/functional/random_payload');
             const mocks = [[
@@ -736,10 +800,12 @@ mocha.describe('PUT', function () {
                 },
             ]];
             const keyContext = {
+                bucketName: 'testbucket',
                 objectKey: 'bestObjEver',
+                version: 1,
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+            hdmock.mockPUT(hdClient, keyContext, mocks);
             hdClient.errorAgent.nextError = new Error('Broken by Design');
 
             hdClient.put(
@@ -802,10 +868,12 @@ mocha.describe('PUT', function () {
                 },
             ]];
             const keyContext = {
+                bucketName: 'testbucket',
                 objectKey: 'bestObjEver',
+                version: 1,
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+            hdmock.mockPUT(hdClient, keyContext, mocks);
             content.pipe(errorStream);
 
             hdClient.put(
@@ -848,13 +916,8 @@ mocha.describe('PUT', function () {
             const realSplitSize = hdclient.split.align(
                 minSplitSize, hdclient.split.DATA_ALIGN);
             assert.ok(size > realSplitSize);
-            const hdClient = hdmock.getDefaultClient({
-                minSplitSize,
-                nLocations: 2,
-                code: 'CP',
-                nData: 2,
-                nCoding: 0,
-            });
+            const codes = [{ type: 'CP', dataParts: 2, codingParts: 0, pattern: '.*' }];
+            const hdClient = hdmock.getDefaultClient({ nLocations: 2, codes, minSplitSize });
             const mocks = [
                 [{
                     statusCode: 200,
@@ -885,10 +948,12 @@ mocha.describe('PUT', function () {
                 }],
             ];
             const keyContext = {
+                bucketName: 'testbucket',
                 objectKey: 'bestObjEver',
+                version: 1,
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+            hdmock.mockPUT(hdClient, keyContext, mocks);
 
             hdClient.put(
                 hdmock.streamString(content),
@@ -939,13 +1004,8 @@ mocha.describe('PUT', function () {
             const realSplitSize = hdclient.split.align(
                 minSplitSize, hdclient.split.DATA_ALIGN);
             assert.ok(size > realSplitSize);
-            const hdClient = hdmock.getDefaultClient({
-                minSplitSize,
-                nLocations: 3,
-                code: 'CP',
-                nData: 3,
-                nCoding: 0,
-            });
+            const codes = [{ type: 'CP', dataParts: 3, codingParts: 0, pattern: '.*' }];
+            const hdClient = hdmock.getDefaultClient({ nLocations: 3, codes, minSplitSize });
             const mocks = [
                 [{
                     statusCode: 200,
@@ -989,10 +1049,12 @@ mocha.describe('PUT', function () {
                 }],
             ];
             const keyContext = {
+                bucketName: 'testbucket',
                 objectKey: 'bestObjEver',
+                version: 1,
             };
 
-            hdmock.mockPUT(hdClient.options, keyContext, mocks);
+            hdmock.mockPUT(hdClient, keyContext, mocks);
 
             hdClient.put(
                 hdmock.streamString(content),
@@ -1014,6 +1076,7 @@ mocha.describe('PUT', function () {
                             version: 1,
 
                         }]);
+
                     const chkTopic = hdmock.getTopic(hdClient, checkTopic);
                     hdmock.strictCompareTopicContent(
                         chkTopic, undefined);
