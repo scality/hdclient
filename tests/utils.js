@@ -203,7 +203,7 @@ function getReturnedBody(payload, range, trailingCRCs) {
         payload.pipe(content, { end: false });
         payload.once('end', () => {
             content.write(trailingCRCs);
-            content.emit('end');
+            content.end();
         });
         return content;
     }
