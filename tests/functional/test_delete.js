@@ -21,7 +21,7 @@ mocha.describe('DELETE', function () {
     const keyContext = {
         bucketName: 'testbucket',
         objectKey: 'best / Obj~Ever!',
-        version: 1,
+        versionId: 1,
     };
 
     mocha.describe('Single hyperdrive', function () {

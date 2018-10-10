@@ -286,7 +286,7 @@ function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, endOffset, fr
  * that enables you to know which are going to be contacted
  *
  * @param {HyperdriveClient} client Hyperdrive client instance
- * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, version }
+ * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, versionId }
  * @param {Number} size Total payload size
  * @param {[[Reply]]} repliess description
  * @comment each entry of replies must be an Object with:
@@ -416,7 +416,7 @@ function _mockGetRequest(uuidmapping,
  * It generates a rawKey (as if there was a PUT before).
  *
  * @param {HyperdriveClient} client Hyperdrive client instance
- * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, version }
+ * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, versionId }
  * @param {Number} objectSize Total object size
  * @param {[[Reply]]} repliess description
  * @comment each entry of replies must be an Object with:
@@ -524,7 +524,7 @@ function _mockDeleteRequest(uuidmapping, location, { statusCode, timeoutMs = 0 }
  * It generates a rawKey (as if there was a PUT before).
  *
  * @param {HyperdriveClient} client Hyperdrive client instance
- * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, version }
+ * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, versionId }
  * @param {Number} objectSize Total object size
  * @param {[[Reply]]} repliess description
  * @comment replies are organized:  [replies] per chunk
