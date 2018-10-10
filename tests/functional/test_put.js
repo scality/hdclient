@@ -26,7 +26,7 @@ mocha.describe('PUT', function () {
     const keyContext = {
         bucketName: 'testbucket',
         objectKey: 'best / :Obj~Ever!',
-        version: 1,
+        versionId: 1,
     };
 
 
