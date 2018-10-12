@@ -18,7 +18,7 @@ All fragments are **IMMUTABLE**. Any mutation is handled at the CloudServer leve
 
 ## High-level description
 
-![Global architecture diagram](graphs/global_architecture.png)
+![Global architecture diagram](../graphs/global_architecture.png)
 
 ## Key generation scheme
 
@@ -108,7 +108,7 @@ If there is no orphans, we report a success. Otherwise we log orphaned fragments
 
 This behavior is summarized in the below graph, while logic is implemented in lib/http_delete.js: decideDELETE & fragmentDELETE functions.
 
-![DELETE sequence diagram](graphs/delete_sequence.png)
+![DELETE sequence diagram](../graphs/delete_sequence.png)
 
 Example of 'delete' topic entry: expects JSON messages
 
@@ -130,7 +130,7 @@ Similarly on a PUT we may fail to write some fragments. Depending on the number 
 
 This behavior is summarized in the below graph, while logic is implemented in lib/http_putjs: decidePUT & fragmentPUT functions.
 
-![PUT sequence diagram](graphs/put_sequence.png)
+![PUT sequence diagram](../graphs/put_sequence.png)
 
 Example of 'delete/repair' topic entry: expects JSON messages
 ```json
@@ -155,7 +155,7 @@ If we are able to provide the caller with the data, we must do so. For replicati
 
 GET is more complicated than PUT or DELETE, since we start streaming back data to the client before having ascertain the status of all the fragments. Some might be missing, some might be corrupted - which is only detected during streaming the answer.We already advertised success to the user, hence stream corruption will emit an error and early close the streamed data.
 
-![GET sequence diagram](graphs/get_sequence.png)
+![GET sequence diagram](../graphs/get_sequence.png)
 
 ## Data placement
 
