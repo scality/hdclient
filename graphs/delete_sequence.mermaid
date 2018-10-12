@@ -1,0 +1,18 @@
+sequenceDiagram
+User ->> CloudServer: objDELETE
+CloudServer ->> CloudServer: fetch rawKey from DB
+CloudServer -->> hdClient: objDELETE
+hdClient ->> Hyperdrives: HTTP DEL all fragments
+activate Hyperdrives
+Hyperdrives ->> hdClient: replies
+deactivate Hyperdrives
+hdClient -->> hdClient: decideDELETE
+opt orphan fragments detected
+	hdClient ->> Kafka: log in delete topic
+	Kafka ->> hdClient: 
+end
+hdClient -->> CloudServer: success/failure 
+opt on success
+CloudServer ->> CloudServer: delete from DB
+end
+CloudServer ->> User: success/failure
