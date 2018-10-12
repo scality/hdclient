@@ -1,0 +1,21 @@
+graph LR
+subgraph CloudServer
+    S3 -. embeds .-> GCP
+    S3 -. embeds .-> AWS
+    S3 -. embeds .-> Azure
+    S3 -. embeds .-> HyperdriveClient_inst1
+    S3 --- db[Persistent DB]
+end
+
+subgraph Hyperdrive cluster
+     HyperdriveClient_inst1 -- HTTP --> Hyperdrive1
+    HyperdriveClient_inst1 -- HTTP --> Hyperdrive2
+    HyperdriveClient_inst1 -- HTTP --> Hyperdrive3
+end
+
+HyperdriveClient_inst1 -- produces --> Kafka
+HyperdriveRepair -- consumer/producer --- Kafka
+
+subgraph Kafka Consumers
+    HyperdriveRepair -. embeds .-> HyperdriveClient_inst2
+end

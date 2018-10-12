@@ -8,6 +8,7 @@ All fragments are **IMMUTABLE**. Any mutation is handled at the CloudServer leve
 
 ## Glossary
 
+* **hyperdrive**: Scality's own KVS, providing local erasure coding protection over multiple disks
 * **object/objectkey**: S3 object name to store/retrieve/delete.
 * **chunk**: big objects are split into several chunks. Small objects are made of only a single chunk.
 * **fragment**: part of a chunk. For replication, it is a full copy. For erasure coding, it is a data or coding part.
@@ -16,7 +17,8 @@ All fragments are **IMMUTABLE**. Any mutation is handled at the CloudServer leve
 * **rawKey/genKey**: metadata created by hdclient to track all fragments of an object, encoded as a string and returned on PUT to CloudServer for persistent storage.
 
 ## High-level description
-TODO + architecture schema with HD
+
+![Global architecture diagram](graphs/global_architecture.png)
 
 ## Key generation scheme
 
