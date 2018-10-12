@@ -22,7 +22,7 @@ mocha.describe('PUT', function () {
     mocha.afterEach(function () { assert.ok(nock.isDone); });
 
     const deleteTopic = hdclient.httpUtils.topics.delete;
-    const checkTopic = hdclient.httpUtils.topics.check;
+    const repairTopic = hdclient.httpUtils.topics.repair;
     const keyContext = {
         bucketName: 'testbucket',
         objectKey: 'best / :Obj~Ever!',
@@ -69,9 +69,9 @@ mocha.describe('PUT', function () {
                     const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
                         delTopic, undefined);
-                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    const repTopic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
-                        chkTopic, undefined);
+                        repTopic, undefined);
                     done();
                 });
         });
@@ -116,9 +116,9 @@ mocha.describe('PUT', function () {
                     const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
                         delTopic, undefined);
-                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    const repTopic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
-                        chkTopic, undefined);
+                        repTopic, undefined);
                     done();
                 });
         });
@@ -153,9 +153,9 @@ mocha.describe('PUT', function () {
                             fragments: [[0, 0]],
                             version: 1,
                         }]);
-                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    const repTopic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
-                        chkTopic, undefined);
+                        repTopic, undefined);
 
                     /* Check for errors */
                     assert.strictEqual(err.code,
@@ -199,9 +199,9 @@ mocha.describe('PUT', function () {
                     }];
                     hdmock.strictCompareTopicContent(
                         delTopic, delLoggedErrors);
-                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    const repTopic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
-                        chkTopic, undefined);
+                        repTopic, undefined);
 
                     /* Check for errors */
                     assert.strictEqual(err.code, 504);
@@ -257,9 +257,9 @@ mocha.describe('PUT', function () {
                         const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                         hdmock.strictCompareTopicContent(
                             delTopic, undefined);
-                        const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                        const repTopic = hdmock.getTopic(hdClient, repairTopic);
                         hdmock.strictCompareTopicContent(
-                            chkTopic, undefined);
+                            repTopic, undefined);
 
                         /* Check for errors */
                         done(err);
@@ -300,28 +300,27 @@ mocha.describe('PUT', function () {
                     keyContext, '1',
                     (err, rawKey) => {
                         /* Check for errors */
-                        assert.ok(err);
-                        assert.strictEqual(err.code, 500);
+                        assert.ifError(err);
 
-                        /* Key should still be valid */
+                        /* Key should be valid */
                         assert.strictEqual(typeof rawKey, 'string');
                         const parts = hdclient.keyscheme.deserialize(rawKey);
                         assert.strictEqual(parts.nDataParts, 3);
                         assert.strictEqual(parts.nCodingParts, 0);
                         assert.strictEqual(parts.nChunks, 1);
 
-                        /* Check cleanup mechanism */
-                        const delTopic = hdmock.getTopic(hdClient, deleteTopic);
-                        const delLoggedErrors = [{
+                        /* Check async mechanism */
+                        const repTopic = hdmock.getTopic(hdClient, repairTopic);
+                        const repLoggedErrors = [{
                             rawKey,
-                            fragments: [[0, 0], [0, 1], [0, 2]],
+                            fragments: [[0, 2]],
                             version: 1,
                         }];
                         hdmock.strictCompareTopicContent(
-                            delTopic, delLoggedErrors);
-                        const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                            repTopic, repLoggedErrors);
+                        const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                         hdmock.strictCompareTopicContent(
-                            chkTopic, undefined);
+                            delTopic, undefined);
 
                         done();
                     });
@@ -380,9 +379,9 @@ mocha.describe('PUT', function () {
                         }];
                         hdmock.strictCompareTopicContent(
                             delTopic, delLoggedErrors);
-                        const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                        const repTopic = hdmock.getTopic(hdClient, repairTopic);
                         hdmock.strictCompareTopicContent(
-                            chkTopic, undefined);
+                            repTopic, undefined);
 
                         done();
                     });
@@ -434,14 +433,14 @@ mocha.describe('PUT', function () {
                         const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                         hdmock.strictCompareTopicContent(
                             delTopic, undefined);
-                        const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                        const repTopic = hdmock.getTopic(hdClient, repairTopic);
                         const chkLoggedErrors = [{
                             rawKey,
                             fragments: [[0, 1]],
                             version: 1,
                         }];
                         hdmock.strictCompareTopicContent(
-                            chkTopic, chkLoggedErrors);
+                            repTopic, chkLoggedErrors);
 
                         /* Check for errors */
                         done(err);
@@ -577,9 +576,9 @@ mocha.describe('PUT', function () {
                         const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                         hdmock.strictCompareTopicContent(
                             delTopic, undefined);
-                        const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                        const repTopic = hdmock.getTopic(hdClient, repairTopic);
                         hdmock.strictCompareTopicContent(
-                            chkTopic, undefined);
+                            repTopic, undefined);
 
                         /* Check for errors */
                         done(err);
@@ -654,7 +653,7 @@ mocha.describe('PUT', function () {
                                     const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                                     hdmock.strictCompareTopicContent(
                                         delTopic, undefined);
-                                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                                    const repTopic = hdmock.getTopic(hdClient, repairTopic);
                                     let expectedChkTopic = undefined;
                                     if (timeouts.size > 0) {
                                         expectedChkTopic = [{
@@ -665,7 +664,7 @@ mocha.describe('PUT', function () {
                                         }];
                                     }
                                     hdmock.strictCompareTopicContent(
-                                        chkTopic, expectedChkTopic);
+                                        repTopic, expectedChkTopic);
 
                                     /* Check for errors */
                                     done(err);
@@ -806,9 +805,9 @@ mocha.describe('PUT', function () {
                     const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
                         delTopic, undefined);
-                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    const repTopic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
-                        chkTopic, undefined);
+                        repTopic, undefined);
                     done();
                 });
         });
@@ -866,9 +865,9 @@ mocha.describe('PUT', function () {
                             fragments: [[0, 0]],
                             version: 1,
                         }]);
-                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    const repTopic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
-                        chkTopic, undefined);
+                        repTopic, undefined);
 
                     /* Check for errors */
                     assert.ok(err);
@@ -955,9 +954,9 @@ mocha.describe('PUT', function () {
                     const delTopic = hdmock.getTopic(hdClient, deleteTopic);
                     hdmock.strictCompareTopicContent(
                         delTopic, undefined);
-                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    const repTopic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
-                        chkTopic, undefined);
+                        repTopic, undefined);
 
                     /* Check for errors */
                     done(err);
@@ -1039,9 +1038,9 @@ mocha.describe('PUT', function () {
 
                         }]);
 
-                    const chkTopic = hdmock.getTopic(hdClient, checkTopic);
+                    const repTopic = hdmock.getTopic(hdClient, repairTopic);
                     hdmock.strictCompareTopicContent(
-                        chkTopic, undefined);
+                        repTopic, undefined);
 
                     /* Check for errors */
                     done();

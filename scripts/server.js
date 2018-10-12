@@ -35,7 +35,6 @@ let removeMemIndexOnDelete = true;
 function getFsErrorAgent() {
     return {
         topics: {
-            check: fs.createWriteStream('check.topic.log'),
             delete: fs.createWriteStream('delete.topic.log'),
             repair: fs.createWriteStream('repair.topic.log'),
         },
@@ -46,7 +45,6 @@ function getFsErrorAgent() {
             });
         },
         close() {
-            this.topics.check.write(null);
             this.topics.delete.write(null);
             this.topics.repair.write(null);
         },
