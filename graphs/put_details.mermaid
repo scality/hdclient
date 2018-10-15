@@ -1,0 +1,26 @@
+sequenceDiagram
+hdclient ->> http_put: doPUT(istream, fragments, callback, ...)
+http_put ->> http_put: setup stream graph
+http_put ->> hdclient: operationContext
+
+loop for each chunk c
+    http_put -->> http_put: consume istream, create new chunk C
+    http_put -->> http_put: demultiplex C (replication/EC)
+    loop for each fragment f in C
+        http_put-->> hyperdrives: fragmentPUT f (HTTP)
+    end
+end
+
+loop for each chunk c
+    loop for each fragment f
+         hyperdrives -->> http_put: reply f
+         http_put ->> http_put: fragmentPUTCb
+    end
+end
+
+http_put ->> http_put: decidePUT
+opt _handleErrors
+    http_put -->> Kafka: log in delete topic
+    Kafka -->> http_put: \n
+end
+http_put -->> hdclient: callback(error, rawKey)

@@ -1,0 +1,31 @@
+sequenceDiagram
+hdclient ->> http_get: doGET(fragments, callback, ...)
+http_get ->> chunkGET: kickstart chunk 0
+loop async over chunks
+
+    loop over fragments
+        chunkGET ->> fragmentGET: 
+        fragmentGET ->> hyperdrives: HTTP GET
+        hyperdrives -->> fragmentGETCb: data stream + CRC
+        fragmentGETCb ->> fragmentGETCb: wrap in CorruptionCheckerStream
+
+        opt enough parts to decode?
+            fragmentGETCb -->> chunkGETCb: istream <- decode(...)
+            activate chunkGETCb
+            chunkGETCb -->> chunkGET: fetch next chunk only when stream is consumed
+            deactivate chunkGETCb
+        end
+    end
+
+    opt first chunk?
+        chunkGETCb ->> hdclient: callback(err, aggregated output stream)
+    end
+end
+
+activate hdclient
+hdclient -->> hdclient: consume concatenated, decoded output stream
+deactivate hdclient
+opt _handleErrors
+    http_get -->> Kafka: log in repair topic
+    Kafka -->> http_get: \n
+end

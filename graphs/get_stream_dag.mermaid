@@ -1,0 +1,18 @@
+graph LR
+subgraph output stream
+    chunk-0 -- concatenate --> chunk-1
+    chunk-1 -- concatenate --> chunk-i
+    chunk-i -- concatenate --> chunk-N
+end
+
+subgraph chunk i
+    fragment-i-0 -- HTTP stream --> CorruptSafeStream-i-0
+    CorruptSafeStream-i-0 -- wrapped stream --> decoder-i[decoder replication/ECN]
+    fragment-i-1 -- HTTP stream --> CorruptSafeStream-i-1
+    CorruptSafeStream-i-1 -- wrapped stream --> decoder-i
+    fragment-i-2 -- HTTP stream --> CorruptSafeStream-i-2
+    CorruptSafeStream-i-2 -- wrapped stream --> decoder-i
+
+end
+
+decoder-i --  real data stream --> chunk-i
