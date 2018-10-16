@@ -9,7 +9,8 @@
   "scripts": {
     "lint": "eslint $(git ls-files '*.js')",
     "test": "mocha --use_strict --check-leaks --no-exit ",
-    "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text mocha --use_strict --check-leaks --no-exit "
+      "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text mocha --use_strict --check-leaks --no-exit ",
+    "gengraphs": "./graphs/generate_graphs.sh"
   },
   "repository": "scality/hdclient",
   "author": "Maxime Lubin",

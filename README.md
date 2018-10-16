@@ -64,6 +64,9 @@ npm test tests/functional/
 # Code coverage
 npm run coverage tests/*
 
+# Generating documentation graphs
+npm run gengraphs
+
 # Other options and Mocha help
 npm test -- -h
 
