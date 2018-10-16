@@ -81,7 +81,11 @@ function strictCompareTopicContent(realContent, expectedContent) {
  * Helper to create a HyperdriveClient
  *
  * @param {Number} nLocations - how many hyperdrive availables
- * @param {Array|null} codes - Code config section (default:null => CP,1)
+ * @param {Object[]|null} codes - Code config section (default:null => CP,1)
+ * @param {String} codes[].type - Type of code to use
+ * @param {Number} codes[].dataParts - Number of data fragments
+ * @param {Number} codes[].codingParts - Number of coding fragments
+ * @param {String} codes[].pattern - Regex to match on bucket/object name
  * @param {Number} nData - Number of data fragments
  * @param {Number} nCoding - Number of coding fragments
  * @return {HyperdriveClient} created client
@@ -126,7 +130,7 @@ function getDefaultClient({ nLocations = 1,
  * @param {HyperdriveClient} client - Client used
  * @param {String} topic - Topic to retrieve
  * @return {undefined} if topic does not exist
- * @return {[Object]} array of logged objects
+ * @return {Object[]} array of logged objects
  */
 function getTopic(client, topic) {
     const content = client.errorAgent.logged.get(topic);
@@ -173,7 +177,7 @@ function getPayloadLength(payload) {
  *
  * GET replies must fill the Content-Length header
  * @param {Number} size of payload (see getPayloadLength)
- * @param {null|[Number]} range requested
+ * @param {null|Number[]} range requested
  * @returns {Number} content's length
  * @comment Blocking! Use for test purposes only
  */
@@ -185,7 +189,7 @@ function getContentLength(size, range) {
  * Get body to return (potentially adding CRCs)
  *
  * @param {fs.ReadStream|Buffer} payload to size
- * @param {null|[Number]} range requested
+ * @param {null|Number[]} range requested
  * @param {String} trailingCRCs to append
  * @returns {fs.ReadStream|Buffer} body to return
  */
@@ -277,6 +281,8 @@ function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, endOffset, fr
         .reply(statusCode, '', replyheaders);
 }
 
+// For some reason, JSDoc is happy with this syntax, but not ESLInt...
+/* eslint-disable valid-jsdoc */
 /**
  * Mock an object-level singel PUT call
  *
@@ -285,19 +291,19 @@ function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, endOffset, fr
  * /!\ ALL ENDPOINTS ARE MOCKED, you must have a setup
  * that enables you to know which are going to be contacted
  *
- * @param {HyperdriveClient} client Hyperdrive client instance
- * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, versionId }
- * @param {Number} size Total payload size
- * @param {[[Reply]]} repliess description
- * @comment each entry of replies must be an Object with:
- *          - statusCode => {Number} HTTP status code to return
- *          - payload {fs.ReadStream | String } body to match (only match size for now)
- *          - contentType ('data', 'usermd', etc) - only data for now
- *          [- timeoutMs] => {Number} timeout ms
+ * @param {HyperdriveClient} client - Hyperdrive client instance
+ * @param {Object} keyContext - Same as given to actual PUT { objectKey, bucketName, versionId }
+ * @param {Number} size - Total payload size
+ * @param {Object[][]} repliess - Description of all mocks
+ * @param {Number} repliess[][].statuscode -  HTTP status code to return
+ * @param {String|fs.ReadStream} repliess[][].payload - data to return
+ * @param {String} repliess[][].contentType - payload type ('data', 'usermd', etc)
+ * @param {undefined|Number} repliess[][].timeoutMs - timeout of the query
  * @comment replies.length must be equal to nChunks * nPparts
  * @return {Object} with rawKey and mocks
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
+/* eslint-enable valid-jsdoc */
 function mockPUT(client, keyContext, size, repliess) {
     const clientConfig = client.options;
     const code = client.selectCode(keyContext.bucketName, keyContext.objectKey);
@@ -408,6 +414,8 @@ function _mockGetRequest(uuidmapping,
         .reply(statusCode, returnedBody, replyheaders);
 }
 
+// For some reason, JSDoc is happy with this syntax, but not ESLInt...
+/* eslint-disable valid-jsdoc */
 /**
  * Mock an object-level singel GET call
  *
@@ -415,22 +423,22 @@ function _mockGetRequest(uuidmapping,
  * and return specific codes for each.
  * It generates a rawKey (as if there was a PUT before).
  *
- * @param {HyperdriveClient} client Hyperdrive client instance
- * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, versionId }
- * @param {Number} objectSize Total object size
- * @param {[[Reply]]} repliess description
- * @comment each entry of replies must be an Object with:
- *          - statusCode => {Number} HTTP status code to return
- *          - payload => {String|fs.ReadStream} payload (file system stream or string)
- *          - acceptType => {String} payload type ('data', 'usermd', etc)
- *          - range => {undefined | [Number]} range to return
- *          [- timeoutMs] => {Number} timeout ms
- *          [- storedCRC => {Number} CRC retrieved from the index]
- *          [- actualCRC => {Number} CRC computed by 'reading' the data
+ * @param {HyperdriveClient} client - Hyperdrive client instance
+ * @param {Object} keyContext - Same as given to actual PUT { objectKey, bucketName, versionId }
+ * @param {Number} objectSize - Total object size
+ * @param {Object[][]} repliess - Description of all mocks
+ * @param {Number} repliess[][].statuscode -  HTTP status code to return
+ * @param {String|fs.ReadStream} repliess[][].payload - data to return
+ * @param {String} repliess[][].acceptType - payload type ('data', 'usermd', etc)
+ * @param {Number[]|undefined} repliess[][].range - HTTP range to return
+ * @param {undefined|Number} repliess[][].timeoutMs - timeout of the query
+ * @param {Number} repliess[][].storedCRC - CRC retrieved from the index
+ * @param {Number} repliess[][].actualCRC - CRC computed by 'reading' the data
  * @comment replies.length must be equal to nChunks * nPparts
  * @return {Object} with rawKey and mocks
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
+/* eslint-enable valid-jsdoc */
 function mockGET(client, keyContext, objectSize, repliess) {
     const clientConfig = client.options;
     const nDataParts = clientConfig.codes[0].dataParts;
@@ -516,6 +524,8 @@ function _mockDeleteRequest(uuidmapping, location, { statusCode, timeoutMs = 0 }
         .reply(statusCode, '', replyheaders);
 }
 
+// For some reason, JSDoc is happy with this syntax, but not ESLInt...
+/* eslint-disable valid-jsdoc */
 /**
  * Mock an object-level singel DELETE call
  *
@@ -523,18 +533,18 @@ function _mockDeleteRequest(uuidmapping, location, { statusCode, timeoutMs = 0 }
  * and return specific codes for each.
  * It generates a rawKey (as if there was a PUT before).
  *
- * @param {HyperdriveClient} client Hyperdrive client instance
- * @param {Object} keyContext same as given to actual PUT { objectKey, bucketName, versionId }
- * @param {Number} objectSize Total object size
- * @param {[[Reply]]} repliess description
+ * @param {HyperdriveClient} client - Hyperdrive client instance
+ * @param {Object} keyContext - Same as given to actual PUT { objectKey, bucketName, versionId }
+ * @param {Number} objectSize - Total object size
+ * @param {Object[][]} repliess - Description of all mocks
+ * @param {Number} repliess[][].statusCode - HTTP status code to return
+ * @param {Number|undefined} repliess[][].timeoutMs - timeout of the query
  * @comment replies are organized:  [replies] per chunk
- * @comment each entry of replies must be an Object with:
- *          - statusCode => {Number} HTTP status code to return
- *          [- timeoutMS] => {Number} timeout ms
  * @comment replies.length must be equal to nChunks * nPparts
  * @return {Object} with rawKey and mocks
  * @comment mocks is an array of {dataMocks: [mock], codingMocks: [mock]}
  */
+/* eslint-enable valid-jsdoc */
 function mockDELETE(client, keyContext, objectSize, repliess) {
     const clientConfig = client.options;
     const nDataParts = clientConfig.codes[0].dataParts;
