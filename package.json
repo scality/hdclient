@@ -9,8 +9,9 @@
   "scripts": {
     "lint": "eslint $(git ls-files '*.js')",
     "test": "mocha --use_strict --check-leaks --no-exit ",
-      "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text mocha --use_strict --check-leaks --no-exit ",
-    "gengraphs": "./graphs/generate_graphs.sh"
+    "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text mocha --use_strict --check-leaks --no-exit ",
+    "gengraphs": "./graphs/generate_graphs.sh",
+    "jsdoc": "jsdoc lib/ tests/ -d docs/jsdoc"
   },
   "repository": "scality/hdclient",
   "author": "Maxime Lubin",
@@ -25,6 +26,7 @@
     "eslint-config-airbnb": "6.2.0",
     "eslint-config-scality": "scality/Guidelines#GA7.2.0.5",
     "eslint-plugin-react": "4.2.3",
+    "jsdoc": "3.5.5",
     "mocha": "2.5.3",
     "nock": "9.3.2",
     "nyc": "12.0.2",
