@@ -89,11 +89,11 @@ npm run clinic
 npm run clinic doctor
 
 # Diagnosing on the same machine - use --on-port to kickstart load generator
-NODE_ENV=roduction npm run clinic doctor -- \
+NODE_ENV=production npm run clinic doctor -- \
                    --on-port='for i in {..10}; do curl -XPUT --data-binary @/etc/hosts "http://localhost:6767/bucket/testobj$i" ; done' \
                    -- node scripts/server.js 6767 scripts/example_hdclient_proxy.conf.json
 
-NODE_ENV=roduction npm run clinic doctor -- \
+NODE_ENV=production npm run clinic doctor -- \
                    -- node scripts/server.js 6767 scripts/example_hdclient_proxy.conf.json &
 pid=$!
 # Start and wait for load generator to finish from somewhere else...
