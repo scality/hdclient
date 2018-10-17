@@ -43,6 +43,8 @@ Hyperdrive client functional requirements and specs are inside the [main Zenko a
 
 ```shell
 npm install --save scality/hdclient
+# Check for dependencies vulnerabilities
+npm audit
 ```
 
 ### Running tests
@@ -61,18 +63,52 @@ npm test tests/unit/
 # Functional tests
 npm test tests/functional/
 
+# Other options and Mocha help
+npm test -- -h
+
 # Code coverage
 npm run coverage tests/*
+```
 
-# Generating documentation graphs
+### Generating documentation & graphs
+```shell
 npm run gengraphs
 
 # Generating JSDoc, to start browsing open docs/jsdoc/index.html
 npm run jsdoc
+```
 
-# Other options and Mocha help
-npm test -- -h
+### Performance diagnostic tool
+[Node-clinic](https://github.com/nearform/node-clinic) is installed by default as dev dependency. It can be used to diagnose general performance, I/O specific, event-loop issues, etc. It can also be used to generate flame graphs. Below are some usage examples usage. Note that data acquisition and visualization can be sepearated, they are not in the examples.
 
+```shell
+# Node clinic diagnosis tool - help
+npm run clinic
+
+# Clinic doctor help
+npm run clinic doctor
+
+# Diagnosing on the same machine - use --on-port to kickstart load generator
+NODE_ENV=roduction npm run clinic doctor -- \
+                   --on-port='for i in {..10}; do curl -XPUT --data-binary @/etc/hosts "http://localhost:6767/bucket/testobj$i" ; done' \
+                   -- node scripts/server.js 6767 scripts/example_hdclient_proxy.conf.json
+
+NODE_ENV=roduction npm run clinic doctor -- \
+                   -- node scripts/server.js 6767 scripts/example_hdclient_proxy.conf.json &
+pid=$!
+# Start and wait for load generator to finish from somewhere else...
+kill -SIGINT $pid # Or keep process in foreground and Ctrl-C when done
+wait $pid
+
+# Flame graph help
+npm run clinic flame
+
+# Flame graph - load-generator on different machine, to be started whenever the server is up
+NODE_ENV=production npm run clinic flame -- node scripts/server.js <port> <config file>
+...
+Ctrl-C
+Analysing data
+...
 ```
 
 ### Running as standalone
