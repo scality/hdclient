@@ -2,7 +2,7 @@ sequenceDiagram
 User ->> CloudServer: objGET
 CloudServer ->> CloudServer: fetch rawKey from DB
 CloudServer -->> hdClient: objGET
-hdClient ->> Hyperdrives: HTTP DEL all fragments
+hdClient ->> Hyperdrives: HTTP GET all fragments
 activate Hyperdrives
 Hyperdrives ->> hdClient: replies
 deactivate Hyperdrives
