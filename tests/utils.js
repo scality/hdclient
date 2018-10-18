@@ -275,7 +275,8 @@ function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, endOffset, fr
              * a stringified buffer, of which I can't specify the encoding...
              */
             body === expectedBody.toString('hex') ||
-                body === expectedBody.toString())
+             body === expectedBody.toString())
+        .query({ immutable: true })
         .delay(timeoutMs)
         .reply(statusCode, '', replyheaders);
 }
