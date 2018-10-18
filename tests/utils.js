@@ -262,9 +262,8 @@ function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, endOffset, fr
         `${protocol.specs.HYPERDRIVE_APPLICATION}; ${contentType}=${len}; $crc.${contentType}=0xdeadbeef`,
     };
 
-    const hash = keyscheme.keyhash(keyContext);
     const expectedKeyPattern = [
-        serviceId, '[0-9]+', hash,
+        serviceId, '[0-9]+', '[0-9a-fA-F]+',
         endOffset, fragmentId,
     ].join(keyscheme.PART_KEY_SEPARATOR);
     const mockedPathRegex = new RegExp(`${protocol.specs.STORAGE_BASE_URL}/${expectedKeyPattern}`);
