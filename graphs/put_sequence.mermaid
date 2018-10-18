@@ -1,0 +1,21 @@
+sequenceDiagram
+User ->> CloudServer: objPUT (/bucket/whatever)
+CloudServer -->> hdClient: objPUT
+hdClient -->> hdClient: select hyperdrives, generate rawKey
+hdClient ->> Hyperdrives: HTTP PUT all fragments
+activate Hyperdrives
+Hyperdrives ->> hdClient: replies
+deactivate Hyperdrives
+hdClient -->> hdClient: decidePUT
+alt orphan fragments detected
+	hdClient ->> Kafka: log in delete topic
+	Kafka ->> hdClient: 
+else fragments to be repaired
+	hdClient ->> Kafka: log in reapir topic
+	Kafka ->> hdClient: 
+end
+hdClient -->> CloudServer: success/failure 
+opt on success
+CloudServer ->> CloudServer: store rawKey inDB
+end
+CloudServer ->> User: success/failure

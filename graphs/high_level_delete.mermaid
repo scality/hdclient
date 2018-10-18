@@ -1,0 +1,10 @@
+sequenceDiagram
+User ->> hdclient: delete(rawKey, callback)
+hdclient ->> keyscheme: deserialize(rawKey)
+keyscheme ->> hdclient: fragments
+hdclient ->> http_delete: doDELETE(fragments, ...)
+activate http_delete
+http_delete ->> User: OperationContext
+http_delete -->> http_delete: network
+http_delete -->> User: callback(error)
+deactivate http_delete

@@ -1,0 +1,10 @@
+sequenceDiagram
+User ->> hdclient: get(rawKey, callback)
+hdclient ->> keyscheme: deserialize(rawKey)
+keyscheme ->> hdclient: fragments
+hdclient ->> http_get: doGET(fragments, ...)
+activate http_get
+http_get ->> User: OperationContext
+http_get -->> http_get: network, checksum and else
+http_get -->> User: callback(error, dataStream)
+deactivate http_get

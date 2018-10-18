@@ -1,0 +1,20 @@
+sequenceDiagram
+hdclient ->> http_delete: doDELETE(fragments, callback, ...)
+loop for each chunk c
+    loop for each fragment f in c
+        http_delete -->> hyperdrives: HTTP DELETE f
+    end
+end
+http_delete ->> hdclient: operation context
+loop for each chunk c
+    loop for each fragment f in c
+         hyperdrives -->> http_delete: reply
+         http_delete ->> http_delete: fragmentDELETECb
+    end
+end
+http_delete ->> http_delete: decideDELETE
+opt _handleErrors
+    http_delete -->> Kafka: log in delete topic
+    Kafka -->> http_delete: \n
+end
+http_delete -->> hdclient: callback(error)

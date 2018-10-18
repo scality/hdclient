@@ -64,6 +64,12 @@ npm test tests/functional/
 # Code coverage
 npm run coverage tests/*
 
+# Generating documentation graphs
+npm run gengraphs
+
+# Generating JSDoc, to start browsing open docs/jsdoc/index.html
+npm run jsdoc
+
 # Other options and Mocha help
 npm test -- -h
 

@@ -1,0 +1,29 @@
+sequenceDiagram
+User ->> CloudServer: objGET
+CloudServer ->> CloudServer: fetch rawKey from DB
+CloudServer -->> hdClient: objGET
+hdClient ->> Hyperdrives: HTTP GET all fragments
+activate Hyperdrives
+Hyperdrives ->> hdClient: replies
+deactivate Hyperdrives
+hdClient -->> hdClient: decideGET
+
+alt Success
+        hdClient -->> CloudServer: start streaming data
+        activate hdClient
+        CloudServer ->> User: start streaming data
+        hdClient -->> hdClient: wait for all fragments to be received
+        hdClient -->> CloudServer: end streaming data
+       deactivate hdClient
+        CloudServer ->> User: end streaming data
+
+        opt fragments to repair
+            	hdClient ->> Kafka: log in repair topic
+	        Kafka ->> hdClient: 
+        end
+else Failure
+	hdClient ->> Kafka: log in repair topic
+	Kafka ->> hdClient: 
+        hdClient -->> CloudServer: failure 
+        CloudServer --> User: failure
+end

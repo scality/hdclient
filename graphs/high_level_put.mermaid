@@ -1,0 +1,13 @@
+sequenceDiagram
+User ->> hdclient: put(istream, keyContext, callback)
+hdclient ->> hdclient: code <- selectCode(keyContext, config)
+hdclient ->> placement: select hyperdrives
+placement ->> hdclient: endpoints
+hdclient ->> keyscheme: serialize(endpoints, keyContext, code)
+keyscheme ->> hdclient: rawKey
+hdclient ->> http_put: doPUT(istream, fragments, rawKey, ...)
+activate http_put
+http_put ->> User: OperationContext
+http_put -->> http_put: network and else
+http_put -->> User: callback(error, rawKey)
+deactivate http_put

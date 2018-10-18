@@ -1,0 +1,16 @@
+graph LR
+subgraph input stream
+    chunk-0 --> chunk-1
+    chunk-1 --> chunk-i
+    chunk-i --> chunk-N
+end
+
+chunk-0 --> multiplexer-0[replication/ECN]
+multiplexer-0 --> fragment-0-0
+multiplexer-0 --> fragment-0-1
+multiplexer-0 --> fragment-0-j
+
+chunk-i --> multiplexer-i[replication/ECN]
+multiplexer-i --> fragment-i-0
+multiplexer-i --> fragment-i-1
+multiplexer-i --> fragment-i-j
