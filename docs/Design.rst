@@ -68,9 +68,7 @@ List of requirements
 | Split ready                                   | A split key should be obvious to spot. The generated key    |
 |                                               | length should NOT depend on number of chunk.                |
 +-----------------------------------------------+-------------------------------------------------------------+
-| Fragment name                                 | Resulting fragment key stored on hyperdrive should refer to |
-|                                               | the parent S3 object name - no object name leak. Resulting  |
-|                                               | key must also be unique hyperdrive-wise.                    |
+| Fragment name                                 | Resulting key must also be unique hyperdrive-wise.          |
 +-----------------------------------------------+-------------------------------------------------------------+
 | Fragment location                             | Each fragment must enable the hdclient to select the        |
 |                                               | correcthyperdrive.                                          |
@@ -81,7 +79,7 @@ Proposed key generation scheme
 
 ::
 
-    <genkey> := <version>#<serviceId>#<split>#<rep_policy>#<ctime>#<hash>#<location>[#<location>]
+    <genkey> := <version>#<serviceId>#<split>#<rep_policy>#<ctime>#<rand>#<location>[#<location>]
     <version> := Natural (so 0 or 1 to start)
     <serviceId> := Natural > 1 - serviceId, can be used for namespacing
     <split> := <size>,<split_size>
@@ -89,7 +87,7 @@ Proposed key generation scheme
     <split_size> := size of each splitted parts, except last one (see hyperdrive keys below)
     <rep_policy> := RS,k,m,stripe_size or CP,n (for n-1 copies) - stripe_size is a positive integer
     <ctime> := creation timestamp of the key
-    <hash> := 64 bit hash of bucketName/objectKey/version, in hexadecimal
+    <rand> := 64bits - in hexadecimal - making the fragment keys unique. Currently pseudo-random
     <location>:= hyperdrive location (UUID, idx in table?, ip:port, ...)
 
 The keys actually used to store fragments on the hyperdrives can be derived easily with
@@ -97,8 +95,8 @@ only the generated key, even for splits.
 
 ::
 
-    <stored_fragment_key> := <serviceId>-<ctime>-<hash>-<end_offset>-<fragid>
-    <serviceId>, <ctime> and <hash> are the ones defined above
+    <stored_fragment_key> := <serviceId>-<ctime>-<rand>-<end_offset>-<fragid>
+    <serviceId>, <ctime> and <rand> are the ones defined above
     <fragid>:= index in main key fragment list
     <end_offset> := used for splits, exclusive. All split chunks share the same prefix, storing the
                     offset is used to easily have range queries and avoid storing them all in the
@@ -133,15 +131,15 @@ Hyperdrive keys:
 * On hd1: none
 * On hd2
 
-  #. 42-123456456-cafebabe-49000-2
-  #. 42-123456456-cafebabe-64000-2
+  #. 42-123456456-cafebabe-49000-1
+  #. 42-123456456-cafebabe-64000-1
 
 * On hd3
 
-  #. 42-123456456-cafebabe-49000-1
-  #. 42-123456456-cafebabe-49000-3
-  #. 42-123456456-cafebabe-64000-1
-  #. 42-123456456-cafebabe-64000-3
+  #. 42-123456456-cafebabe-49000-0
+  #. 42-123456456-cafebabe-49000-2
+  #. 42-123456456-cafebabe-64000-0
+  #. 42-123456456-cafebabe-64000-2
 
 Error handling
 --------------

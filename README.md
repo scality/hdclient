@@ -240,7 +240,7 @@ node scripts/keygen.js scripts/example_hdclient_proxy.conf.json "RS,2,1" "bucket
   "parts": {
     "serviceId": 1,
     "ctime": 1121231354,
-    "hash": "deadbeef",
+    "rand": "deadbeef",
     "code": "RS",
     "nDataParts": 2,
     "nCodingParts": 1,

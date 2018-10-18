@@ -19,13 +19,11 @@ mocha.describe('Keyscheme', function () {
     mocha.describe('Keygen', function () {
         mocha.it('Basic', function (done) {
             const keyContext = { bucketName: 'test', objectKey: 'veryFake Object', version: 2 };
-            const expectedHash = keyscheme.keyhash(keyContext);
             const policy = getPlacementPolicy();
             const fragments = keyscheme.keygen(
                 1, policy, keyContext, split.DATA_ALIGN, 'RS', 2, 1);
 
             /* Verify globals */
-            assert.strictEqual(fragments.hash, expectedHash);
             assert.strictEqual(fragments.code, 'RS');
             assert.strictEqual(fragments.nDataParts, 2);
             assert.strictEqual(fragments.nCodingParts, 1);
@@ -42,16 +40,29 @@ mocha.describe('Keyscheme', function () {
                 assert.strictEqual(typeof f.uuid, 'string');
                 assert.strictEqual(f.fragmentId, i);
                 assert.strictEqual(
-                    f.key, `1-${fragments.ctime}-${fragments.hash}-${fragments.size}-${i}`);
+                    f.key, `1-${fragments.ctime}-${fragments.rand}-${fragments.size}-${i}`);
             });
 
             fragments.chunks[0].coding.forEach((f, i) => {
                 assert.strictEqual(typeof f.uuid, 'string');
                 assert.strictEqual(f.fragmentId, 2 + i);
                 assert.strictEqual(
-                    f.key, `1-${fragments.ctime}-${fragments.hash}-${fragments.size}-${2 + i}`);
+                    f.key, `1-${fragments.ctime}-${fragments.rand}-${fragments.size}-${2 + i}`);
             });
 
+            done();
+        });
+
+        mocha.it('Randomness section', function (done) {
+            const keyContext = { bucketName: 'test', objectKey: 'veryFake Object', version: 2 };
+            const policy = getPlacementPolicy();
+            const fragments1 = keyscheme.keygen(
+                1, policy, keyContext, split.DATA_ALIGN, 'RS', 2, 1);
+            const fragments2 = keyscheme.keygen(
+                1, policy, keyContext, split.DATA_ALIGN, 'RS', 2, 1);
+
+            /* Verify randomness */
+            assert.ok(fragments1.rand !== fragments2.rand);
             done();
         });
 
@@ -59,7 +70,6 @@ mocha.describe('Keyscheme', function () {
             // final splitSize should be aligned
             const serviceId = 42;
             const keyContext = { bucketName: 'test', objectKey: 'veryFake Object', version: 2 };
-            const expectedHash = keyscheme.keyhash(keyContext);
             const policy = getPlacementPolicy(split.DATA_ALIGN * 4 - 1);
             const fragments = keyscheme.keygen(
                 serviceId,
@@ -71,7 +81,6 @@ mocha.describe('Keyscheme', function () {
 
             /* Verify globals */
             assert.strictEqual(fragments.serviceId, 42);
-            assert.strictEqual(fragments.hash, expectedHash);
             assert.strictEqual(fragments.code, 'CP');
             assert.strictEqual(fragments.nDataParts, 3);
             assert.strictEqual(fragments.nCodingParts, 0);
@@ -90,7 +99,7 @@ mocha.describe('Keyscheme', function () {
                     assert.strictEqual(typeof f.uuid, 'string');
                     assert.strictEqual(f.fragmentId, i);
                     assert.strictEqual(
-                        f.key, `${serviceId}-${fragments.ctime}-${fragments.hash}-${endOffset}-${i}`);
+                        f.key, `${serviceId}-${fragments.ctime}-${fragments.rand}-${endOffset}-${i}`);
                 });
             });
 
@@ -218,13 +227,13 @@ mocha.describe('Keyscheme', function () {
             }
         });
 
-        mocha.it('No hash section', function (done) {
+        mocha.it('No rand section', function (done) {
             try {
                 keyscheme.deserialize('1#1#split#code#ctime#');
                 done(new Error('Shoud never have been reached'));
             } catch (err) {
                 assert.ok(err instanceof keyscheme.KeySchemeDeserializeError);
-                assert.strictEqual(err.message, 'Bad key: no hash section');
+                assert.strictEqual(err.message, 'Bad key: no rand section');
                 done();
             }
         });
