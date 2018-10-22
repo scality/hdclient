@@ -12,7 +12,7 @@
     "gengraphs": "./graphs/generate_graphs.sh",
     "jsdoc": "jsdoc lib/ tests/ -d docs/jsdoc",
     "lint": "eslint $(git ls-files '*.js')",
-    "test": "mocha --use_strict --check-leaks --no-exit "
+    "test": "mocha --use_strict --check-leaks "
   },
   "repository": "scality/hdclient",
   "author": "Maxime Lubin",
