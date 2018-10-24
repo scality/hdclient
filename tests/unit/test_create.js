@@ -173,8 +173,6 @@ mocha.describe('Hyperdrive Client', function () {
                 assert.strictEqual(valid.config.cluster.components[0].dynamicSum, 0.1);
 
                 assert.strictEqual(valid.config.cluster.name, 'Internal-0-0');
-                assert.strictEqual(valid.config.cluster.affinity, 'soft');
-                assert.strictEqual(valid.config.cluster.ftype, 'both');
                 assert.strictEqual(valid.config.cluster.dynamicWeights.length, 1);
                 assert.strictEqual(valid.config.cluster.dynamicWeights[0], 0.1);
                 assert.strictEqual(valid.config.cluster.dynamicSum, 0.1);
@@ -186,6 +184,65 @@ mocha.describe('Hyperdrive Client', function () {
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         mocha.describe('Validate complex clusters', function () {
+            mocha.it('Bad affinity container', function (done) {
+                const args = {
+                    policy: {
+                        cluster: {
+                            affinity: 'does not exist',
+                            components: [],
+                        },
+                    },
+                };
+                const expectedError = new config.InvalidConfigError(
+                    'component.affinity', 'does not exist',
+                    'affinity expects either "soft" or "hard" as value');
+                assert.throws(() => create(args),
+                              function (thrown) {
+                                  return thrownErrorValidation(thrown, expectedError);
+                              });
+                done();
+            });
+
+            mocha.it('Bad ftype container', function (done) {
+                const args = {
+                    policy: {
+                        cluster: {
+                            ftype: 'does not exist',
+                            components: [],
+                        },
+                    },
+                };
+                const expectedError = new config.InvalidConfigError(
+                    'component.ftype', 'does not exist',
+                    'ftype field expects either "data", "coding" or "both"');
+                assert.throws(() => create(args),
+                              function (thrown) {
+                                  return thrownErrorValidation(thrown, expectedError);
+                              });
+                done();
+            });
+
+            mocha.it('Invalid aggregated weight', function (done) {
+                const args = {
+                    policy: {
+                        cluster: {
+                            components: [
+                                { name: 'hd1', staticWeight: 0 },
+                                { name: 'hd2', staticWeight: 0 },
+                            ],
+                        },
+                    },
+                };
+                const expectedError = new config.InvalidConfigError(
+                    'Aggregated weights', 0,
+                    'A container must have at least 1 sub-components with a non-zero staticWeight');
+                assert.throws(() => create(args),
+                              function (thrown) {
+                                  return thrownErrorValidation(thrown, expectedError);
+                              });
+                done();
+            });
+
             mocha.it('Flat - multiple hyperdrives', function (done) {
                 const expectedWeights = [0, 10, 0.2, 3.14159];
                 const policy = {
@@ -221,8 +278,6 @@ mocha.describe('Hyperdrive Client', function () {
 
                 // Validate cluster level
                 assert.strictEqual(valid.config.cluster.name, policy.cluster.name);
-                assert.strictEqual(valid.config.cluster.ftype, 'both');
-                assert.strictEqual(valid.config.cluster.affinity, 'hard');
                 assert.strictEqual(valid.config.cluster.dynamicWeights.length,
                                    expectedWeights.length);
                 assert.ok(valid.config.cluster.dynamicWeights.every((w, i) => w === expectedWeights[i]));
@@ -295,7 +350,6 @@ mocha.describe('Hyperdrive Client', function () {
                 });
 
                 // Validate cluster level
-                assert.strictEqual(valid.config.cluster.affinity, 'soft');
                 assert.strictEqual(valid.config.cluster.dynamicWeights.length, 3);
                 assert.ok(valid.config.cluster.dynamicWeights.every(w => w === 2));
                 assert.strictEqual(valid.config.cluster.dynamicSum, 6);
@@ -346,8 +400,6 @@ mocha.describe('Hyperdrive Client', function () {
 
                 // Validate cluster
                 assert.strictEqual(cluster.name, 'Internal-0-0');
-                assert.strictEqual(cluster.ftype, 'both');
-                assert.strictEqual(cluster.affinity, 'soft');
                 assert.strictEqual(cluster.dynamicWeights.length, 2);
                 assert.strictEqual(cluster.dynamicWeights[0], 2);
                 assert.strictEqual(cluster.dynamicWeights[1], 10);
@@ -360,13 +412,18 @@ mocha.describe('Hyperdrive Client', function () {
     // ----------------------------------------------------------------------------
     mocha.describe('Codes section', function () {
         mocha.it('No codes', function (done) {
-            const codes = undefined;
+            const args = {
+                policy: {
+                    cluster: { components: [{ name: 'a', staticWeight: 1 }] },
+                },
+            };
             const expectedError = new config.InvalidConfigError(
                 'codes', undefined,
                 'Expected an array of { pattern, dataParts, codingParts }');
-            const validation = config.validateCodeSection(codes);
-            assert.ok(!validation.configIsValid);
-            thrownErrorValidation(validation.configError, expectedError);
+            assert.throws(() => create(args),
+                          function (thrown) {
+                              return thrownErrorValidation(thrown, expectedError);
+                          });
             done();
         });
 

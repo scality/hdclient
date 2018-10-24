@@ -126,6 +126,11 @@ mocha.describe('Helper functions', function () {
             done();
         });
 
+        mocha.it('Impossible - passing no weights', function (done) {
+            assert.strictEqual(libUtils.categoricalSample([]), null);
+            done();
+        });
+
         mocha.it('Random categorical distribution', function (done) {
             const nCategories = 10;
             const scale = Math.random() * 10000;

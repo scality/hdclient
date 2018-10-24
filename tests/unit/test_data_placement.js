@@ -60,7 +60,6 @@ mocha.describe('Data placement', function () {
         mocha.it('Not enough hyperdrives', function (done) {
             const policy = {
                 cluster: {
-                    affinity: 'soft',
                     components: [{
                         affinity: 'hard',
                         ftype: 'both',
@@ -69,7 +68,6 @@ mocha.describe('Data placement', function () {
                     dynamicSum: 100,
                     dynamicWeights: [100],
                     name: 'cluster',
-                    ftype: 'both',
                 },
             };
 
@@ -95,7 +93,6 @@ mocha.describe('Data placement', function () {
         mocha.it('Soft functional type', function (done) {
             const policy = {
                 cluster: {
-                    affinity: 'soft',
                     components: [{
                         affinity: 'soft',
                         ftype: 'both',
@@ -104,7 +101,6 @@ mocha.describe('Data placement', function () {
                     dynamicSum: 100,
                     dynamicWeights: [100],
                     name: 'cluster',
-                    ftype: 'both',
                 },
             };
 
@@ -118,7 +114,6 @@ mocha.describe('Data placement', function () {
             /* Here we enforce placing all coding fragments on the same hyperdrives */
             const policy = {
                 cluster: {
-                    affinity: 'soft',
                     components: [
                         { affinity: 'hard', ftype: 'data', name: 'hd1' },
                         { affinity: 'hard', ftype: 'coding', name: 'hd2' },
@@ -130,7 +125,6 @@ mocha.describe('Data placement', function () {
                     dynamicSum: 6 * 25,
                     dynamicWeights: [25, 25, 25, 25, 25, 25],
                     name: 'cluster',
-                    ftype: 'both',
                 },
             };
 
@@ -160,7 +154,6 @@ mocha.describe('Data placement', function () {
              */
             const policy = {
                 cluster: {
-                    affinity: 'soft',
                     components: [{
                         name: 'SiteA',
                         affinity: 'hard',
@@ -192,7 +185,6 @@ mocha.describe('Data placement', function () {
                     dynamicSum: 60,
                     dynamicWeights: [20, 20, 20],
                     name: 'cluster',
-                    ftype: 'both',
                 },
             };
 
@@ -208,7 +200,6 @@ mocha.describe('Data placement', function () {
         mocha.it('Free-form', function (done) {
             const policy = {
                 cluster: {
-                    affinity: 'soft',
                     components: [
                         {
                             name: 'SiteA',
@@ -226,7 +217,6 @@ mocha.describe('Data placement', function () {
                     dynamicSum: 3,
                     dynamicWeights: [2, 1],
                     name: 'cluster',
-                    ftype: 'both',
                 },
             };
 
