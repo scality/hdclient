@@ -16,7 +16,10 @@ const testUtils = require('../utils');
 function getPlacementPolicy(minSplitSize = 0) {
     return {
         minSplitSize,
-        locations: libUtils.range(10).map(idx => `fakeUUID-${idx}`),
+        cluster: {
+            components: libUtils.range(10).map(
+                idx => ({ name: `fakeUUID-${idx}`, staticWeight: 1 })),
+        },
     };
 }
 
