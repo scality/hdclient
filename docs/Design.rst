@@ -231,7 +231,102 @@ emit an error and early close the streamed data.
 Data placement
 --------------
 
-TODO
+Since the have several hyperdrives to store data on, the question of how to select them on a put. Ideally
+the seelction algorthm should perform akin to a wear-levelling SSD algorithm, essentially smoothing
+keys over hyerpdrives depending on their current capacity: available space, status, etc.
 
+The available hyperdrives may also be organized in a tree hierarchy (site, rack, etc), where we could decide
+to only store a single or multiple fragments - dubbed affinity. Finally we may reserve some hyperdrives exclusively for data
+fragments and other for codings.
+
+Hyperdrives are the deepest level aka leaves of the cluster description, while internal nodes are dubbed Container.
+
+**Type specification**
+
+.. code-block:: haskell
+
+    Component = Container | Hyperdrive
+    Container = [Component]
+    Cluster = Container
+
+Each Hyperdrive the following fields:
+
+- name: must be unique - typically the uuid - and will be used to find corresponding, real hostname:port
+  to contact the hyperdrive (the actual uuidmapping is another mandatory part of the configuration).
+- staticWeight: positive number, indirectly describing the attractiveness of a hyperdrive. Static because
+  this weight does not take into account liveness inputs.
+- dynamicWeight: corrected weight with liveness info.
+- affinity: 'soft'=multiple fragments or 'hard'=single. Leaves default to 'hard' while higher levels default on 'soft'.
+- ftype: 'data', 'coding' or 'both' (default) specifying which kind of fragment is accepted.
+
+Containers follow roughly the same pattern, except they have a list of children (components), no staticWeight,
+and their dynamicWeight is the sum of the weights of their children.
+
+Example: (XX) are hyperdirve weights, [XX] are aggregated weights
+
+::
+
+  Cluster
+    |____ Site A[11.8],affinity=soft
+    |       |_____ Hyperdrive1(6.3),affinity=hard,ftype=data
+    |       |_____ Hyperdrive2(5.5),affinity=hard,ftype=data
+    |
+    |_____Hyperdrive3(3.14159),affinity=hard,ftype=coding
+
+As you can see the tree is not required to be balanced. While the defaults are selected to make the
+obvious, likely cases easy, short to specify, affinity and ftype can be set to whatever combination
+on any component of the tree. If the result is impossible (e.g. a middle component with ftype='coding'
+and all children with ftype='data'), the selection will simply fail. This contraction is not currently
+checked at configuration time. Same goes for the number of hyperdrives, used codes and the affinity.
+
+**Sampling procedure**
+
+Let :math:`X \sim Cat({w_1, ..., w_n})` where :math:`\forall i \text{ } w_{i} \in [0, +\infty)` and :math:`\sum_{i=1}^{n} w_{i} > 0`.
+X is a sample for the categorical distribution, where the weights are renormalized. The sampling procedure
+is basically recursive sampling for the children, starting from the root until a leaf is reached, changing
+the used catagorical distribution by the weights of current internal node's children.
+
+.. code-block:: haskell
+
+    sampleFragment:: Component -> Component
+    sampleFragment component =
+        # Leaf
+        | component.components => sampleFragmentChild child
+        | otherwise => component
+        where
+            child ~ Cat(c.dynWeight for w in component.components)
+
+
+The simplisitic pseudo-code above has several shortcomings:
+
+- does not handle affinity
+- does not handle ftype
+- no spread: sampling a second fragment has the same probability of landing on the same hyperdrive
+
+While handling the ftype is somewhat straightforward, it also implies selection of the
+children might fail since the ftype consistency in the cluster is not enforced. Handling the affinity
+requires setting to 0 the weight of component with affinity=hard on the sample path. Otherwise we might
+select them again when sampling the next fragment. That means implementation must work on a copy of
+the cluster description, and find a way to do it with as little overhead as possible.
+The last issue - no spread - is essentially a weight modification and can be easily added.
+
+.. code-block:: haskell
+
+    data Ftype = data | coding | both
+    data Affinity = soft | hard
+    spreadFactor::Float = 0.8
+
+    sampleFragment:: Maybe(Component) -> Ftype -> Maybe(Component)
+    sampleFragment component ftype =
+        # Error - no matching children found
+        | None => None
+        # Leaf
+        | Some(component) && component.components => sampleFragmentChild child ftype
+        | otherwise => component
+        where
+            child ~ Cat(c.dynWeight for w in component.components if ftype in [ftype, both])
+            child.dynWeight =
+                | child.affinity == hard => 0.
+                | otherwise child.dynWeight * spreadFactor
 
 .. _CloudServer : https://github.com/scality/cloudserver
