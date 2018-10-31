@@ -232,12 +232,12 @@ Data placement
 --------------
 
 Since the have several hyperdrives to store data on, the question of how to select them on a put. Ideally
-the seelction algorthm should perform akin to a wear-levelling SSD algorithm, essentially smoothing
-keys over hyerpdrives depending on their current capacity: available space, status, etc.
+the selection algorithm should perform akin to a wear-levelling SSD algorithm, essentially smoothing
+keys over hyperdrives depending on their current capacity: available space, status, etc.
 
 The available hyperdrives may also be organized in a tree hierarchy (site, rack, etc), where we could decide
-to only store a single or multiple fragments - dubbed affinity. Finally we may reserve some hyperdrives exclusively for data
-fragments and other for codings.
+to only store a single or multiple fragments - dubbed affinity. Finally we may reserve some hyperdrives
+exclusively for data fragments and other for codings.
 
 Hyperdrives are the deepest level aka leaves of the cluster description, while internal nodes are dubbed Container.
 
@@ -262,7 +262,7 @@ Each Hyperdrive the following fields:
 Containers follow roughly the same pattern, except they have a list of children (components), no staticWeight,
 and their dynamicWeight is the sum of the weights of their children.
 
-Example: (XX) are hyperdirve weights, [XX] are aggregated weights
+Example: (XX) are hyperdrive weights, [XX] are aggregated weights
 
 ::
 
