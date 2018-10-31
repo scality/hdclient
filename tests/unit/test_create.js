@@ -53,7 +53,7 @@ mocha.describe('Hyperdrive Client', function () {
             };
             const expectedError = new config.InvalidConfigError(
                 'policy.cluster.components', undefined,
-                'A clsuter expects at least 1 described component');
+                'A cluster expects at least 1 described component');
             assert.throws(() => create(args),
                           function (thrown) {
                               return thrownErrorValidation(thrown, expectedError);
