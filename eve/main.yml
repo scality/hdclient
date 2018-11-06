@@ -19,16 +19,13 @@ stages:
           shallow: True
           retryFetch: True
           haltOnFailure: True
-# node-rdkafka installation seems mostly broken on Centos7 with given node version
-# requires --force and manual node-gyp rebuild because ./configure is not launched automatically...
       - ShellCommand:
           name: install dependencies
           haltOnFailure: True
-          command: npm install --force
+          command: npm install
       - ShellCommand:
-          name: finish install node-rdkafka
-          command: cd node_modules/node-rdkafka/ && ./configure && node-gyp rebuild
-          haltOnFailure: True
+          name: audit installed packages
+          command: npm audit
       - ShellCommand:
           name: ESLint
           command: npm run lint

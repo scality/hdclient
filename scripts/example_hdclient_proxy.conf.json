@@ -15,17 +15,17 @@
         "hd3": "127.0.0.1:4246"
     },
     "codes": [{
-        "pattern": "mybucket/test1/*",
+        "pattern": ".*",
         "type": "RS",
         "dataParts": 2,
         "codingParts": 1
     }, {
-        "pattern": ".*",
+        "pattern": "replicated/.*",
         "type": "CP",
         "dataParts": 3,
         "codingParts": 0
     }],
-    "requestTimeoutMs": 1000,
+    "requestTimeoutMs": 10000,
     "errorAgent": {
         "kafkaBrokers": "not used by server"
     }
