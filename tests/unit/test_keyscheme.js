@@ -8,10 +8,18 @@ const assert = require('assert');
 
 const { keyscheme, utils: libUtils, split } = require('../../index');
 
+
+/* Make sure we are using the fake placement selector */
+// eslint-disable-next-line no-unused-vars
+const testUtils = require('../utils');
+
 function getPlacementPolicy(minSplitSize = 0) {
     return {
         minSplitSize,
-        locations: libUtils.range(10).map(idx => `fakeUUID-${idx}`),
+        cluster: {
+            components: libUtils.range(10).map(
+                idx => ({ name: `fakeUUID-${idx}`, staticWeight: 1 })),
+        },
     };
 }
 

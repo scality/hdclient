@@ -16,18 +16,19 @@ const { hdclient, protocol, keyscheme, split,
 
 /* Override placement policy for determinism in tests */
 function deterministicPlacement(policy, nData, nCoding) {
-    const len = policy.locations.length;
+    const len = policy.cluster.components.length;
+    const locations = policy.cluster.components.map(c => c.name);
     let pos = 0;
 
     const dataLocations = [];
     for (let i = 0; i < nData; ++i) {
-        dataLocations.push(policy.locations[pos]);
+        dataLocations.push(locations[pos]);
         pos = (pos + 1) % len;
     }
 
     const codingLocations = [];
     for (let i = 0; i < nCoding; ++i) {
-        codingLocations.push(policy.locations[pos]);
+        codingLocations.push(locations[pos]);
         pos = (pos + 1) % len;
     }
 
@@ -95,17 +96,19 @@ function getDefaultClient({ nLocations = 1,
                             minSplitSize = 0 } = {}) {
     const defaultCodes = [{ type: 'CP', dataParts: nLocations, codingParts: 0, pattern: '.*' }];
     const codesToUse = codes || defaultCodes;
-    const locations = libUtils.range(nLocations).map(
-        idx => `uuid-${idx}`);
+    const cluster = {
+        components: libUtils.range(nLocations).map(
+            idx => ({ name: `uuid-${idx}`, staticWeight: 1 })),
+    };
     const uuidmapping = {};
-    locations.forEach(
-        (uuid, idx) => {
-            uuidmapping[uuid] = `fake-hyperdrive-${idx}:8888`;
+    cluster.components.forEach(
+        (hyperdrive, idx) => {
+            uuidmapping[hyperdrive.name] = `fake-hyperdrive-${idx}:8888`;
         });
     const conf = {
         codes: codesToUse,
         requestTimeoutMs: 10,
-        policy: { minSplitSize, locations },
+        policy: { minSplitSize, cluster },
         uuidmapping,
         errorAgent: { kafkaBrokers: 'who cares?' },
     };
@@ -305,7 +308,7 @@ function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, endOffset, fr
  */
 /* eslint-enable valid-jsdoc */
 function mockPUT(client, keyContext, size, repliess) {
-    const clientConfig = client.options;
+    const clientConfig = client.conf;
     const code = client.selectCode(keyContext.bucketName, keyContext.objectKey);
     if (code === null) {
         return {};
@@ -323,14 +326,14 @@ function mockPUT(client, keyContext, size, repliess) {
         const dataMocks = dataLocations.map(
             (loc, idx) => _mockPutRequest(
                 clientConfig.serviceId,
-                clientConfig.uuidmapping,
+                client.uuidmapping,
                 loc, keyContext, endOffset, idx,
                 replies[idx]));
 
         const codingMocks = codingLocations.map(
             (loc, idx) => _mockPutRequest(
                 clientConfig.serviceId,
-                clientConfig.uuidmapping,
+                client.uuidmapping,
                 loc, keyContext, endOffset, dataLocations.length + idx,
                 replies[dataLocations.length + idx]));
 
@@ -440,7 +443,7 @@ function _mockGetRequest(uuidmapping,
  */
 /* eslint-enable valid-jsdoc */
 function mockGET(client, keyContext, objectSize, repliess) {
-    const clientConfig = client.options;
+    const clientConfig = client.conf;
     const nDataParts = clientConfig.codes[0].dataParts;
     const nCodingParts = clientConfig.codes[0].codingParts;
     const parts = keyscheme.keygen(
@@ -464,7 +467,7 @@ function mockGET(client, keyContext, objectSize, repliess) {
                 const { use, chunkRange } = libUtils.getChunkRange(parts, chunkId, mockedReply.range);
                 assert.ok(use);
                 mockedReply.range = chunkRange;
-                return _mockGetRequest(clientConfig.uuidmapping, part, mockedReply);
+                return _mockGetRequest(client.uuidmapping, part, mockedReply);
             }
         );
 
@@ -475,7 +478,7 @@ function mockGET(client, keyContext, objectSize, repliess) {
                 const { use, range } = libUtils.getChunkRange(parts, chunkId, mockedReply.range);
                 assert.ok(use);
                 mockedReply.range = range;
-                return _mockGetRequest(clientConfig.uuidmapping, part, mockedReply);
+                return _mockGetRequest(client.uuidmapping, part, mockedReply);
             }
         );
 
@@ -546,7 +549,7 @@ function _mockDeleteRequest(uuidmapping, location, { statusCode, timeoutMs = 0 }
  */
 /* eslint-enable valid-jsdoc */
 function mockDELETE(client, keyContext, objectSize, repliess) {
-    const clientConfig = client.options;
+    const clientConfig = client.conf;
     const nDataParts = clientConfig.codes[0].dataParts;
     const nCodingParts = clientConfig.codes[0].codingParts;
     const parts = keyscheme.keygen(
@@ -566,13 +569,13 @@ function mockDELETE(client, keyContext, objectSize, repliess) {
         // Setup data mocks
         const dataMocks = chunk.data.map(
             (part, idx) => _mockDeleteRequest(
-                clientConfig.uuidmapping, part, repliess[chunkId][idx])
+                client.uuidmapping, part, repliess[chunkId][idx])
         );
 
         // Setup coding mocks
         const codingMocks = chunk.coding.map(
             (part, idx) => _mockDeleteRequest(
-                clientConfig.uuidmapping, part,
+                client.uuidmapping, part,
                 repliess[chunkId][idx + nDataParts])
         );
 

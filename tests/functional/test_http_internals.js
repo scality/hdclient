@@ -21,7 +21,8 @@ mocha.describe('HTTP internals', function () {
 
     mocha.it('Socket error handling', function (done) {
         const hdClient = hdmock.getDefaultClient();
-        const [ip, port] = hdClient.options.policy.locations[0].split(':');
+        const uuid = hdClient.conf.policy.cluster.components[0].name;
+        const [ip, port] = hdClient.uuidmapping[uuid].split(':');
         const opts = hdclient.httpUtils.getCommonStoreRequestOptions(
             hdClient.httpAgent, ip, Number(port), 'test_key');
         opts.method = 'GET';
@@ -29,7 +30,7 @@ mocha.describe('HTTP internals', function () {
         const noLog = { error() {} };
         const expectedErrorDescription = 'something awful happened';
 
-        nock(`http://${hdClient.options.policy.locations[0]}`)
+        nock(`http://${ip}:${port}`)
             .get(opts.path)
             .replyWithError(expectedErrorDescription);
 
@@ -57,14 +58,15 @@ mocha.describe('HTTP internals', function () {
 
     mocha.it('Request timeout', function (done) {
         const hdClient = hdmock.getDefaultClient();
-        const [ip, port] = hdClient.options.policy.locations[0].split(':');
+        const uuid = hdClient.conf.policy.cluster.components[0].name;
+        const [ip, port] = hdClient.uuidmapping[uuid].split(':');
         const opts = hdclient.httpUtils.getCommonStoreRequestOptions(
             hdClient.httpAgent, ip, Number(port), 'test_key');
         opts.method = 'GET';
         opts.path = '/jesuisunemiteenpullover';
         const noLog = { error() {} };
 
-        nock(`http://${hdClient.options.policy.locations[0]}`)
+        nock(`http://${ip}:${port}`)
             .get(opts.path)
             .delay(hdClient.options.requestTimeoutMs + 10)
             .reply(200, 'je suis une mite en pull over');
@@ -96,14 +98,15 @@ mocha.describe('HTTP internals', function () {
 
     mocha.it('Request abort', function (done) {
         const hdClient = hdmock.getDefaultClient();
-        const [ip, port] = hdClient.options.policy.locations[0].split(':');
+        const uuid = hdClient.conf.policy.cluster.components[0].name;
+        const [ip, port] = hdClient.uuidmapping[uuid].split(':');
         const opts = hdclient.httpUtils.getCommonStoreRequestOptions(
             hdClient.httpAgent, ip, Number(port), 'test_key');
         opts.method = 'GET';
         opts.path = '/jesuisunemiteenpullover';
         const noLog = { error() {} };
 
-        nock(`http://${hdClient.options.policy.locations[0]}`)
+        nock(`http://${ip}:${port}`)
             .get(opts.path)
             .delay(hdClient.options.requestTimeoutMs - 1)
             .reply(200, 'je suis une mite en pull over');

@@ -1,21 +1,26 @@
 {
     "policy": {
         "minSplitSize": 512000,
-        "locations": ["hd1", "hd2", "hd3", "hd4"]
+        "cluster": {
+            "components": [
+                { "name": "hd1", "staticWeight": 1 },
+                { "name": "hd2", "staticWeight": 1 },
+                { "name": "hd3", "staticWeight": 1 }
+            ]
+        }
     },
     "uuidmapping": {
         "hd1": "127.0.0.1:4244",
         "hd2": "127.0.0.1:4245",
-        "hd3": "127.0.0.1:4246",
-        "hd4": "127.0.0.1:4247"
+        "hd3": "127.0.0.1:4246"
     },
     "codes": [{
-        "pattern": "mybucket/test1/*"
+        "pattern": "mybucket/test1/*",
         "type": "RS",
         "dataParts": 2,
         "codingParts": 1
     }, {
-        "pattern": ".*"
+        "pattern": ".*",
         "type": "CP",
         "dataParts": 3,
         "codingParts": 0

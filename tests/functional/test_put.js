@@ -57,8 +57,7 @@ mocha.describe('PUT', function () {
                     assert.strictEqual(typeof rawKey, 'string');
                     const parts = hdclient.keyscheme.deserialize(rawKey);
 
-                    const uuid =
-                              hdClient.options.policy.locations[0];
+                    const uuid = hdClient.conf.policy.cluster.components[0].name;
                     assert.strictEqual(parts.nDataParts, 1);
                     assert.strictEqual(parts.nCodingParts, 0);
                     assert.strictEqual(parts.nChunks, 1);
@@ -104,7 +103,7 @@ mocha.describe('PUT', function () {
                     assert.strictEqual(typeof rawKey, 'string');
                     const parts = hdclient.keyscheme.deserialize(rawKey);
 
-                    const uuid = hdClient.options.policy.locations[0];
+                    const uuid = hdClient.conf.policy.cluster.components[0].name;
                     assert.strictEqual(parts.nDataParts, 1);
                     assert.strictEqual(parts.nCodingParts, 0);
                     assert.strictEqual(parts.nChunks, 1);
@@ -942,7 +941,7 @@ mocha.describe('PUT', function () {
 
                     /* Verify layout: fragment (i,j) sould be on hyperdrive i for all j */
                     for (let i = 0; i < 2; ++i) {
-                        const uuid = hdClient.options.policy.locations[i];
+                        const uuid = hdClient.conf.policy.cluster.components[i].name;
                         for (let j = 0; j < 3; ++j) {
                             const fragment = parts.chunks[j].data[i];
                             assert.strictEqual(fragment.uuid, uuid);
