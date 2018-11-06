@@ -231,7 +231,7 @@ emit an error and early close the streamed data.
 Data placement
 --------------
 
-Since the have several hyperdrives to store data on, the question of how to select them on a put. Ideally
+Since we have several hyperdrives to store data on, the question of how to select them on a put. Ideally
 the selection algorithm should perform akin to a wear-levelling SSD algorithm, essentially smoothing
 keys over hyperdrives depending on their current capacity: available space, status, etc.
 
