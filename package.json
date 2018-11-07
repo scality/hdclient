@@ -7,11 +7,12 @@
   "description": "Hyperdrive appliance client library",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint $(git ls-files '*.js')",
-    "test": "mocha --use_strict --check-leaks --no-exit ",
+    "clinic": "clinic ",
     "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text mocha --use_strict --check-leaks ",
     "gengraphs": "./graphs/generate_graphs.sh",
-    "jsdoc": "jsdoc lib/ tests/ -d docs/jsdoc"
+    "jsdoc": "jsdoc lib/ tests/ -d docs/jsdoc",
+    "lint": "eslint $(git ls-files '*.js')",
+    "test": "mocha --use_strict --check-leaks "
   },
   "repository": "scality/hdclient",
   "author": "Maxime Lubin",
@@ -22,6 +23,7 @@
     "werelogs": "scality/werelogs#GA7.2.0.5"
   },
   "devDependencies": {
+    "clinic": "1.3.0",
     "eslint": "2.13.1",
     "eslint-config-airbnb": "6.2.0",
     "eslint-config-scality": "scality/Guidelines#GA7.2.0.5",
