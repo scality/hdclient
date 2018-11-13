@@ -39,6 +39,7 @@ mocha.describe('Keyscheme', function () {
             assert.strictEqual(fragments.nChunks, 1);
             assert.strictEqual(fragments.size, split.DATA_ALIGN);
             assert.strictEqual(fragments.splitSize, split.DATA_ALIGN);
+            assert.strictEqual(typeof fragments.metadata, 'string');
 
             /* Verify each fragment */
             assert.strictEqual(fragments.chunks.length, 1);
@@ -96,6 +97,7 @@ mocha.describe('Keyscheme', function () {
             assert.strictEqual(fragments.nChunks, 3);
             assert.strictEqual(fragments.size, split.DATA_ALIGN * 8 + 1);
             assert.strictEqual(fragments.splitSize, split.DATA_ALIGN * 4);
+            assert.strictEqual(typeof fragments.metadata, 'string');
 
             /* Verify each fragment */
             assert.strictEqual(fragments.chunks.length, 3);

@@ -110,7 +110,7 @@ mocha.describe('Hyperdrive Protocol Specification', function () {
         });
         mocha.it('Mixture', function (done) {
             // Usermd does not exists, it is usermeta
-            const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; data=4096; usermeta=256; meta=11`;
+            const expected = `${hdProto.specs.HYPERDRIVE_APPLICATION}; meta=11; usermeta=256; data=4096`;
             const generated = hdProto.helpers.makePutContentType(
                 { usermeta: 256, data: 4096, meta: 11 }
             );

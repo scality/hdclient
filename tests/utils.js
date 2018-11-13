@@ -222,16 +222,21 @@ function getReturnedBody(payload, range, trailingCRCs) {
  * Retrieve expected mocked request body
  *
  * PUT replies must fill the ContenT-Length header
+ * @param {String} metadata to store along with the key
  * @param {fs.ReadStream|String} payload to size
- * @returns {Number} payload's length
+ * @returns {Buffer|String} body to match
  * @comment Blocking! Use for test purposes only
  */
-function getExpectedBody(payload) {
+function getExpectedBody(metadata, payload) {
     if (payload instanceof fs.ReadStream) {
-        return fs.readFileSync(payload.path);
+        return Buffer.concat([Buffer.from(metadata, null),
+                              fs.readFileSync(payload.path)]);
+    } else if (payload instanceof Buffer) {
+        return Buffer.concat([Buffer.from(metadata, null),
+                              payload]);
     }
 
-    return payload;
+    return metadata + payload;
 }
 
 /**
@@ -241,6 +246,7 @@ function getExpectedBody(payload) {
  * @param {Map} uuidmapping Map UUIDS to hyperdrive endpoints (ip:port)
  * @param {String} uuid  to contact
  * @param {Object} keyContext same as given to actual PUT
+ * @param {String} metadata to sotr alongside the key
  * @param {String} endOffset Total end offset of this chunk in object
  * @param {Number} fragmentId Index of fragment
  * @param {Number} statusCode of the reply
@@ -250,20 +256,24 @@ function getExpectedBody(payload) {
  * @return {Nock.Scope} can be used to further chain mocks
  *                      onto same machine
  */
-function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, endOffset, fragmentId,
+function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, metadata, endOffset, fragmentId,
                          { statusCode, payload, contentType, timeoutMs = 0 }) {
     const len = getPayloadLength(payload);
-    const expectedBody = getExpectedBody(payload);
+    const expectedBody = getExpectedBody(metadata, payload);
     const reqheaders = {
-        ['Content-Length']: len,
+        ['Content-Length']: len + metadata.length,
         ['Content-Type']: protocol.helpers.makePutContentType(
-            { [contentType]: len }),
+            { [contentType]: len, meta: metadata.length }),
     };
 
-    const replyheaders = {
-        ['Content-Type']:
-        `${protocol.specs.HYPERDRIVE_APPLICATION}; ${contentType}=${len}; $crc.${contentType}=0xdeadbeef`,
-    };
+    const ctypeSections = [
+        protocol.specs.HYPERDRIVE_APPLICATION,
+        `meta=${metadata.length}`,
+        `${contentType}=${len}`,
+        '$crc.meta=0xcafebabe',
+        `$crc.${contentType}=0xdeadbeef`,
+    ];
+    const replyheaders = { ['Content-Type']: ctypeSections.join('; ') };
 
     const expectedKeyPattern = [
         serviceId, '[0-9]+', '[0-9a-fA-F]+',
@@ -277,7 +287,7 @@ function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, endOffset, fr
             /* Stupid nock forces to match expected body against
              * a stringified buffer, of which I can't specify the encoding...
              */
-            body === expectedBody.toString('hex') ||
+             body === expectedBody.toString('hex') ||
              body === expectedBody.toString())
         .query({ immutable: true, force: true })
         .delay(timeoutMs)
@@ -314,12 +324,21 @@ function mockPUT(client, keyContext, size, repliess) {
         return {};
     }
 
-    const { splitSize } = split.getSplitSize(
+    const { splitSize, stripeSize } = split.getSplitSize(
         clientConfig.policy.minSplitSize, size, code.type, code.dataParts);
     const { dataLocations, codingLocations } = deterministicPlacement(
         clientConfig.policy, code.dataParts, code.codingParts);
     const nParts = dataLocations.length + codingLocations.length;
     assert.ok(repliess.every(c => c.length === nParts));
+
+    const repPolicy = [code.type, code.dataParts];
+    if (code.type === 'RS') {
+        repPolicy.push(code.codingParts);
+        repPolicy.push(stripeSize);
+    }
+    const serializedRepPolicy = repPolicy.join(keyscheme.SUBSECTION_SEPARATOR);
+    const metadata = [serializedRepPolicy, ...dataLocations, ...codingLocations].join(
+        keyscheme.SECTION_SEPARATOR);
 
     const mocks = repliess.map((replies, chunkId) => {
         const endOffset = Math.min(size, splitSize * (chunkId + 1));
@@ -327,14 +346,16 @@ function mockPUT(client, keyContext, size, repliess) {
             (loc, idx) => _mockPutRequest(
                 clientConfig.serviceId,
                 client.uuidmapping,
-                loc, keyContext, endOffset, idx,
+                loc, keyContext, metadata,
+                endOffset, idx,
                 replies[idx]));
 
         const codingMocks = codingLocations.map(
             (loc, idx) => _mockPutRequest(
                 clientConfig.serviceId,
                 client.uuidmapping,
-                loc, keyContext, endOffset, dataLocations.length + idx,
+                loc, keyContext, metadata,
+                endOffset, dataLocations.length + idx,
                 replies[dataLocations.length + idx]));
 
         return { dataMocks, codingMocks };
