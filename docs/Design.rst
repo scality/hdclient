@@ -112,6 +112,15 @@ a straggler. Using the offset in the total object as the only discriminator betw
 same fragments of different chunks means we do not need a manifest to track them all:
 having only the split size and the toal size, we can recover all fragment keys.
 
+Each fragmeents will store in Hyperdrive index a samll blob of metadata. This blob,
+identical for each fragment, encodes object information we cannot infer using
+a single hyperdrive. It will be used by background task daemons to perform several
+actions, most notably filing network repair into Kafka (ECN). As per current design,
+it contains:
+
+* the whole content of <rep_policy> ie the code description
+* the list of selected hyperdrive UUIDs - be able to quickly find all related fragments
+
 **Example key:**
 
 1/ Small key: storing s3://fakebucket/obj1/11 of 32KB with RS2+1 (stripe: 4096) onto hd1, hd2 and hd3
@@ -121,6 +130,7 @@ Hyperdrive keys:
 #. 42-123456789-deadbeef-320000-0
 #. 42-123456789-deadbeef-320000-1
 #. 42-123456789-deadbeef-320000-2
+#. Metadata: RS,2,1,4096#hd1#hd3#hd2
 
 2/ Splitted key: storing s3://fakebucket/Large1/13 with RS2+1,4096 onto hd1, hd2 and hd3
 Key size: 64000, split_size: 49000, 2 parts on same hyperdrive (no conflict!)
@@ -128,6 +138,7 @@ Key size: 64000, split_size: 49000, 2 parts on same hyperdrive (no conflict!)
 Main key: 1#42#64000,49000#RS,2,1,4096#123456456#cafebabe#hd3#hd2#hd3
 Hyperdrive keys:
 
+* Metadata: RS,2,1,4096#hd3#hd2#hd3
 * On hd1: none
 * On hd2
 
