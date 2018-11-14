@@ -279,7 +279,7 @@ function _mockPutRequest(serviceId, uuidmapping, uuid, keyContext, endOffset, fr
              */
             body === expectedBody.toString('hex') ||
              body === expectedBody.toString())
-        .query({ immutable: true })
+        .query({ immutable: true, force: true })
         .delay(timeoutMs)
         .reply(statusCode, '', replyheaders);
 }
