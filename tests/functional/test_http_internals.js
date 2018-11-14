@@ -19,6 +19,28 @@ mocha.describe('HTTP internals', function () {
         assert.ok(nock.isDone);
     });
 
+    mocha.it('Query strings', function (done) {
+        const hdClient = hdmock.getDefaultClient();
+        const uuid = hdClient.conf.policy.cluster.components[0].name;
+        const [ip, port] = hdClient.uuidmapping[uuid].split(':');
+
+        const queries = { invisible: null, test: false, regular: 1 };
+        const queryString = hdclient.httpUtils.makeQueryString(queries);
+        assert.ok(queryString === 'test=false&regular=1'
+                 || queryString === 'regular=1&test=false');
+
+        const noQS = hdclient.httpUtils.getCommonStoreRequestOptions(
+            hdClient.httpAgent, ip, Number(port), 'test_key');
+        assert.strictEqual(noQS.path,
+                           `${hdclient.protocol.specs.STORAGE_BASE_URL}/test_key`);
+
+        const withQS = hdclient.httpUtils.getCommonStoreRequestOptions(
+            hdClient.httpAgent, ip, Number(port), 'test_key', queryString);
+        assert.strictEqual(withQS.path,
+                           `${hdclient.protocol.specs.STORAGE_BASE_URL}/test_key?${queryString}`);
+        done();
+    });
+
     mocha.it('Socket error handling', function (done) {
         const hdClient = hdmock.getDefaultClient();
         const uuid = hdClient.conf.policy.cluster.components[0].name;
