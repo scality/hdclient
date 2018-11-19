@@ -55,7 +55,7 @@ To use the linter and run the tests:
 npm run lint
 
 # All tests
-npm test tests/*
+npm test tests/
 
 # Unit tests
 npm test tests/unit/
@@ -67,7 +67,7 @@ npm test tests/functional/
 npm test -- -h
 
 # Code coverage
-npm run coverage tests/*
+npm run coverage
 ```
 
 ### Generating documentation & graphs

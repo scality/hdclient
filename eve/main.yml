@@ -34,4 +34,4 @@ stages:
           command: npm run jsdoc
       - ShellCommand:
           name: unit, functional tests with coverage
-          command: npm run coverage tests/*
+          command: npm run coverage
