@@ -55,7 +55,7 @@ To use the linter and run the tests:
 npm run lint
 
 # All tests
-npm test tests/*
+npm test tests/
 
 # Unit tests
 npm test tests/unit/
@@ -67,7 +67,7 @@ npm test tests/functional/
 npm test -- -h
 
 # Code coverage
-npm run coverage tests/*
+npm run coverage
 ```
 
 ### Generating documentation & graphs
@@ -172,53 +172,67 @@ curl -XDELETE -v http://localhost:8888/mybucket/testobj/64
 ```
 
 ### Running as a CloudServer data backend
-How to run integrated hyperdrive client inside S3 or Zenko deployment? This section is only a work in progress since actual S3 integration code is not yet merged.
+How to run integrated hyperdrive client inside S3 or Zenko deployment? This section is only a work in progress
+since actual S3 integration code is not yet merged.
 ```shell
 # Checkout S3 repository and checkout proper hdclient integration branch
-git clone https://github.com/scality/S3.git
-cd S3/
-git checkout feature/RING-28500-add-hyperdrive-client-data-backend
+git clone https://github.com/scality/CloudServer.git
+cd CloudServer/
+git checkout feature/RING-28500-add-hyperdrive-client-data-backend-real
 
-# Modify package.json to use the version of hdclient you want
+# Modify package.json to use the version of hdclient you want in case latest development/1.0 is not good
 # To use a local repository
 # sed s%scality/hdclient%file:<path to hdclient repository% package.json
 # To use a tag or commit
-sed -i s%scality/hdclient%scality/hdclient#<tag/commit>% package.json
+# sed -i s%scality/hdclient%scality/hdclient#<tag/commit>% package.json
 
 # Add new locationConstraints
 # Region us-east-1 is mandatory, since the default config still references it
-hyperdrive_ipport="127.0.0.1:7777"
 cat <<EOF > hdclient_locationConfig.json
 {
     "us-east-1": {
         "type": "file",
+        "objectId": "tg",
         "legacyAwsBehavior": true,
         "details": {}
     },
     "hyperdrive-cluster-1": {
         "type": "scality",
-        "legacyAwsBehavior": true,
+        "objectId": "bolos",
+        "legacyAwsBehavior": false,
         "details": {
             "connector": {
                 "hdclient" : {
                     "policy": {
-                        "locations": ["${hyperdrive_ipport}"]
+                        "minSplitSize":512000,
+                        "cluster": {
+                            "components": [{
+                                "name": "hd1",
+                                "staticWeight": 1
+                            }, {
+                                "name": "hd2",
+                                "staticWeight": 1
+                            }, {
+                                "name": "hd3",
+                                "staticWeight": 1
+                            }]
+                        }
                     },
                     "uuidmapping": {
-                        "hd-uuid-124586": "${hyperdrive_ipport}"
-                    },
+                        "hd1": "127.0.0.1:4244",
+                        "hd2": "localhost:4245",
+                        "hd3": "localhost:4246"
+                        },
                     "codes": [{
-                        "pattern": "mybucket/test1/*"
-                        "type": "CP",
-                        "dataParts": 3,
-                        "codingParts": 0
-                    }, {
-                        "pattern": ".*"
+                        "pattern": ".*",
                         "type": "RS",
                         "dataParts": 2,
                         "codingParts": 1
-                    }],
-                    "requestTimeoutMs": 30000
+                        }],
+                    "requestTimeoutMs": 30000,
+                    "errorAgent": {
+                        "kafkaBrokers": "127.0.0.1:6666"
+                    }
                 }
             }
         }
@@ -234,9 +248,11 @@ EOF
 # Install dependencies
 npm install
 
+# Start a Kafka instance on passed kafkaBrokers parameters (in the example 127.0.0.1:6666)
+
 # Start CloudServer (memory backend ie metadata in-memory)
 # More informations inside S3 repository documentation
-S3DATA=multiple S3_LOCATION_FILE=hdclient_locationConfig.json npm run mem_backend
+NODE_ENV=production S3DATA=multiple S3_LOCATION_FILE=hdclient_locationConfig.json npm run mem_backend
 ```
 
 In a separate tab, have fun with AWS CLI

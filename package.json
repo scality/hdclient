@@ -8,11 +8,11 @@
   "main": "index.js",
   "scripts": {
     "clinic": "clinic ",
-    "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text mocha --use_strict --check-leaks ",
+    "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text npm test tests/",
     "gengraphs": "./graphs/generate_graphs.sh",
     "jsdoc": "jsdoc lib/ tests/ -d docs/jsdoc",
     "lint": "eslint $(git ls-files '*.js')",
-    "test": "mocha --use_strict --check-leaks "
+    "test": "mocha --use_strict --check-leaks --recursive "
   },
   "repository": "scality/hdclient",
   "author": "Maxime Lubin",
