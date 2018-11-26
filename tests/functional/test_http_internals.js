@@ -22,7 +22,7 @@ mocha.describe('HTTP internals', function () {
     mocha.it('Query strings', function (done) {
         const hdClient = hdmock.getDefaultClient();
         const uuid = hdClient.conf.policy.cluster.components[0].name;
-        const [ip, port] = hdClient.uuidmapping[uuid].split(':');
+        const { hostname, port } = hdClient.uuidmapping[uuid];
 
         const queries = { invisible: null, test: false, regular: 1 };
         const queryString = hdclient.httpUtils.makeQueryString(queries);
@@ -30,12 +30,12 @@ mocha.describe('HTTP internals', function () {
                  || queryString === 'regular=1&test=false');
 
         const noQS = hdclient.httpUtils.getCommonStoreRequestOptions(
-            hdClient.httpAgent, ip, Number(port), 'test_key');
+            hdClient.httpAgent, hostname, port, 'test_key');
         assert.strictEqual(noQS.path,
                            `${hdclient.protocol.specs.STORAGE_BASE_URL}/test_key`);
 
         const withQS = hdclient.httpUtils.getCommonStoreRequestOptions(
-            hdClient.httpAgent, ip, Number(port), 'test_key', queryString);
+            hdClient.httpAgent, hostname, port, 'test_key', queryString);
         assert.strictEqual(withQS.path,
                            `${hdclient.protocol.specs.STORAGE_BASE_URL}/test_key?${queryString}`);
         done();
@@ -44,15 +44,15 @@ mocha.describe('HTTP internals', function () {
     mocha.it('Socket error handling', function (done) {
         const hdClient = hdmock.getDefaultClient();
         const uuid = hdClient.conf.policy.cluster.components[0].name;
-        const [ip, port] = hdClient.uuidmapping[uuid].split(':');
+        const { hostname, port } = hdClient.uuidmapping[uuid];
         const opts = hdclient.httpUtils.getCommonStoreRequestOptions(
-            hdClient.httpAgent, ip, Number(port), 'test_key');
+            hdClient.httpAgent, hostname, port, 'test_key');
         opts.method = 'GET';
         opts.path = '/jesuisunemiteenpullover';
         const noLog = { error() {} };
         const expectedErrorDescription = 'something awful happened';
 
-        nock(`http://${ip}:${port}`)
+        nock(`http://${hostname}:${port}`)
             .get(opts.path)
             .replyWithError(expectedErrorDescription);
 
@@ -81,14 +81,14 @@ mocha.describe('HTTP internals', function () {
     mocha.it('Request timeout', function (done) {
         const hdClient = hdmock.getDefaultClient();
         const uuid = hdClient.conf.policy.cluster.components[0].name;
-        const [ip, port] = hdClient.uuidmapping[uuid].split(':');
+        const { hostname, port } = hdClient.uuidmapping[uuid];
         const opts = hdclient.httpUtils.getCommonStoreRequestOptions(
-            hdClient.httpAgent, ip, Number(port), 'test_key');
+            hdClient.httpAgent, hostname, port, 'test_key');
         opts.method = 'GET';
         opts.path = '/jesuisunemiteenpullover';
         const noLog = { error() {} };
 
-        nock(`http://${ip}:${port}`)
+        nock(`http://${hostname}:${port}`)
             .get(opts.path)
             .delay(hdClient.options.requestTimeoutMs + 10)
             .reply(200, 'je suis une mite en pull over');
@@ -121,14 +121,14 @@ mocha.describe('HTTP internals', function () {
     mocha.it('Request abort', function (done) {
         const hdClient = hdmock.getDefaultClient();
         const uuid = hdClient.conf.policy.cluster.components[0].name;
-        const [ip, port] = hdClient.uuidmapping[uuid].split(':');
+        const { hostname, port } = hdClient.uuidmapping[uuid];
         const opts = hdclient.httpUtils.getCommonStoreRequestOptions(
-            hdClient.httpAgent, ip, Number(port), 'test_key');
+            hdClient.httpAgent, hostname, port, 'test_key');
         opts.method = 'GET';
         opts.path = '/jesuisunemiteenpullover';
         const noLog = { error() {} };
 
-        nock(`http://${ip}:${port}`)
+        nock(`http://${hostname}:${port}`)
             .get(opts.path)
             .delay(hdClient.options.requestTimeoutMs - 1)
             .reply(200, 'je suis une mite en pull over');
