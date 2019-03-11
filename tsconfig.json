@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "outDir": "./lib",
+        "allowJs": true,
+        "target": "es2016",
+        "alwaysStrict": true,
+        "module": "commonjs"
+    },
+    "include": [
+        "./src/*"
+    ]
+}
