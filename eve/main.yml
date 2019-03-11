@@ -1,0 +1,49 @@
+---
+version: 0.2
+
+branches:
+  user/*, dev/*, q/*, w/*:
+    stage: pre-merge
+
+stages:
+  pre-merge:
+    worker:
+      type: docker
+      path: eve/centos7
+      volumes:
+        - '/home/eve/workspace'
+    steps:
+      - Git:
+          name: git pull
+          repourl: "%(prop:git_reference)s"
+          shallow: true
+          retryFetch: true
+          haltOnFailure: true
+      - ShellCommand:
+          name: install dependencies
+          haltOnFailure: true
+          command: npm install && npm install --only=dev
+      - ShellCommand:
+          name: audit installed packages
+          command: npm audit
+      - ShellCommand:
+          name: verify build
+          command: npm build
+      - ShellCommand:
+          name: JSDoc
+          command: npm run jsdoc
+      - ShellCommand:
+          name: unit, functional tests with coverage
+          command: npm run coverage
+      - ShellCommand:
+          name: "Prepare artifacts"
+          command: >-
+            set -xv;
+            mkdir artifacts;
+            cp -a docs artifacts/;
+            cp -a coverage artifacts/;
+      - Upload:
+          source: "artifacts"
+          urls:
+            - ['\1', 'artifacts/*']
+          alwaysRun: true

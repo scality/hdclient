@@ -1,0 +1,62 @@
+{
+  "name": "hdclient",
+  "engines": {
+    "node": ">=8"
+  },
+  "version": "0.1.0",
+  "description": "Hyperdrive appliance client library",
+  "main": "index.js",
+  "scripts": {
+    "clinic": "clinic ",
+    "build": "tsc --strict ",
+    "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text --reporter=html --reporter=lcov npm test tests/",
+    "jsdoc": "jsdoc src/ tests/ -d docs/jsdoc",
+    "lint": "eslint $(git ls-files '*.js')",
+    "test": "mocha --require ts-node/register --use_strict --check-leaks --recursive tests/**/*.ts"
+  },
+  "nyc": {
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ],
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
+  },
+  "repository": "scality/hdclient",
+  "author": "Maxime Lubin",
+  "dependencies": {
+    "werelogs": "scality/werelogs#GA7.2.0.5"
+  },
+  "devDependencies": {
+    "@types/mocha": "^5.2.6",
+    "@types/nock": "^9.3.1",
+    "@types/node": "^11.10.4",
+    "clinic": "^3.1.0",
+    "eslint": "^5.15.1",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-config-scality": "github:scality/Guidelines",
+    "eslint-plugin-import": "^2.16.0",
+    "jsdoc": "3.5.5",
+    "mocha": "5.2.0",
+    "nock": "9.3.2",
+    "nyc": "^13.3.0",
+    "ts-node": "^8.0.3",
+    "typescript": "^3.3.3333"
+  },
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/scality/hdclient/issues"
+  },
+  "homepage": "https://github.com/scality/hdclient#readme"
+}
