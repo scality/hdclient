@@ -2,7 +2,7 @@
 version: 0.2
 
 branches:
-  user/*, dev/*, q/*, w/*:
+  user/*, dev/*, q/*, w/*, bugfix/*:
     stage: pre-merge
 
 stages:
@@ -22,7 +22,7 @@ stages:
       - ShellCommand:
           name: install dependencies
           haltOnFailure: true
-          command: npm install && npm install --only=dev
+          command: npm --verbose install && npm --verbose install --only=dev
       - ShellCommand:
           name: audit installed packages
           command: npm audit
