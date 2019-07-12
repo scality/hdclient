@@ -39,10 +39,10 @@
     "werelogs": "scality/werelogs#GA7.2.0.5"
   },
   "devDependencies": {
-    "@types/mocha": "^5.2.6",
+    "@types/mocha": "^5.2.7",
     "@types/nock": "^9.3.1",
-    "@types/node": "^11.10.4",
-    "clinic": "^3.1.0",
+    "@types/node": "^11.13.17",
+    "clinic": "^3.1.1",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-config-scality": "github:scality/Guidelines",
@@ -51,8 +51,8 @@
     "mocha": "5.2.0",
     "nock": "9.3.2",
     "nyc": "^14.1.1",
-    "ts-node": "^8.0.3",
-    "typescript": "^3.3.3333"
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.3"
   },
   "license": "Apache-2.0",
   "bugs": {
