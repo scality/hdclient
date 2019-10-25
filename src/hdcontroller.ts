@@ -278,7 +278,10 @@ export class HDProxydClient {
                 return callback(new HDProxydError("no key returned"));
             }
             const key = response.headers['scal-key'] as string;
-            return callback(undefined, key);
+            response.resume(); // drain the stream
+            response.on('end', () => {
+                return callback(undefined, key);
+            });
         }, params);
     }
 
@@ -310,7 +313,15 @@ export class HDProxydClient {
         assert.strictEqual(typeof key, 'string');
         const log = this.createLogger(reqUids);
         this._failover('DELETE', null, 0, key, 0, log, (err?: HDProxydError, res?: http.IncomingMessage) => {
-        callback(err);
+            if (res) {
+                // Drain the stream
+                res.resume();
+                res.on('end', () => {
+                    callback(err);
+                });
+            } else {
+                callback(err);
+            }
         });
     }
 
