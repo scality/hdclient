@@ -4,6 +4,7 @@
         "allowJs": true,
         "target": "es2016",
         "alwaysStrict": true,
+        "skipLibCheck": true,
         "module": "commonjs"
     },
     "include": [
