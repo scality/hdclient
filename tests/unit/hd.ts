@@ -80,6 +80,18 @@ describe('HD Controller client', () => {
                 .reply(200, 'body');
                 h.healthcheck(undefined, done);
             });
+        it('should be batch deletable', (done) => {
+                nock('http://1.2.3.4:12345')
+                .post('/job/delete', ['testing']) // Will verify that the body is ok
+                .reply(200, 'body');
+                h.batchDelete({keys: ['testing']}, '', (err: HDProxydError) => {
+                    if (err) {
+                        done(Error('unexpected error ' + err));
+                        return;
+                    }
+                    done();
+                });
+            });
         });
     describe('error', () => {
             it('should react properly on an error', (done) => {
