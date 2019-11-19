@@ -1,6 +1,8 @@
 'use strict'; // eslint-disable-line strict
 
-const randomBytes = require('crypto').randomBytes;
+import crypto = require('crypto');
+
+const randomBytes = crypto.randomBytes;
 
 /*
  * This set of function allows us to create an efficient shuffle
@@ -39,12 +41,13 @@ function randomRange(min: number, max: number): number {
     const bits = Math.floor(Math.log2(range)) + 1;
     // decide how many bytes we need to draw from nextBytes: drawing less
     // bytes means being more efficient
-    const bytes = Math.ceil(bits/8);
+    const bytes = Math.ceil(bits / 8);
     // we use a mask as an optimization: it increases the chances for the
     // candidate to be in range
     const mask = Math.pow(2, bits) - 1;
     let candidate: number;
     do {
+        // tslint:disable-next-line: no-bitwise
         candidate = parseInt(nextBytes(bytes).toString('hex'), 16) & mask;
     } while (candidate > range);
     return (candidate + min);
@@ -56,15 +59,15 @@ function randomRange(min: number, max: number): number {
  * @param {Array} array - Any type of array
  * @return {Array} - The sorted array
  */
-export function shuffle(array: Array<any>): Array<any> {
+export function shuffle(array: any[]): any[] {
     if (array.length === 1) {
-        return array
+        return array;
     }
     for (let i = array.length - 1; i > 0; i--) {
         const randIndex = randomRange(0, i);
         const randIndexVal = array[randIndex];
-        array[randIndex], array[i] = array[i],array[randIndex] ; // eslint-disable-line no-param-reassign
+        [array[randIndex], array[i]] = [array[i], array[randIndex]]; // eslint-disable-line no-param-reassign
         array[i] = randIndexVal; // eslint-disable-line no-param-reassign
     }
     return array;
-};
+}
