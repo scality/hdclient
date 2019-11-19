@@ -5,12 +5,12 @@ import async = require('async');
 import http = require('http');
 import werelogs = require('werelogs');
 
-import { shuffle } from './shuffle';
 import { Stream } from 'stream';
+import { shuffle } from './shuffle';
 
 export class HDProxydError extends Error {
-    code: number | undefined;
-    isExpected: boolean = false;
+    public code: number | undefined;
+    public isExpected: boolean = false;
 }
 
 type HDProxydCallback = (error?: HDProxydError, res?: http.IncomingMessage) => void;
@@ -55,18 +55,18 @@ function _parseBootstrapList(list: string[]): string[][] {
     return list.map((value) => value.split(':'));
 }
 
+// tslint:disable-next-line: interface-name
 export interface HDProxydOptions {
     bootstrap: string[];
     logApi: any;
 }
 
 export class HDProxydClient {
-    path: string;
-    bootstrap: string[][];
-    httpAgent: http.Agent;
-    logging: werelogs.Logger | any;
-    current: string[] = ['', ''];
-    chunkSize: number = 1024 * 1024;
+    private path: string;
+    private bootstrap: string[][];
+    private httpAgent: http.Agent;
+    private logging: werelogs.Logger | any;
+    private current: string[] = ['', ''];
     /**
      * This represent our interface with the hdproxyd server.
      * @constructor
@@ -94,7 +94,7 @@ export class HDProxydClient {
      *
      * @return {undefined}
      */
-    destroy(): void {
+    public destroy(): void {
         this.httpAgent.destroy();
     }
 
@@ -106,17 +106,17 @@ export class HDProxydClient {
      *                                for the Logger object
      * @return {undefined}
      */
-    setupLogging(logApi: any): void {
+    private setupLogging(logApi: any): void {
         this.logging = new (logApi || werelogs).Logger('HDProxydClient');
     }
 
-    createLogger(reqUids: any=undefined): werelogs.Logger {
+    private createLogger(reqUids?: any): werelogs.Logger {
         return reqUids ?
             this.logging.newRequestLoggerFromSerializedUids(reqUids) :
             this.logging.newRequestLogger();
     }
 
-    _shiftCurrentBootstrapToEnd(log: werelogs.Logger): HDProxydClient {
+    private _shiftCurrentBootstrapToEnd(log: werelogs.Logger): HDProxydClient {
         const previousEntry = this.bootstrap.shift() as string[];
         this.bootstrap.push(previousEntry);
         const newEntry = this.bootstrap[0];
@@ -126,12 +126,12 @@ export class HDProxydClient {
         return this;
     }
 
-    setCurrentBootstrap(host: string[]): HDProxydClient {
+    private setCurrentBootstrap(host: string[]): HDProxydClient {
         this.current = host;
         return this;
     }
 
-    getCurrentBootstrap(): string[] {
+    private getCurrentBootstrap(): string[] {
         return this.current;
     }
 
@@ -147,7 +147,7 @@ export class HDProxydClient {
         reqHeaders['content-type'] = 'application/octet-stream';
         if (params && params.range) {
             /* eslint-disable dot-notation */
-            reqHeaders['Range'] = `bytes=${params.range[0]}-${params.range[1]}`;
+            reqHeaders.Range = `bytes=${params.range[0]}-${params.range[1]}`;
             /* eslint-enable dot-notation */
         }
         let realPath: string;
@@ -219,7 +219,7 @@ export class HDProxydClient {
             headers['content-length'] = size;
             const request = _createRequest(req, log, (err?: HDProxydError, response?: http.IncomingMessage) => {
                 if (err || !response) {
-                    log.error('putting chunk to hdproxyd', { host, key: key,
+                    log.error('putting chunk to hdproxyd', { host, key,
                         error: err });
                     return callback(err);
                 }
@@ -240,7 +240,7 @@ export class HDProxydClient {
                     contentLength: size,
                 }));
             stream.pipe(request);
-            stream.on('error', err => {
+            stream.on('error', (err) => {
                 log.error('error from readable stream', {
                     error: err,
                     method: '_handleRequest',
@@ -251,13 +251,13 @@ export class HDProxydClient {
         } else {
             headers['content-length'] = isBatchDelete ? size : 0;
             const request = _createRequest(req, log, (err?: HDProxydError, response?: http.IncomingMessage) => {
-                if (err||!response) {
+                if (err || !response) {
                     log.error('error sending hdproxyd request', { host,
-                        error: err, key: key, method: '_handleRequest' });
+                        error: err, key, method: '_handleRequest' });
                     return callback(err);
                 }
                 log.debug('success sending hdproxyd request', { host,
-                    statusCode: response.statusCode, key: key,
+                    statusCode: response.statusCode, key,
                     method: '_handleRequest' });
                 return callback(undefined, response);
             });
