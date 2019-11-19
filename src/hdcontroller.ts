@@ -6,6 +6,7 @@ import http = require('http');
 import werelogs = require('werelogs');
 
 import { Stream } from 'stream';
+import { RequestLogger } from './RequestLogger';
 import { shuffle } from './shuffle';
 
 export class HDProxydError extends Error {
@@ -22,7 +23,7 @@ type HDProxydClientDeleteCallback = (error?: HDProxydError) => void;
 /*
  * This handles the request, and the corresponding response default behaviour
  */
-function _createRequest(req: http.RequestOptions, log: any, callback: HDProxydCallback): http.ClientRequest {
+function _createRequest(req: http.RequestOptions, log: RequestLogger, callback: HDProxydCallback): http.ClientRequest {
     const request = http.request(req, (response) => {
         // Get range returns a 206
         // Concurrent deletes on hdproxyd/immutable keys returns 423
@@ -65,7 +66,7 @@ export class HDProxydClient {
     private path: string;
     private bootstrap: string[][];
     private httpAgent: http.Agent;
-    private logging: werelogs.Logger | any;
+    private logging: RequestLogger | any;
     private current: string[] = ['', ''];
     /**
      * This represent our interface with the hdproxyd server.
@@ -110,13 +111,13 @@ export class HDProxydClient {
         this.logging = new (logApi || werelogs).Logger('HDProxydClient');
     }
 
-    private createLogger(reqUids?: any): werelogs.Logger {
+    private createLogger(reqUids?: any): RequestLogger {
         return reqUids ?
             this.logging.newRequestLoggerFromSerializedUids(reqUids) :
             this.logging.newRequestLogger();
     }
 
-    private _shiftCurrentBootstrapToEnd(log: werelogs.Logger): HDProxydClient {
+    private _shiftCurrentBootstrapToEnd(log: RequestLogger): HDProxydClient {
         const previousEntry = this.bootstrap.shift() as string[];
         this.bootstrap.push(previousEntry);
         const newEntry = this.bootstrap[0];
@@ -134,6 +135,19 @@ export class HDProxydClient {
     private getCurrentBootstrap(): string[] {
         return this.current;
     }
+    /**
+     * Returns the first id from the array of request ids.
+     * @param {Object} log - log from s3
+     * @returns {String} - first request id
+     */
+    private _getFirstReqUid(log: RequestLogger): string {
+        let reqUids: string[] = [];
+
+        if (log) {
+            reqUids = log.getUids();
+        }
+        return reqUids[0];
+    }
 
     /*
      * This creates a default request for hdproxyd
@@ -143,8 +157,11 @@ export class HDProxydClient {
         const reqHeaders = headers || {};
 
         const currentBootstrap: string[] = this.getCurrentBootstrap();
+        const reqUids = this._getFirstReqUid(log);
 
         reqHeaders['content-type'] = 'application/octet-stream';
+        reqHeaders['X-Scal-Request-Uids'] = reqUids;
+        reqHeaders['X-Scal-Trace-Ids'] = reqUids;
         if (params && params.range) {
             /* eslint-disable dot-notation */
             reqHeaders.Range = `bytes=${params.range[0]}-${params.range[1]}`;
@@ -380,7 +397,7 @@ export class HDProxydClient {
      * @param {SproxydClient-healthcheckCallback} callback - callback
      * @returns {void}
      */
-   public healthcheck(log: object, callback: HDProxydCallback): void {
+   public healthcheck(log: RequestLogger, callback: HDProxydCallback): void {
         const logger = log || this.createLogger();
         const currentBootstrap = this.getCurrentBootstrap();
         const req = {
@@ -388,9 +405,9 @@ export class HDProxydClient {
            port: currentBootstrap[1],
            method: 'GET',
            path: '/metrics', // XXX
-           // headers: {
-           //     'X-Scal-Request-Uids': logger.getSerializedUids(),
-           // },
+           headers: {
+               'X-Scal-Request-Uids': logger.getSerializedUids(),
+           },
            agent: this.httpAgent,
         };
         const request = _createRequest(req, logger, callback);
