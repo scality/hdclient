@@ -64,7 +64,7 @@ export interface HDProxydOptions {
 
 export class HDProxydClient {
     private path: string;
-    private bootstrap: string[][];
+    public bootstrap: string[][];
     private httpAgent: http.Agent;
     private logging: RequestLogger | any;
     private current: string[] = ['', ''];
@@ -127,12 +127,12 @@ export class HDProxydClient {
         return this;
     }
 
-    private setCurrentBootstrap(host: string[]): HDProxydClient {
+    public setCurrentBootstrap(host: string[]): HDProxydClient {
         this.current = host;
         return this;
     }
 
-    private getCurrentBootstrap(): string[] {
+    public getCurrentBootstrap(): string[] {
         return this.current;
     }
     /**
