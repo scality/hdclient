@@ -36,6 +36,9 @@ stages:
           name: unit, functional tests with coverage
           command: npm run coverage
       - ShellCommand:
+          name: check tsc
+          command: scripts/check-tsc.sh
+      - ShellCommand:
           name: "Prepare artifacts"
           command: >-
             set -xv;
