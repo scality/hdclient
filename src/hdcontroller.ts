@@ -376,10 +376,10 @@ export class HDProxydClient {
                         // Drain the stream
                         res.resume();
                         res.on('end', () => {
-                            callback(err);
+                            done(err);
                         });
                     } else {
-                        callback(err);
+                        done(err);
                     }
                 }, {}, payload);
         }, (err: undefined|null|HDProxydError) => {
