@@ -2,7 +2,7 @@
 version: 0.2
 
 branches:
-  user/*, dev/*, q/*, w/*, bugfix/*:
+  user/*, dev/*, q/*, w/*, bugfix/*, dependabot/*:
     stage: pre-merge
 
 stages:
@@ -25,7 +25,7 @@ stages:
           command: npm --verbose install && npm --verbose install --only=dev
       - ShellCommand:
           name: audit installed packages
-          command: npm audit
+          command: npm audit --only=prod --production
       - ShellCommand:
           name: verify build
           command: npm build
