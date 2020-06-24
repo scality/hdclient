@@ -43,7 +43,7 @@
     "@types/mocha": "^5.2.7",
     "@types/nock": "^9.3.1",
     "@types/node": "^11.13.17",
-    "clinic": "^3.1.1",
+    "clinic": "^6.0.2",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-config-scality": "github:scality/Guidelines",
