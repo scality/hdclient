@@ -23,8 +23,8 @@ RUN yum clean all && yum install -y \
     sudo \
     wget
 
-# Install nodejs v8, node-gyp and npm
-RUN curl -sL https://rpm.nodesource.com/setup_8.x | bash -
+# Install nodejs v10, node-gyp and npm
+RUN curl -sL https://rpm.nodesource.com/setup_10.x | bash -
 RUN yum install -y nodejs
 
 RUN pip install --upgrade pip
