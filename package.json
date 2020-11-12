@@ -40,9 +40,9 @@
   },
   "devDependencies": {
     "@types/async": "^3.2.3",
-    "@types/mocha": "^8.0.3",
+    "@types/mocha": "^8.0.4",
     "@types/nock": "^11.1.0",
-    "@types/node": "^14.14.6",
+    "@types/node": "^14.14.7",
     "clinic": "^7.0.0",
     "eslint": "^7.13.0",
     "eslint-config-airbnb-base": "^14.2.1",
@@ -50,7 +50,7 @@
     "eslint-plugin-import": "^2.22.1",
     "jsdoc": "^3.6.6",
     "mocha": "^8.2.1",
-    "nock": "^13.0.4",
+    "nock": "^13.0.5",
     "nyc": "^15.1.0",
     "ts-node": "^9.0.0",
     "typescript": "^4.0.5"
