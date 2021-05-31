@@ -47,7 +47,7 @@
     "eslint": "^7.27.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-config-scality": "github:scality/Guidelines",
-    "eslint-plugin-import": "^2.23.3",
+    "eslint-plugin-import": "^2.23.4",
     "jsdoc": "^3.6.7",
     "mocha": "^8.4.0",
     "nock": "^13.0.11",
