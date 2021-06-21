@@ -44,7 +44,7 @@
     "@types/nock": "^11.1.0",
     "@types/node": "^15.12.0",
     "clinic": "^9.0.0",
-    "eslint": "^7.27.0",
+    "eslint": "^7.29.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-config-scality": "github:scality/Guidelines",
     "eslint-plugin-import": "^2.23.4",
