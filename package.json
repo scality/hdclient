@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@types/async": "^3.2.6",
-    "@types/mocha": "^8.2.2",
+    "@types/mocha": "^8.2.3",
     "@types/nock": "^11.1.0",
     "@types/node": "^16.0.0",
     "clinic": "^9.0.0",
