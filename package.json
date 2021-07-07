@@ -49,7 +49,7 @@
     "eslint-config-scality": "github:scality/Guidelines",
     "eslint-plugin-import": "^2.23.4",
     "jsdoc": "^3.6.7",
-    "mocha": "^9.0.1",
+    "mocha": "^9.0.2",
     "nock": "^13.1.0",
     "nyc": "^15.1.0",
     "ts-node": "^10.0.0",
