@@ -11,15 +11,7 @@ To release hdclient:
 * Update the `version` field on the [package.json] file on to the desired tag.
 * Commit your changes: `git commit -m "TICKET-123 release version $tag"`
 * Create a PR and merge the [package.json] change.
-* Checkout the change in the development branch:
-  1. `git checkout development/x.y`
-  1. `git pull`
-* Tag the repository using the same tag:
-  1. `git tag --annotate $tag`
-  1. `git push origin $tag`
+* Trigger the [release] workflow.
 
-Note: You can also perform the last two steps through
-the [GitHub Release] UI.
-
+[release]: https://github.com/scality/hdclient/actions/workflows/release.yaml
 [package.json]: ./package.json
-[GitHub Release]: https://github.com/scality/hdclient/releases/new
