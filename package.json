@@ -1,7 +1,7 @@
 {
   "name": "hdclient",
   "engines": {
-    "node": ">=8"
+    "node": ">=16"
   },
   "version": "0.1.0",
   "description": "Hyperdrive appliance client library",
