@@ -1,5 +1,5 @@
 {
-  "name": "hdclient",
+  "name": "@scality/hdclient",
   "engines": {
     "node": ">=16"
   },
@@ -34,7 +34,7 @@
     "sourceMap": true,
     "instrument": true
   },
-  "repository": "scality/hdclient",
+  "repository": "git://github.com/scality/hdclient.git ",
   "author": "Maxime Lubin",
   "dependencies": {
     "werelogs": "scality/werelogs#GA7.2.0.5"
