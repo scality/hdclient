@@ -43,7 +43,7 @@
     "@types/async": "^3.2.15",
     "@types/mocha": "^9.1.1",
     "@types/nock": "^11.1.0",
-    "@types/node": "^18.7.4",
+    "@types/node": "^18.7.5",
     "clinic": "^11.1.2",
     "eslint": "^8.22.0",
     "eslint-config-airbnb-base": "^15.0.0",
