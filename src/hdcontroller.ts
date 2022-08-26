@@ -88,6 +88,7 @@ export class HDProxydClient {
         this.httpAgent = new http.Agent({
             keepAlive: true,
             maxSockets: 50,
+            scheduling: 'fifo',
         });
 
         this.setupLogging(options.logApi);
