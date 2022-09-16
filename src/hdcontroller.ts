@@ -7,7 +7,7 @@ import werelogs = require('werelogs');
 
 import { Stream } from 'stream';
 import { RequestLogger } from './RequestLogger';
-import { shuffle } from './shuffle';
+import { shuffle } from './shuffle';
 
 export class HDProxydError extends Error {
     public code: number | undefined;
@@ -16,7 +16,7 @@ export class HDProxydError extends Error {
 
 type HDProxydCallback = (error?: HDProxydError, res?: http.IncomingMessage) => void;
 
-type HDProxydClientPutCallback = (error?: HDProxydError, key?: string) => void;
+type HDProxydClientPutCallback = (error?: HDProxydError, key?: string) => void;
 type HDProxydClientGetCallback = (error?: HDProxydError, res?: Stream) => void;
 type HDProxydClientDeleteCallback = (error?: HDProxydError) => void;
 
@@ -87,8 +87,8 @@ export class HDProxydClient {
         this.setCurrentBootstrap(this.bootstrap[0]);
         this.httpAgent = new http.Agent({
             keepAlive: true,
-            maxSockets: 50,
-            scheduling: 'fifo',
+            maxSockets: Number(process.env.MAX_SPROXYD_CLIENT_SOCKETS) || Infinity,
+            // scheduling: 'fifo',
         });
 
         this.setupLogging(options.logApi);
