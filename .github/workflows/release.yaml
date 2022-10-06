@@ -15,7 +15,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Ensure version is properly set
         run: |
           test "$(npm -s run get-version)" = "${{ github.event.inputs.tag }}"
