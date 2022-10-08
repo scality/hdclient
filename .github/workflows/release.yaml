@@ -23,7 +23,7 @@ jobs:
         if: failure()
         run: echo "::error file=package.json,line=6::The tag ${{ github.event.inputs.tag }} must match the version"
       # Setup .npmrc file to publish to GitHub Packages
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
           registry-url: 'https://npm.pkg.github.com'
