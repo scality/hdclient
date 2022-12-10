@@ -37,7 +37,8 @@
   "repository": "git://github.com/scality/hdclient.git ",
   "author": "Maxime Lubin",
   "dependencies": {
-    "werelogs": "scality/werelogs#GA7.2.0.5"
+    "httpagent": "github:scality/httpagent#1.0.2",
+    "werelogs": "github:scality/werelogs#8.1.2"
   },
   "devDependencies": {
     "@types/async": "^3.2.16",
@@ -62,6 +63,6 @@
   },
   "homepage": "https://github.com/scality/hdclient#readme",
   "publishConfig": {
-    "registry":"https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com"
   }
 }
