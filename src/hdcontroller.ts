@@ -5,6 +5,7 @@ import async = require('async');
 import http = require('http');
 import werelogs = require('werelogs');
 
+import { http as httpAgent } from 'httpagent';
 import { Stream } from 'stream';
 import { RequestLogger } from './RequestLogger';
 import { shuffle } from './shuffle';
@@ -85,7 +86,7 @@ export class HDProxydClient {
         this.bootstrap = shuffle(this.bootstrap);
         this.path = '/store/';
         this.setCurrentBootstrap(this.bootstrap[0]);
-        this.httpAgent = new http.Agent({ keepAlive: true });
+        this.httpAgent = new httpAgent.Agent();
 
         this.setupLogging(options.logApi);
     }
