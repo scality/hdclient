@@ -3,7 +3,7 @@
   "engines": {
     "node": ">=16"
   },
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Hyperdrive appliance client library",
   "main": "index.js",
   "scripts": {
