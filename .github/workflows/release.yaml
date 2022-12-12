@@ -1,5 +1,9 @@
----
 name: Release
+
+permissions:
+  contents: write
+  metadata: read
+  packages: write
 
 on:
   workflow_dispatch:
@@ -37,4 +41,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.event.inputs.tag }}
-          release_name: Release ${{ github.event.inputs.tag }}
+          name: Release ${{ github.event.inputs.tag }}
