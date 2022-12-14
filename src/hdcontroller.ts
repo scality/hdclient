@@ -86,8 +86,7 @@ export class HDProxydClient {
         this.bootstrap = shuffle(this.bootstrap);
         this.path = '/store/';
         this.setCurrentBootstrap(this.bootstrap[0]);
-        this.httpAgent = new httpAgent.Agent();
-
+        this.httpAgent = new httpAgent.Agent() as http.Agent;
         this.setupLogging(options.logApi);
     }
 
