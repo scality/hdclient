@@ -11,7 +11,7 @@ import { RequestLogger } from './RequestLogger';
 import { shuffle } from './shuffle';
 
 export class HDProxydError extends Error {
-    public code: number | undefined;
+    public code: number | string | undefined;
     public isExpected: boolean = false;
 }
 
@@ -25,7 +25,9 @@ type HDProxydClientDeleteCallback = (error?: HDProxydError) => void;
  * This handles the request, and the corresponding response default behaviour
  */
 function _createRequest(req: http.RequestOptions, log: RequestLogger, callback: HDProxydCallback): http.ClientRequest {
+    let callbackCalled = false;
     const request = http.request(req, (response) => {
+        callbackCalled = true;
         // Get range returns a 206
         // Concurrent deletes on hdproxyd/immutable keys returns 423
         if (response.statusCode !== 200 && response.statusCode !== 206 &&
@@ -38,7 +40,15 @@ function _createRequest(req: http.RequestOptions, log: RequestLogger, callback: 
             return callback(error);
         }
         return callback(undefined, response);
-    }).on('error', callback);
+    }).on('error', (err: HDProxydError) => {
+        if (!callbackCalled) {
+            callbackCalled = true;
+            return callback(err);
+        }
+        if (err.code !== 'ERR_SOCKET_TIMEOUT') {
+            log.error('got socket error after response', { err });
+        }
+    });
 
     // disable nagle algorithm
     request.setNoDelay(true);
