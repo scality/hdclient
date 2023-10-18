@@ -17,7 +17,7 @@ export class HDProxydError extends Error {
 
 type HDProxydCallback = (error?: HDProxydError, res?: http.IncomingMessage) => void;
 
-type HDProxydClientPutCallback = (error?: HDProxydError, key?: string) => void;
+type HDProxydClientPutCallback = (error?: HDProxydError, key?: string) => void;
 type HDProxydClientGetCallback = (error?: HDProxydError, res?: Stream) => void;
 type HDProxydClientDeleteCallback = (error?: HDProxydError) => void;
 
@@ -37,6 +37,7 @@ function _createRequest(req: http.RequestOptions, log: RequestLogger, callback: 
             error.isExpected = true;
             log.debug('got expected response code:',
                       { statusCode: response.statusCode });
+            response.resume(); // Drain the response stream
             return callback(error);
         }
         return callback(undefined, response);
@@ -311,6 +312,9 @@ export class HDProxydClient {
     public put(stream: Stream, size: number, params: any, reqUids: string, callback: HDProxydClientPutCallback): void {
         const log = this.createLogger(reqUids);
         this._failover('POST', stream, size, '', 0, log, (err?: HDProxydError, response?: http.IncomingMessage) => {
+            if (response) {
+                response.resume();
+            }
             if (err || !response) {
                 return callback(err);
             }
@@ -318,7 +322,6 @@ export class HDProxydClient {
                 return callback(new HDProxydError('no key returned'));
             }
             const key = response.headers['scal-key'] as string;
-            response.resume(); // drain the stream
             response.on('end', () => {
                 return callback(undefined, key);
             });
