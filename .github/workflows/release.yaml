@@ -12,7 +12,7 @@ jobs:
     name: preliminary-checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Ensure version is properly set
         run: |
           test "$(npm -s run get-version)" = "${{ github.event.inputs.tag }}"
@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       # Setup .npmrc file to publish to GitHub Packages
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: '16'
           registry-url: 'https://npm.pkg.github.com'
@@ -55,7 +55,7 @@ jobs:
     - publish-npm
     steps:
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
