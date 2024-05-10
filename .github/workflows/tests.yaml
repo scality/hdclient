@@ -4,15 +4,16 @@ name: tests
 on:
   push:
     branches-ignore:
-    - 'development/**'
+    - development/**
+    - q/*/**
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+      uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
         node-version: '10'
         cache: 'npm'
@@ -34,7 +35,7 @@ jobs:
         mkdir artifacts
         cp -a docs artifacts/
         cp -a coverage artifacts/
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: artifacts
         path: artifacts
