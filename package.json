@@ -44,7 +44,7 @@
     "@types/async": "^3.2.16",
     "@types/mocha": "^10.0.1",
     "@types/nock": "^11.1.0",
-    "@types/node": "^20.1.1",
+    "@types/node": "^22.0.0",
     "@types/sinon": "^17.0.0",
     "clinic": "^13.0.0",
     "eslint": "^8.34.0",
