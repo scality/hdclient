@@ -38,7 +38,7 @@
   "author": "Maxime Lubin",
   "dependencies": {
     "httpagent": "github:scality/httpagent#1.0.6",
-    "werelogs": "github:scality/werelogs#8.1.5"
+    "werelogs": "github:scality/werelogs#8.2.0"
   },
   "devDependencies": {
     "@types/async": "^3.2.16",
