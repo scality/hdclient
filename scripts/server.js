@@ -1,8 +1,3 @@
-/* eslint-disable strict */
-/* eslint-disable prefer-destructuring */
-/* eslint-disable no-bitwise */
-/* eslint-disable no-console */
-
 'use strict';
 
 /**
@@ -16,10 +11,11 @@
  * curl -XGET http://host:port/mybucket/myboject
  */
 
-import { createServer } from 'http';
-import { readFileSync } from 'fs';
+const { createServer } = require('http');
+const { readFileSync } = require('fs');
+const werelogs = require('werelogs');
 
-import { hdcontroller } from '../index';
+const { hdcontroller } = require('../index');
 
 /* On DELETE, should we remove the object from the
  * in-memory index?
@@ -28,6 +24,8 @@ import { hdcontroller } from '../index';
  * to the hyperdrives (and returning 404 instead of 500)
 */
 let removeMemIndexOnDelete = true;
+
+const log = new werelogs.Logger('HDClient:Server');
 
 function getHyperdriveClient(config) {
     return new hdcontroller.HDProxydClient(config);
@@ -162,7 +160,7 @@ function loadConfig(file) {
 function main() {
     const args = process.argv;
     if (args.length < 4) {
-        console.error(`Usage: <port> <conf path> <memindexnodel>
+        log.error(`Usage: <port> <conf path> <memindexnodel>
 {Number} port to listen on
 {String} path to HyperdriveClient json config
 {*}      don't remove in-memory keys on DELETE (used to check
@@ -183,7 +181,7 @@ function main() {
     const server = createServer(
         (req, res) => serverCallback(client, object2rawkey, req, res),
     );
-    server.listen(port, () => console.log('Listening on %d',
+    server.listen(port, () => log.info('Listening on %d',
         server.address().port));
     server.on('connection', socket => socket.setNoDelay(true));
 }

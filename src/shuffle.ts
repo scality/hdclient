@@ -1,8 +1,8 @@
-'use strict'; // eslint-disable-line strict
+'use strict';  
 
-import crypto = require('crypto');
+import * as cryptoLib from 'crypto';
 
-const randomBytes = crypto.randomBytes;
+const randomBytes = cryptoLib.randomBytes;
 
 /*
  * This set of function allows us to create an efficient shuffle
@@ -24,7 +24,11 @@ function nextBytes(numBytes: number): Buffer {
     try {
         return randomBytes(numBytes);
     } catch (ex) {
-        throw new Error('Insufficient entropy');
+        if (ex instanceof Error) {
+            throw new Error(`Insufficient entropy: ${ex.message}`);
+        } else {
+            throw new Error('Insufficient entropy: Unknown error');
+        }
     }
 }
 
@@ -59,7 +63,7 @@ function randomRange(min: number, max: number): number {
  * @param {Array} array - Any type of array
  * @return {Array} - The sorted array
  */
-export function shuffle(array: any[]): any[] {
+export function shuffle<T>(array: T[]): T[]{
     if (array.length === 1) {
         return array;
     }
