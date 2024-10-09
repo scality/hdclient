@@ -11,7 +11,7 @@
     "build": "tsc --strict ",
     "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text --reporter=html --reporter=lcov npm test tests/",
     "jsdoc": "jsdoc src/ tests/ -d docs/jsdoc",
-    "lint": "eslint $(git ls-files '*.ts')",
+    "lint": "eslint $(git ls-files '*.ts' '*.js')",
     "test": "mocha --require ts-node/register --use_strict --check-leaks --recursive tests/**/*.ts",
     "get-version": "echo $npm_package_version"
   },
@@ -50,6 +50,7 @@
     "clinic": "^13.0.0",
     "eslint": "^9.11.1",
     "eslint-config-scality": "github:scality/Guidelines#8.3.0",
+    "globals": "^15.11.0",
     "jsdoc": "^4.0.3",
     "mocha": "^10.7.3",
     "nock": "^13.5.5",

@@ -11,11 +11,11 @@
  * curl -XGET http://host:port/mybucket/myboject
  */
 
-const { createServer } = require('http');
-const { readFileSync } = require('fs');
-const werelogs = require('werelogs');
+import { createServer } from 'http';
+import { readFileSync } from 'fs';
+import * as werelogs from 'werelogs';
 
-const { hdcontroller } = require('../index');
+import { hdcontroller } from '../index';
 
 /* On DELETE, should we remove the object from the
  * in-memory index?

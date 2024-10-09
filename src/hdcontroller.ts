@@ -1,4 +1,4 @@
-'use strict';  
+'use strict';
 
 import * as assert from 'assert';
 import * as async from 'async';
@@ -76,11 +76,6 @@ function _parseBootstrapList(list: string[]): string[][] {
 export interface HDProxydOptions {
     bootstrap: string[];
     logApi: typeof werelogs;
-}
-
-// tslint:disable-next-line: interface-name
-interface Headers {
-    [key: string]: string;
 }
 
 export class HDProxydClient {
@@ -186,9 +181,7 @@ export class HDProxydClient {
         reqHeaders['X-Scal-Request-Uids'] = reqUids;
         reqHeaders['X-Scal-Trace-Ids'] = reqUids;
         if (params && params.range) {
-             
             reqHeaders.Range = `bytes=${params.range[0]}-${params.range[1]}`;
-             
         }
         let realPath: string;
         if (key === '/job/delete') {
@@ -237,7 +230,7 @@ export class HDProxydClient {
                         callback, params);
             }
             receivedResponse = true;
-            log.debug('request received response');
+            log.end('request received response');
             return callback(err, ret);
         }, args, payload);
     }
@@ -250,8 +243,8 @@ export class HDProxydClient {
         size: number, key: string, log: werelogs.RequestLogger,
         callback: HDProxydCallback, params: Params,
         payload: object | undefined): void {
-        //tslint:disable-next-line:no-any
-        const headers = ( params.headers ? params.headers : {}) as { 'content-length'?: number; [key: string]: any };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const headers = (params.headers ? params.headers : {}) as { 'content-length'?: number; [key: string]: any };
         const req = this._createRequestHeader(method, headers, key, params,
             log);
         const host = this.getCurrentBootstrap();
@@ -430,7 +423,7 @@ export class HDProxydClient {
             hostname: currentBootstrap[0],
             port: currentBootstrap[1],
             method: 'GET',
-            path: '/metrics', // XXX
+            path: '/metrics',
             headers: {
                 'X-Scal-Request-Uids': logger.getSerializedUids(),
             },
