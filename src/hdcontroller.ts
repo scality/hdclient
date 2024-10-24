@@ -1,14 +1,14 @@
-'use strict'; // eslint-disable-line strict
+'use strict';
 
-import assert = require('assert');
-import async = require('async');
-import http = require('http');
-import werelogs = require('werelogs');
+import * as assert from 'assert';
+import * as async from 'async';
+import * as http from 'http';
+import * as werelogs from 'werelogs';
 
 import { http as httpAgent } from 'httpagent';
 import { Stream } from 'stream';
-import { RequestLogger } from './RequestLogger';
-import { shuffle } from './shuffle';
+import { shuffle } from './shuffle';
+
 
 export class HDProxydError extends Error {
     public code: number | string | undefined;
@@ -21,12 +21,15 @@ type HDProxydClientPutCallback = (error?: HDProxydError, key?: string) => void;
 type HDProxydClientGetCallback = (error?: HDProxydError, res?: Stream) => void;
 type HDProxydClientDeleteCallback = (error?: HDProxydError) => void;
 
+type Params = { [key: string]: string } & { range?: number[] };
+
 /*
  * This handles the request, and the corresponding response default behaviour
  */
-function _createRequest(req: http.RequestOptions, log: RequestLogger, callback: HDProxydCallback): http.ClientRequest {
+function _createRequest(req: http.RequestOptions, log: werelogs.RequestLogger, 
+    callback: HDProxydCallback): http.ClientRequest {
     let callbackCalled = false;
-    const request = http.request(req, (response) => {
+    const request = http.request(req, response => {
         callbackCalled = true;
         // Get range returns a 206
         // Concurrent deletes on hdproxyd/immutable keys returns 423
@@ -36,7 +39,7 @@ function _createRequest(req: http.RequestOptions, log: RequestLogger, callback: 
             error.code = response.statusCode;
             error.isExpected = true;
             log.debug('got expected response code:',
-                      { statusCode: response.statusCode });
+                { statusCode: response.statusCode });
             response.resume(); // Drain the response stream
             return callback(error);
         }
@@ -49,6 +52,7 @@ function _createRequest(req: http.RequestOptions, log: RequestLogger, callback: 
         if (err.code !== 'ERR_SOCKET_TIMEOUT') {
             log.error('got socket error after response', { err });
         }
+        return null;
     });
 
     // disable nagle algorithm
@@ -65,20 +69,20 @@ function _createRequest(req: http.RequestOptions, log: RequestLogger, callback: 
  * maintain.
  */
 function _parseBootstrapList(list: string[]): string[][] {
-    return list.map((value) => value.split(':'));
+    return list.map(value => value.split(':'));
 }
 
 // tslint:disable-next-line: interface-name
 export interface HDProxydOptions {
     bootstrap: string[];
-    logApi: any;
+    logApi: typeof werelogs;
 }
 
 export class HDProxydClient {
     private path: string;
     public bootstrap: string[][];
     private httpAgent: http.Agent;
-    private logging: RequestLogger | any;
+    private logging!: werelogs.Logger;
     private current: string[] = ['', ''];
     /**
      * This represent our interface with the hdproxyd server.
@@ -121,17 +125,17 @@ export class HDProxydClient {
      *                                for the Logger object
      * @return {undefined}
      */
-    private setupLogging(logApi: any): void {
+    private setupLogging(logApi: typeof werelogs): void {
         this.logging = new (logApi || werelogs).Logger('HDProxydClient');
     }
 
-    private createLogger(reqUids?: any): RequestLogger {
+    private createLogger(reqUids?: string): werelogs.RequestLogger {
         return reqUids ?
             this.logging.newRequestLoggerFromSerializedUids(reqUids) :
             this.logging.newRequestLogger();
     }
 
-    private _shiftCurrentBootstrapToEnd(log: RequestLogger): HDProxydClient {
+    private _shiftCurrentBootstrapToEnd(log: werelogs.RequestLogger): HDProxydClient {
         const previousEntry = this.bootstrap.shift() as string[];
         this.bootstrap.push(previousEntry);
         const newEntry = this.bootstrap[0];
@@ -154,7 +158,7 @@ export class HDProxydClient {
      * @param {Object} log - log from s3
      * @returns {String} - first request id
      */
-    private _getFirstReqUid(log: RequestLogger): string {
+    private _getFirstReqUid(log: werelogs.RequestLogger): string {
         let reqUids: string[] = [];
 
         if (log) {
@@ -167,7 +171,7 @@ export class HDProxydClient {
      * This creates a default request for hdproxyd
      */
     private _createRequestHeader(method: string, headers: {[key: string]: string}|undefined,
-                                 key: string, params: any, log: any): object {
+        key: string, params: Params, log: werelogs.RequestLogger): object {
         const reqHeaders = headers || {};
 
         const currentBootstrap: string[] = this.getCurrentBootstrap();
@@ -177,9 +181,7 @@ export class HDProxydClient {
         reqHeaders['X-Scal-Request-Uids'] = reqUids;
         reqHeaders['X-Scal-Trace-Ids'] = reqUids;
         if (params && params.range) {
-            /* eslint-disable dot-notation */
             reqHeaders.Range = `bytes=${params.range[0]}-${params.range[1]}`;
-            /* eslint-enable dot-notation */
         }
         let realPath: string;
         if (key === '/job/delete') {
@@ -198,9 +200,9 @@ export class HDProxydClient {
     }
 
     private _failover(method: string, stream: Stream|null, size: number, key: string,
-                      tries: number, log: any, callback: HDProxydCallback, params?: any,
-                      payload?: any): void {
-        const args = params === undefined ? {} : params;
+        tries: number, log: werelogs.RequestLogger, callback: HDProxydCallback,  params?: Params,
+        payload?: object): void {
+        const args: Params = params === undefined ? {} : params;
         let counter = tries;
         log.debug('sending request to hdproxyd', { method, key, args, counter });
 
@@ -220,15 +222,15 @@ export class HDProxydClient {
                 }
                 if (++counter >= this.bootstrap.length) {
                     log.errorEnd('failover tried too many times, giving up',
-                                 { retries: counter });
+                        { retries: counter });
                     return callback(err);
                 }
                 return this._shiftCurrentBootstrapToEnd(log)
                     ._failover(method, stream, size, key, counter, log,
-                               callback, params);
+                        callback, params);
             }
             receivedResponse = true;
-            log.end().debug('request received response');
+            log.end('request received response');
             return callback(err, ret);
         }, args, payload);
     }
@@ -238,12 +240,13 @@ export class HDProxydClient {
      * creation and its sending.
      */
     private _handleRequest(method: string, stream: Stream|null,
-                           size: number, key: string, log: any,
-                           callback: HDProxydCallback, params: any,
-                           payload: any): void {
-        const headers = params.headers ? params.headers : {};
+        size: number, key: string, log: werelogs.RequestLogger,
+        callback: HDProxydCallback, params: Params,
+        payload: object | undefined): void {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const headers = (params.headers ? params.headers : {}) as { 'content-length'?: number; [key: string]: any };
         const req = this._createRequestHeader(method, headers, key, params,
-                                              log);
+            log);
         const host = this.getCurrentBootstrap();
         const isBatchDelete = key === '/job/delete';
         if (stream) {
@@ -271,7 +274,7 @@ export class HDProxydClient {
                     contentLength: size,
                 }));
             stream.pipe(request);
-            stream.on('error', (err) => {
+            stream.on('error', err => {
                 log.error('error from readable stream', {
                     error: err,
                     method: '_handleRequest',
@@ -309,7 +312,8 @@ export class HDProxydClient {
      * @param {HDProxydClient~putCallback} callback - callback
      * @returns {undefined}
      */
-    public put(stream: Stream, size: number, params: any, reqUids: string, callback: HDProxydClientPutCallback): void {
+    public put(stream: Stream, size: number, params: { [key: string]: string }, reqUids: string,
+        callback: HDProxydClientPutCallback): void {
         const log = this.createLogger(reqUids);
         this._failover('POST', stream, size, '', 0, log, (err?: HDProxydError, response?: http.IncomingMessage) => {
             if (response) {
@@ -322,9 +326,8 @@ export class HDProxydClient {
                 return callback(new HDProxydError('no key returned'));
             }
             const key = response.headers['scal-key'] as string;
-            response.on('end', () => {
-                return callback(undefined, key);
-            });
+            response.on('end', () => callback(undefined, key));
+            return null;
         }, params);
     }
 
@@ -342,7 +345,7 @@ export class HDProxydClient {
         assert.strictEqual(typeof key, 'string');
         const log = this.createLogger(reqUids);
         const params = { range };
-        this._failover('GET', null, 0, key, 0, log, callback, params);
+        this._failover('GET', null, 0, key, 0, log, callback, params as Params);
     }
 
     /**
@@ -377,9 +380,9 @@ export class HDProxydClient {
      */
     public batchDelete(list: {keys: string[]}, reqUids: string, callback: HDProxydClientDeleteCallback): void {
         assert.strictEqual(typeof list, 'object');
-        assert(list.keys.every((k) => typeof k === 'string'));
+        assert(list.keys.every(k => typeof k === 'string'));
         // split the list into batches of 1000 each
-        const batches = [];
+        const batches : { keys: string[] }[] = [];
         while (list.keys.length > 0) {
             batches.push({ keys: list.keys.splice(0, 1000) });
         }
@@ -413,18 +416,18 @@ export class HDProxydClient {
      * @param {SproxydClient-healthcheckCallback} callback - callback
      * @returns {void}
      */
-   public healthcheck(log: RequestLogger, callback: HDProxydCallback): void {
+    public healthcheck(log: werelogs.RequestLogger, callback: HDProxydCallback): void {
         const logger = log || this.createLogger();
         const currentBootstrap = this.getCurrentBootstrap();
         const req = {
-           hostname: currentBootstrap[0],
-           port: currentBootstrap[1],
-           method: 'GET',
-           path: '/metrics', // XXX
-           headers: {
-               'X-Scal-Request-Uids': logger.getSerializedUids(),
-           },
-           agent: this.httpAgent,
+            hostname: currentBootstrap[0],
+            port: currentBootstrap[1],
+            method: 'GET',
+            path: '/metrics',
+            headers: {
+                'X-Scal-Request-Uids': logger.getSerializedUids(),
+            },
+            agent: this.httpAgent,
         };
         const request = _createRequest(req, logger, callback);
         request.end();
