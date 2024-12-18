@@ -1,4 +1,5 @@
-module.exports = {
-    hdcontroller: require('./lib/hdcontroller'),
-    shuffle: require('./lib/shuffle'),
-};
+import hdcontroller from './lib/hdcontroller';
+import shuffle from './lib/shuffle';
+
+export { hdcontroller, shuffle };
+

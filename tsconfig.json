@@ -5,7 +5,7 @@
         "target": "es2016",
         "alwaysStrict": true,
         "skipLibCheck": true,
-        "module": "commonjs"
+        "module": "commonjs",
     },
     "include": [
         "./src/*"
