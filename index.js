@@ -1,5 +1,5 @@
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-module.exports = {
-    hdcontroller: require('./lib/hdcontroller'),
-    shuffle: require('./lib/shuffle'),
-};
+exports.shuffle = exports.hdcontroller = void 0;
+exports.hdcontroller = require("./src/hdcontroller");
+exports.shuffle = require("./src/shuffle");
