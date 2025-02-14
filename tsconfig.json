@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "outDir": "./lib",
+        "declaration": true,
         "allowJs": true,
         "target": "es2016",
         "alwaysStrict": true,
@@ -8,6 +8,10 @@
         "module": "commonjs",
     },
     "include": [
-        "./src/*"
-    ]
+        "./index.ts",
+        "./src/*",
+    ],
+    "exclude": [
+        "node_modules",
+    ],
 }
