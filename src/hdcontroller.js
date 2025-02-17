@@ -1,12 +1,12 @@
 'use strict';
-Object.defineProperty(exports, '__esModule', { value: true });
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.HDProxydClient = exports.HDProxydError = void 0;
-const assert = require('assert');
-const async = require('async');
-const http = require('http');
-const werelogs = require('werelogs');
-const httpagent_1 = require('httpagent');
-const shuffle_1 = require('./shuffle');
+const assert = require("assert");
+const async = require("async");
+const http = require("http");
+const werelogs = require("werelogs");
+const httpagent_1 = require("httpagent");
+const shuffle_1 = require("./shuffle");
 class HDProxydError extends Error {
     constructor() {
         super(...arguments);
@@ -33,7 +33,7 @@ function _createRequest(req, log, callback) {
             return callback(error);
         }
         return callback(undefined, response);
-    }).on('error', err => {
+    }).on('error', (err) => {
         if (!callbackCalled) {
             callbackCalled = true;
             return callback(err);
@@ -198,7 +198,7 @@ class HDProxydClient {
      * creation and its sending.
      */
     _handleRequest(method, stream, size, key, log, callback, params, payload) {
-         
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const headers = (params.headers ? params.headers : {});
         const req = this._createRequestHeader(method, headers, key, params, log);
         const host = this.getCurrentBootstrap();
@@ -352,7 +352,7 @@ class HDProxydClient {
                     done(err);
                 }
             }, {}, payload);
-        }, err => {
+        }, (err) => {
             if (err) {
                 callback(err);
             }
