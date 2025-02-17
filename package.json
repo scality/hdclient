@@ -5,7 +5,8 @@
   },
   "version": "1.2.1",
   "description": "Hyperdrive appliance client library",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "clinic": "clinic ",
     "build": "tsc --strict ",
