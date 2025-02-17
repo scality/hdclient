@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "outDir": "./lib",
         "declaration": true,
         "allowJs": true,
         "target": "es2016",
