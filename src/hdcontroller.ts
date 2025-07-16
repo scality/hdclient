@@ -255,6 +255,7 @@ export class HDProxydClient {
                 if (err || !response) {
                     log.error('putting chunk to hdproxyd', { host, key,
                         error: err });
+                    request.destroy();
                     return callback(err);
                 }
                 const Method = method;
