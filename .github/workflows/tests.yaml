@@ -35,7 +35,7 @@ jobs:
         mkdir artifacts
         cp -a docs artifacts/
         cp -a coverage artifacts/
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: artifacts
         path: artifacts
