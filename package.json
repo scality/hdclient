@@ -50,7 +50,7 @@
     "@types/sinon": "^21.0.0",
     "clinic": "^13.0.0",
     "eslint": "^10.0.1",
-    "eslint-config-scality": "github:scality/Guidelines#8.3.0",
+    "eslint-config-scality": "github:scality/Guidelines#8.3.1",
     "globals": "^17.0.0",
     "jsdoc": "^4.0.3",
     "mocha": "^11.0.1",
