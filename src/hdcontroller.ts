@@ -47,11 +47,13 @@ function _createRequest(req: http.RequestOptions, log: werelogs.RequestLogger,
     }).on('error', (err: HDProxydError) => {
         if (!callbackCalled) {
             callbackCalled = true;
+            request.destroy(err);
             return callback(err);
         }
         if (err.code !== 'ERR_SOCKET_TIMEOUT') {
             log.error('got socket error after response', { err });
         }
+        request.destroy(err);
         return null;
     });
 
@@ -280,7 +282,7 @@ export class HDProxydClient {
                     method: '_handleRequest',
                     component: 'sproxydclient',
                 });
-                request.end();
+                request.destroy(err);
             });
         } else {
             headers['content-length'] = isBatchDelete ? size : 0;
