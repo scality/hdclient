@@ -12,7 +12,7 @@
     "build": "tsc --strict ",
     "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text --reporter=html --reporter=lcov npm test tests/",
     "jsdoc": "jsdoc src/*.ts tests/ -d docs/jsdoc",
-    "lint": "eslint $(git ls-files '*.ts' '*.js')",
+    "lint": "eslint $(git ls-files '*.ts' '*.js' ':!lib/')",
     "test": "mocha --require ts-node/register --use_strict --check-leaks --recursive tests/**/*.ts",
     "get-version": "echo $npm_package_version"
   },
@@ -46,6 +46,7 @@
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.0",
+    "@scality/eslint-config-scality": "scality/Guidelines#8.4.0",
     "@types/async": "^3.2.24",
     "@types/mocha": "^10.0.8",
     "@types/nock": "^11.1.0",
@@ -53,8 +54,7 @@
     "@types/sinon": "^21.0.0",
     "clinic": "^13.0.0",
     "eslint": "^10.0.1",
-    "eslint-config-scality": "github:scality/Guidelines#8.3.1",
-    "globals": "^17.0.0",
+    "eslint-plugin-mocha": "^11.3.0",
     "jsdoc": "^4.0.3",
     "mocha": "^11.0.1",
     "nock": "^13.5.5",
