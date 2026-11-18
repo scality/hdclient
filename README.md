@@ -34,6 +34,8 @@ npm audit
 To use the linter and run the tests:
 
 ```shell
+# Linter
+npm run lint
 
 # All tests
 npm test tests/
