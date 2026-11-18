@@ -24,9 +24,11 @@ It does not change the data, it is merely a proxy to HDController.
 
 ### HDController protocol
 
-Basically a subset of HTTP 1.1 using POST, GET and DELETE verbs to create, to get and to delete an object.
+Basically a subset of HTTP 1.1 using POST, GET and DELETE verbs to create, to
+get and to delete an object.
 
-On POST, the HDController will create a key that can be used in GET / DELETE to access the data stored.
+On POST, the HDController will create a key that can be used in GET / DELETE to
+access the data stored.
 
 ## Usage
 
@@ -65,7 +67,11 @@ npm run jsdoc
 
 ### Performance diagnostic tool
 
-[Node-clinic](https://github.com/nearform/node-clinic) is installed by default as dev dependency. It can be used to diagnose general performance, I/O specific, event-loop issues, etc. It can also be used to generate flame graphs. Below are some usage examples usage. Note that data acquisition and visualization can be sepearated, they are not in the examples.
+[Node-clinic](https://github.com/nearform/node-clinic) is installed by default
+as dev dependency. It can be used to diagnose general performance, I/O specific,
+event-loop issues, etc. It can also be used to generate flame graphs. Below are
+some usage examples usage. Note that data acquisition and visualization can be
+sepearated, they are not in the examples.
 
 ```shell
 # Node clinic diagnosis tool - help
@@ -76,11 +82,12 @@ npm run clinic doctor
 
 # Diagnosing on the same machine - use --on-port to kickstart load generator
 NODE_ENV=production npm run clinic doctor -- \
-                   --on-port='for i in {..10}; do curl -XPUT --data-binary @/etc/hosts "http://localhost:6767/bucket/testobj$i" ; done' \
-                   -- node scripts/server.js 6767 scripts/example_hdclient_proxy.conf.json
+    --on-port='for i in {..10}; do
+        curl -XPUT --data-binary @/etc/hosts "http://localhost:6767/bucket/testobj$i" ; done' \
+    -- node scripts/server.js 6767 scripts/example_hdclient_proxy.conf.json
 
 NODE_ENV=production npm run clinic doctor -- \
-                   -- node scripts/server.js 6767 scripts/example_hdclient_proxy.conf.json &
+    -- node scripts/server.js 6767 scripts/example_hdclient_proxy.conf.json &
 pid=$!
 # Start and wait for load generator to finish from somewhere else...
 kill -SIGINT $pid # Or keep process in foreground and Ctrl-C when done
@@ -99,7 +106,11 @@ Analysing data
 
 ### Running as standalone
 
-Because deploying the full S3 server might be too much of a hassle for your specific need, a HTTP server using HdClient is provided. The mapping between object key and internal keys (the ones actually stored on the hyperdrive) is stored in-memory only. The internal keys are not accessible on the outside, mirrorring behavior of Zenko-like deployment.
+Because deploying the full S3 server might be too much of a hassle for your
+specific need, a HTTP server using HdClient is provided. The mapping between
+object key and internal keys (the ones actually stored on the hyperdrive) is
+stored in-memory only. The internal keys are not accessible on the outside,
+mirrorring behavior of Zenko-like deployment.
 
  ```shell
 # Start Hyperdrive 'proxy'
@@ -160,7 +171,8 @@ curl -XDELETE -v http://localhost:8888/mybucket/testobj/64
 
 ### Running as a CloudServer data backend
 
-How to run integrated hyperdrive client inside S3 or Zenko deployment? This section is only a work in progress
+How to run integrated hyperdrive client inside S3 or Zenko deployment? This
+section is only a work in progress
 since actual S3 integration code is not yet merged.
 
 ```shell
