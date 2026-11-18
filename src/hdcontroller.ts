@@ -235,9 +235,8 @@ export class HDProxydClient {
                 if ((err && !err.isExpected) || !ret) {
                     if (receivedResponse === true) {
                         log.fatal(
-                            'multiple responses from hdproxyd, trying to ' +
-                                'write more data to the stream after hdproxyd sent a ' +
-                                'response, size of the object could be incorrect',
+                            'multiple responses from hdproxyd, trying to write more data to the stream ' +
+                                'after hdproxyd sent a response, size of the object could be incorrect',
                             {
                                 error: err,
                                 method: '_failover',
