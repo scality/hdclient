@@ -12,7 +12,7 @@
     "build": "tsc --strict ",
     "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text --reporter=html --reporter=lcov npm test tests/",
     "jsdoc": "jsdoc src/*.ts tests/ -d docs/jsdoc",
-    "lint": "eslint $(git ls-files '*.ts' '*.js' ':!lib/')",
+    "lint": "eslint $(git ls-files '*.ts' '*.js' '*.mjs' ':!lib/')",
     "test": "mocha --require ts-node/register --use_strict --check-leaks --recursive tests/**/*.ts",
     "get-version": "echo $npm_package_version"
   },
