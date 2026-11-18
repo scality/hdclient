@@ -24,7 +24,7 @@ function nextBytes(numBytes: number): Buffer {
     try {
         return randomBytes(numBytes);
     } catch (ex) {
-        throw new Error(`Insufficient entropy: ${ex instanceof Error ? ex.message : 'Unknown error'}`);
+        throw new Error(`Insufficient entropy: ${ex instanceof Error ? ex.message : 'Unknown error'}`, { cause: ex });
     }
 }
 

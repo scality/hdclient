@@ -4,6 +4,7 @@
         "declaration": true,
         "allowJs": true,
         "target": "es2016",
+        "lib": ["es2022"],
         "alwaysStrict": true,
         "skipLibCheck": true,
         "module": "commonjs",
