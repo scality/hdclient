@@ -25,6 +25,8 @@ jobs:
       run: npm audit --only=prod --production
     - name: run lint
       run: npm run --silent lint -- --max-warnings 0
+    - name: check formatting
+      run: npm run --silent prettier:check
     - name: verify build
       run: npm run build
     - name: JSDoc
