@@ -4,44 +4,44 @@ name: tests
 on:
   push:
     branches-ignore:
-    - development/**
-    - q/*/**
+      - development/**
+      - q/*/**
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v7
-    - uses: actions/setup-node@v7
-      with:
-        node-version: '22'
-        cache: 'npm'
-    - name: install dependencies
-      run: |
-        npm --verbose install
-        npm --verbose install --only=dev
-    - name: audit installed packages
-      run: npm audit --only=prod --production
-    - name: run lint
-      run: npm run --silent lint -- --max-warnings 0
-    - name: run lint_md
-      run: npm run --silent lint_md
-    - name: check formatting
-      run: npm run --silent prettier:check
-    - name: verify build
-      run: npm run build
-    - name: JSDoc
-      run: npm run jsdoc
-    - name: unit, functional tests with coverage
-      run: npm run coverage
-    - name: "Prepare artifacts"
-      run: |
-        set -xv
-        mkdir artifacts
-        cp -a docs artifacts/
-        cp -a coverage artifacts/
-    - uses: actions/upload-artifact@v7
-      with:
-        name: artifacts
-        path: artifacts
+      - name: Checkout
+        uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: install dependencies
+        run: |
+          npm --verbose install
+          npm --verbose install --only=dev
+      - name: audit installed packages
+        run: npm audit --only=prod --production
+      - name: run lint
+        run: npm run --silent lint -- --max-warnings 0
+      - name: run lint_md
+        run: npm run --silent lint_md
+      - name: check formatting
+        run: npm run --silent prettier:check
+      - name: verify build
+        run: npm run build
+      - name: JSDoc
+        run: npm run jsdoc
+      - name: unit, functional tests with coverage
+        run: npm run coverage
+      - name: 'Prepare artifacts'
+        run: |
+          set -xv
+          mkdir artifacts
+          cp -a docs artifacts/
+          cp -a coverage artifacts/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: artifacts
+          path: artifacts

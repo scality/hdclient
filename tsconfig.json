@@ -7,13 +7,8 @@
         "lib": ["es2022"],
         "alwaysStrict": true,
         "skipLibCheck": true,
-        "module": "commonjs",
+        "module": "commonjs"
     },
-    "include": [
-        "./index.ts",
-        "./src/*",
-    ],
-    "exclude": [
-        "node_modules",
-    ],
+    "include": ["./index.ts", "./src/*"],
+    "exclude": ["node_modules"]
 }

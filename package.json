@@ -1,78 +1,78 @@
 {
-  "name": "@scality/hdclient",
-  "engines": {
-    "node": ">=20"
-  },
-  "version": "1.4.1-dev",
-  "description": "Hyperdrive appliance client library",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
-  "scripts": {
-    "clinic": "clinic ",
-    "build": "tsc --strict ",
-    "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text --reporter=html --reporter=lcov npm test tests/",
-    "jsdoc": "jsdoc src/*.ts tests/ -d docs/jsdoc",
-    "lint": "eslint $(git ls-files '*.ts' '*.js' '*.mjs' ':!lib/')",
-    "lint_md": "mdlint $(git ls-files '*.md')",
-    "prettier:check": "prettier --check .",
-    "test": "mocha --require ts-node/register --use_strict --check-leaks --recursive tests/**/*.ts",
-    "get-version": "echo $npm_package_version"
-  },
-  "nyc": {
-    "include": [
-      "src/**/*.ts",
-      "src/**/*.tsx"
-    ],
-    "extension": [
-      ".ts",
-      ".tsx"
-    ],
-    "require": [
-      "ts-node/register"
-    ],
-    "reporter": [
-      "text-summary",
-      "html"
-    ],
-    "sourceMap": true,
-    "instrument": true
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/scality/hdclient.git"
-  },
-  "author": "Maxime Lubin",
-  "dependencies": {
-    "httpagent": "github:scality/httpagent#1.1.0",
-    "werelogs": "github:scality/werelogs#8.2.3"
-  },
-  "devDependencies": {
-    "@eslint/compat": "^2.0.0",
-    "@scality/eslint-config-scality": "scality/Guidelines#8.4.0",
-    "@types/async": "^3.2.24",
-    "@types/mocha": "^10.0.8",
-    "@types/nock": "^11.1.0",
-    "@types/node": "^25.0.0",
-    "@types/sinon": "^21.0.0",
-    "clinic": "^13.0.0",
-    "eslint": "^10.0.1",
-    "eslint-plugin-mocha": "^11.3.0",
-    "jsdoc": "^4.0.3",
-    "mocha": "^11.0.1",
-    "nock": "^13.5.5",
-    "nyc": "^18.0.0",
-    "prettier": "^3.10.1",
-    "sinon": "^21.0.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.6.2",
-    "typescript-eslint": "^8.67.0"
-  },
-  "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/scality/hdclient/issues"
-  },
-  "homepage": "https://github.com/scality/hdclient#readme",
-  "publishConfig": {
-    "access": "public"
-  }
+    "name": "@scality/hdclient",
+    "engines": {
+        "node": ">=20"
+    },
+    "version": "1.4.1-dev",
+    "description": "Hyperdrive appliance client library",
+    "main": "lib/index.js",
+    "types": "lib/index.d.ts",
+    "scripts": {
+        "clinic": "clinic ",
+        "build": "tsc --strict ",
+        "coverage": "nyc --check-coverage --exclude 'tests/*' --lines=90 --reporter=text --reporter=html --reporter=lcov npm test tests/",
+        "jsdoc": "jsdoc src/*.ts tests/ -d docs/jsdoc",
+        "lint": "eslint $(git ls-files '*.ts' '*.js' '*.mjs' ':!lib/')",
+        "lint_md": "mdlint $(git ls-files '*.md')",
+        "prettier:check": "prettier --check .",
+        "test": "mocha --require ts-node/register --use_strict --check-leaks --recursive tests/**/*.ts",
+        "get-version": "echo $npm_package_version"
+    },
+    "nyc": {
+        "include": [
+            "src/**/*.ts",
+            "src/**/*.tsx"
+        ],
+        "extension": [
+            ".ts",
+            ".tsx"
+        ],
+        "require": [
+            "ts-node/register"
+        ],
+        "reporter": [
+            "text-summary",
+            "html"
+        ],
+        "sourceMap": true,
+        "instrument": true
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/scality/hdclient.git"
+    },
+    "author": "Maxime Lubin",
+    "dependencies": {
+        "httpagent": "github:scality/httpagent#1.1.0",
+        "werelogs": "github:scality/werelogs#8.2.3"
+    },
+    "devDependencies": {
+        "@eslint/compat": "^2.0.0",
+        "@scality/eslint-config-scality": "scality/Guidelines#8.4.0",
+        "@types/async": "^3.2.24",
+        "@types/mocha": "^10.0.8",
+        "@types/nock": "^11.1.0",
+        "@types/node": "^25.0.0",
+        "@types/sinon": "^21.0.0",
+        "clinic": "^13.0.0",
+        "eslint": "^10.0.1",
+        "eslint-plugin-mocha": "^11.3.0",
+        "jsdoc": "^4.0.3",
+        "mocha": "^11.0.1",
+        "nock": "^13.5.5",
+        "nyc": "^18.0.0",
+        "prettier": "^3.10.1",
+        "sinon": "^21.0.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.6.2",
+        "typescript-eslint": "^8.67.0"
+    },
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/scality/hdclient/issues"
+    },
+    "homepage": "https://github.com/scality/hdclient#readme",
+    "publishConfig": {
+        "access": "public"
+    }
 }

@@ -1,4 +1,4 @@
-'use strict';  
+'use strict';
 
 import * as cryptoLib from 'crypto';
 
@@ -37,7 +37,7 @@ function nextBytes(numBytes: number): Buffer {
  * @return {number} - a pseudo-random integer in [min,max]
  */
 function randomRange(min: number, max: number): number {
-    const range = (max - min);
+    const range = max - min;
     const bits = Math.floor(Math.log2(range)) + 1;
     // decide how many bytes we need to draw from nextBytes: drawing less
     // bytes means being more efficient
@@ -50,7 +50,7 @@ function randomRange(min: number, max: number): number {
         // tslint:disable-next-line: no-bitwise
         candidate = parseInt(nextBytes(bytes).toString('hex'), 16) & mask;
     } while (candidate > range);
-    return (candidate + min);
+    return candidate + min;
 }
 
 /**
@@ -59,7 +59,7 @@ function randomRange(min: number, max: number): number {
  * @param {Array} array - Any type of array
  * @return {Array} - The sorted array
  */
-export function shuffle<T>(array: T[]): T[]{
+export function shuffle<T>(array: T[]): T[] {
     if (array.length === 1) {
         return array;
     }

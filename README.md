@@ -3,8 +3,7 @@
 ## Contributing
 
 In order to contribute, please follow the
-[Contributing Guidelines](
-https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
+[Contributing Guidelines](https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
 
 ### Formatting
 
@@ -113,7 +112,7 @@ object key and internal keys (the ones actually stored on the hyperdrive) is
 stored in-memory only. The internal keys are not accessible on the outside,
 mirrorring behavior of Zenko-like deployment.
 
- ```shell
+```shell
 # Start Hyperdrive 'proxy'
 # example conf assumes 1 hdcontroller listening on localhost:18888
 NODE_ENV=production node scripts/server.js 8888 scripts/example_hdclient_proxy.conf.json &

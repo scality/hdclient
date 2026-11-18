@@ -53,8 +53,8 @@ jobs:
   release-github:
     runs-on: ubuntu-latest
     needs:
-    - publish-github
-    - publish-npm
+      - publish-github
+      - publish-npm
     steps:
       - name: Create Release
         uses: softprops/action-gh-release@v2

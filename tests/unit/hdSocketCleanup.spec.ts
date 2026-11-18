@@ -55,7 +55,6 @@ describe('HDProxydClient — outbound socket cleanup after response', () => {
         firstDestroyArgFromStream?: unknown;
     };
 
-
     function stubRequestAndCaptureDestroy(options: {
         assignCapture: (cap: DestroyCapture) => void;
         postResponseError?: {
@@ -65,10 +64,7 @@ describe('HDProxydClient — outbound socket cleanup after response', () => {
     }): void {
         const origRequest = http.request;
         sandbox.stub(http, 'request').callsFake(((opts, cb) => {
-            const req = origRequest(
-                opts as string | http.RequestOptions,
-                cb as (res: http.IncomingMessage) => void,
-            );
+            const req = origRequest(opts as string | http.RequestOptions, cb as (res: http.IncomingMessage) => void);
             const destroyCapture: DestroyCapture = { destroyCalled: false, destroyCallCount: 0 };
             options.assignCapture(destroyCapture);
             const innerDestroy = req.destroy.bind(req);
@@ -117,7 +113,9 @@ describe('HDProxydClient — outbound socket cleanup after response', () => {
         let destroyCapture: DestroyCapture | undefined;
         let finished = false;
         const finish = (e?: Error) => {
-            if (finished) {return;}
+            if (finished) {
+                return;
+            }
             finished = true;
             done(e);
         };
@@ -126,7 +124,9 @@ describe('HDProxydClient — outbound socket cleanup after response', () => {
                 code: 'ERR_SOCKET_TIMEOUT',
                 message: 'simulated idle timeout',
             },
-            assignCapture: (capture: DestroyCapture) => { destroyCapture = capture; },
+            assignCapture: (capture: DestroyCapture) => {
+                destroyCapture = capture;
+            },
         });
 
         listenServer(port => {
@@ -142,7 +142,10 @@ describe('HDProxydClient — outbound socket cleanup after response', () => {
                 setImmediate(() => {
                     try {
                         assert.ok(destroyCapture!, 'capture should be set');
-                        assert.ok(destroyCapture!.destroyCalled, 'request.destroy must run for post-response socket error');
+                        assert.ok(
+                            destroyCapture!.destroyCalled,
+                            'request.destroy must run for post-response socket error',
+                        );
                         assert.strictEqual(destroyCapture!.destroyCallCount, 1, 'request.destroy should run once');
                         const arg0 = destroyCapture!.lastDestroyArg as NodeJS.ErrnoException;
                         assert.strictEqual(arg0?.code, 'ERR_SOCKET_TIMEOUT');
@@ -161,7 +164,9 @@ describe('HDProxydClient — outbound socket cleanup after response', () => {
         let destroyCapture: DestroyCapture | undefined;
         let finished = false;
         const finish = (e?: Error) => {
-            if (finished) { return; }
+            if (finished) {
+                return;
+            }
             finished = true;
             done(e);
         };
@@ -170,7 +175,9 @@ describe('HDProxydClient — outbound socket cleanup after response', () => {
                 code: 'ECONNRESET',
                 message: 'simulated reset',
             },
-            assignCapture: (capture: DestroyCapture) => { destroyCapture = capture; },
+            assignCapture: (capture: DestroyCapture) => {
+                destroyCapture = capture;
+            },
         });
 
         listenServer(port => {
@@ -205,13 +212,17 @@ describe('HDProxydClient — outbound socket cleanup after response', () => {
         let destroyCapture: DestroyCapture | undefined;
         let finished = false;
         const finish = (e?: Error) => {
-            if (finished) {return;}
+            if (finished) {
+                return;
+            }
             finished = true;
             done(e);
         };
         const injectedError = new Error('simulated upload stream failure');
         stubRequestAndCaptureDestroy({
-            assignCapture: (capture: DestroyCapture) => { destroyCapture = capture; },
+            assignCapture: (capture: DestroyCapture) => {
+                destroyCapture = capture;
+            },
         });
 
         listenServer(port => {
@@ -224,38 +235,49 @@ describe('HDProxydClient — outbound socket cleanup after response', () => {
                     this.destroy(injectedError);
                 },
             });
-            h.put(upload, 5, {
-                bucketName: 'test',
-                owner: 'test',
-                namespace: 'zenko',
-            }, '', () => {
-                setImmediate(() => {
-                    try {
-                        assert.ok(destroyCapture, 'capture should be set');
-                        assert.ok(destroyCapture!.destroyCalled, 'request.destroy must run for upload stream error');
-                        // Node may issue a second destroy from its internal pipe error handling; 
-                        // we are allowing both while requiring our stream error to trigger first.
-                        assert.ok(
-                            destroyCapture!.destroyCallCount === 1 || destroyCapture!.destroyCallCount === 2,
-                            `request.destroy should run once (or twice at most if http request also errors); 
+            h.put(
+                upload,
+                5,
+                {
+                    bucketName: 'test',
+                    owner: 'test',
+                    namespace: 'zenko',
+                },
+                '',
+                () => {
+                    setImmediate(() => {
+                        try {
+                            assert.ok(destroyCapture, 'capture should be set');
+                            assert.ok(
+                                destroyCapture!.destroyCalled,
+                                'request.destroy must run for upload stream error',
+                            );
+                            // Node may issue a second destroy from its internal pipe error handling;
+                            // we are allowing both while requiring our stream error to trigger first.
+                            assert.ok(
+                                destroyCapture!.destroyCallCount === 1 || destroyCapture!.destroyCallCount === 2,
+                                `request.destroy should run once (or twice at most if http request also errors); 
                             callCount=${destroyCapture!.destroyCallCount}`,
-                        );
-                        assert.strictEqual(destroyCapture!.firstDestroyArgFromStream, injectedError);
-                        h.destroy();
-                        finish();
-                    } catch (e) {
-                        h.destroy();
-                        finish(e as Error);
-                    }
-                });
-            });
+                            );
+                            assert.strictEqual(destroyCapture!.firstDestroyArgFromStream, injectedError);
+                            h.destroy();
+                            finish();
+                        } catch (e) {
+                            h.destroy();
+                            finish(e as Error);
+                        }
+                    });
+                },
+            );
         });
     });
 
     it('does not accumulate agent sockets across repeated post-response ECONNRESET errors', done => {
         let finished = false;
         const finish = (e?: Error) => {
-            if (finished) {return;}
+            if (finished) {
+                return;
+            }
             finished = true;
             done(e);
         };
