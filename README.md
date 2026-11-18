@@ -42,11 +42,12 @@ npm audit
 
 ### Running tests
 
-To use the linter and run the tests:
+To use the linters and run the tests:
 
 ```shell
-# Linter
+# Linters
 npm run lint
+npm run lint_md
 
 # All tests
 npm test tests/
