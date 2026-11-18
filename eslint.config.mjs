@@ -12,7 +12,10 @@ const gitignorePath = path.resolve(__dirname, '.gitignore');
 
 export default defineConfig(
     ...scality,
-    ...tseslint.configs.recommended,
+    {
+        files: [tseslint.globs.ts],
+        extends: [tseslint.configs.recommended],
+    },
     includeIgnoreFile(gitignorePath),
     globalIgnores(['lib/']),
     mocha(['tests/**/*.ts']),
