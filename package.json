@@ -53,7 +53,7 @@
         "@types/mocha": "^10.0.8",
         "@types/nock": "^11.1.0",
         "@types/node": "^25.0.0",
-        "@types/sinon": "^21.0.0",
+        "@types/sinon": "^22.0.2",
         "clinic": "^13.0.0",
         "eslint": "^10.0.1",
         "eslint-plugin-mocha": "^11.3.0",
@@ -62,7 +62,7 @@
         "nock": "^13.5.5",
         "nyc": "^18.0.0",
         "prettier": "^3.10.1",
-        "sinon": "^21.0.0",
+        "sinon": "^22.1.0",
         "ts-node": "^10.9.2",
         "typescript": "^5.6.2",
         "typescript-eslint": "^8.67.0"
